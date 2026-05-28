@@ -1,0 +1,21 @@
+{
+  "short_name": "Radiant RIS",
+  "name": "Radiant RIS - Radiology Information System",
+  "icons": [
+    {
+      "src": "/ris_logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/ris_logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#000000",
+  "theme_color": "#066952",
+  "display": "standalone",
+  "orientation": "portrait"
+}

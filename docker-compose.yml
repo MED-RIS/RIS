@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------
+  # Development Environment (Hot-reloading enabled)
+  # Run with: docker compose up --build ris-dev
+  # -------------------------------------------------------------
+  ris-dev:
+    container_name: ris-frontend-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules # Avoid overriding container packages with host package folders
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    stdin_open: true
+    tty: true
+    restart: always
+
+  # -------------------------------------------------------------
+  # Production Environment (Served via Nginx)
+  # Run with: docker compose up --build ris-prod
+  # -------------------------------------------------------------
+  ris-prod:
+    container_name: ris-frontend-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8080:80"
+    restart: always
