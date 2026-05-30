@@ -28,7 +28,8 @@ import {
   Smartphone,
   Radio,
   GraduationCap,
-  Briefcase
+  Briefcase,
+  Form
 } from 'lucide-react';
 
 import {
@@ -95,6 +96,7 @@ import BranchesTab from './components/BranchesTab';
 import OrganizationsTab from './components/OrganizationsTab';
 import MetricsTab from './components/MetricsTab';
 import ConsultaTab from './components/ConsultaTab';
+import FormularioTab from './components/FormularioTab';
 
 // New Tabs
 import TemplatesTab from './components/TemplatesTab';
@@ -121,6 +123,7 @@ const MENU_GROUPS = [
       { id: 'informes', label: 'Informes', icon: <FileText className="w-5 h-5" /> },
       { id: 'pacientes', label: 'Pacientes', icon: <Users className="w-5 h-5" /> },
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },
+      { id: 'Formulario', label: 'Formulario', icon: <Form className="w-5 h-5" /> },
     ]
   },
   {
@@ -717,11 +720,11 @@ function RisWorklistPanel({ servicesManager }) {
       <div className="flex flex-1 bg-black text-white font-sans overflow-hidden relative">
         {/* Mobile Drawer Overlay */}
         {isMobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/80 z-50 sm:hidden transition-opacity duration-300"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <aside 
+            <aside
               className="w-64 h-full bg-secondary-dark border-r border-secondary-dark flex flex-col z-50 animate-slide-in-left"
               onClick={(e) => e.stopPropagation()}
             >
@@ -730,8 +733,8 @@ function RisWorklistPanel({ servicesManager }) {
                   <img src="/ris_logo.svg" alt="Logo" className="w-8 h-8 object-contain" />
                   <span className="font-bold text-lg text-primary-light">RIS</span>
                 </div>
-                <button 
-                  onClick={() => setIsMobileMenuOpen(false)} 
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -913,6 +916,10 @@ function RisWorklistPanel({ servicesManager }) {
                   setNewOrder={setNewOrder}
                   companies={companies}
                 />
+              )}
+
+              {activeTab === 'Formulario' && (
+                <FormularioTab />
               )}
 
               {activeTab === 'informes' && (
