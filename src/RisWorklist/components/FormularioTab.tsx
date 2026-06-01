@@ -88,7 +88,7 @@ const FormularioTab = () => {
           <div className="flex items-center justify-between px-4 py-2 bg-secondary-dark/40 border-b border-white/5 text-xs text-gray-400 select-none">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="font-mono tracking-wider">http://147.93.3.171:5174</span>
+              <span className="font-mono tracking-wider">https://server5.signa-engineering.com.bo/form/</span>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -104,7 +104,7 @@ const FormularioTab = () => {
                 🔄 Recargar
               </button>
               <a
-                href="http://147.93.3.171:5174"
+                href="https://server5.signa-engineering.com.bo/form/"
                 target="_blank"
                 rel="noreferrer"
                 className="hover:text-white transition-colors flex items-center gap-1 font-medium bg-white/5 hover:bg-white/10 px-2 py-1 rounded"
@@ -124,7 +124,7 @@ const FormularioTab = () => {
 
           <iframe
             id="formulario-iframe"
-            src="http://147.93.3.171:5174"
+            src="https://server5.signa-engineering.com.bo/form/"
             className="w-full flex-1 border-none bg-white"
             onLoad={() => setIframeLoading(false)}
             title="Formulario Integrado"
