@@ -42,21 +42,19 @@ const FormularioTab = () => {
 
       <div className="flex gap-4 border-b border-secondary-dark">
         <button
-          className={`pb-2 px-2 text-sm font-medium transition-colors border-b-2 ${
-            activeSubTab === 'tab1'
-              ? 'border-primary-light text-primary-light'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
+          className={`pb-2 px-2 text-sm font-medium transition-colors border-b-2 ${activeSubTab === 'tab1'
+            ? 'border-primary-light text-primary-light'
+            : 'border-transparent text-gray-400 hover:text-white'
+            }`}
           onClick={() => setActiveSubTab('tab1')}
         >
           Plantilla 1
         </button>
         <button
-          className={`pb-2 px-2 text-sm font-medium transition-colors border-b-2 ${
-            activeSubTab === 'tab2'
-              ? 'border-primary-light text-primary-light'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
+          className={`pb-2 px-2 text-sm font-medium transition-colors border-b-2 ${activeSubTab === 'tab2'
+            ? 'border-primary-light text-primary-light'
+            : 'border-transparent text-gray-400 hover:text-white'
+            }`}
           onClick={() => setActiveSubTab('tab2')}
         >
           Plantilla 2
@@ -90,10 +88,10 @@ const FormularioTab = () => {
           <div className="flex items-center justify-between px-4 py-2 bg-secondary-dark/40 border-b border-white/5 text-xs text-gray-400 select-none">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="font-mono tracking-wider">http://localhost:5174</span>
+              <span className="font-mono tracking-wider">http://147.93.3.171:5174</span>
             </div>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => {
                   const iframe = document.getElementById('formulario-iframe') as HTMLIFrameElement;
                   if (iframe) {
@@ -105,9 +103,9 @@ const FormularioTab = () => {
               >
                 🔄 Recargar
               </button>
-              <a 
-                href="http://localhost:5174" 
-                target="_blank" 
+              <a
+                href="http://147.93.3.171:5174"
+                target="_blank"
                 rel="noreferrer"
                 className="hover:text-white transition-colors flex items-center gap-1 font-medium bg-white/5 hover:bg-white/10 px-2 py-1 rounded"
               >
@@ -123,10 +121,10 @@ const FormularioTab = () => {
               <span className="text-sm text-gray-400">Cargando formulario desde localhost...</span>
             </div>
           )}
-          
-          <iframe 
+
+          <iframe
             id="formulario-iframe"
-            src="http://localhost:5174" 
+            src="http://147.93.3.171:5174"
             className="w-full flex-1 border-none bg-white"
             onLoad={() => setIframeLoading(false)}
             title="Formulario Integrado"
