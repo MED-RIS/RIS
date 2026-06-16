@@ -781,8 +781,7 @@ function RisWorklistPanel({ servicesManager }) {
         )}
 
         {/* Sidebar */}
-        {activeTab !== 'totem' && (
-          <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} flex-shrink-0 bg-gradient-to-t from-secondary-dark border-r border-secondary-dark flex flex-col transition-all duration-300 z-10 hidden sm:flex`}>
+        <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} flex-shrink-0 bg-gradient-to-t from-secondary-dark border-r border-secondary-dark flex flex-col transition-all duration-300 z-10 hidden sm:flex`}>
             <div className="h-16 flex items-center justify-between px-4 border-b border-secondary-dark/50">
               {isSidebarOpen ? (
                 <div className="flex items-center gap-2">
@@ -842,7 +841,7 @@ function RisWorklistPanel({ servicesManager }) {
               ))}
             </div>
           </aside>
-        )}
+
 
         {/* Contenido Principal */}
         <main className="flex-1 flex flex-col min-w-0 bg-black">
