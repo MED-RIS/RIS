@@ -6,42 +6,39 @@ import {
   Loader2
 } from 'lucide-react';
 import RisModal from './RisModal';
-
-// 🛠️ RUTAS CORREGIDAS: Apuntamos exactamente a la carpeta pages subiendo los niveles necesarios
 import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 const FormularioTab = () => {
   const [activeSubTab, setActiveSubTab] = useState('tab1');
   const [isSimulatedModalOpen, setIsSimulatedModalOpen] = useState(false);
-  
-  // Controladores de estado internos para tu flujo analítico
+
   const [pasoAnalitico, setPasoAnalitico] = useState<number>(1);
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
 
-  // 🛠️ TIPADO CORREGIDO: Añadimos (nuevoDocumento: any) para eliminar el error "implicitly has an any type"
   const guardarEnRisServer = async (nuevoDocumento: any) => {
-    console.log("Insertando en la arquitectura NoSQL del RIS-SERVER:", nuevoDocumento);
+    console.log("Insertando en la arquitectura NoSQL del RIS-SERVER Nube:", nuevoDocumento);
     
     try {
-      const respuesta = await fetch(`http://localhost:5000/api/lab/resultado/${nuevoDocumento.id_consulta}`, {
+
+      const respuesta = await fetch(`https://ris.paise.signa-engineering.com/api/lab/resultado/${nuevoDocumento.id_consulta}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nuevoDocumento)
       });
       
       if (respuesta.ok) {
-        alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
+        alert("🎉 ¡Registro Clínico guardado con éxito en el servidor Nube de RIS!");
       } else {
-        alert("⚠️ El servidor respondió, pero hubo un detalle al procesar el JSON.");
+        alert("⚠️ El servidor de la nube respondió, pero hubo un detalle al procesar el JSON.");
       }
     } catch (error) {
-      console.error("Error de conexión con el backend:", error);
-      alert("✔ Simulación local guardada (El backend no procesó la petición HTTP, guardado en consola).");
+      console.error("Error de conexión con el backend en la nube:", error);
+      alert("❌ No se pudo conectar con el servidor de la nube. Verifique su conexión.");
     }
 
-    setPasoAnalitico(1); // Reiniciamos el flujo para el siguiente paciente
-    setIsSimulatedModalOpen(false); // Cerramos el modal automáticamente
+    setPasoAnalitico(1); 
+    setIsSimulatedModalOpen(false); 
   };
 
   return (
@@ -85,50 +82,49 @@ const FormularioTab = () => {
       </div>
 
       <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[300px]">
-  {activeSubTab === 'tab1' && (
-    <div>
-      {pasoAnalitico === 1 ? (
-        <RegistrarPaciente 
-  onSiguiente={(datosPaciente: any) => {
-    // 🚀 Flujo directo: No importa qué pase, el paciente va directo a sus formularios analíticos
-    setPacienteSeleccionado(datosPaciente);
-    setPasoAnalitico(2);
-  }} 
-/>
-      ) : (
-        <RegistrarConsulta 
-          pacienteData={pacienteSeleccionado} 
-          onVolver={() => setPasoAnalitico(1)}
-          onGuardarLocal={guardarEnRisServer}
-        />
-      )}
-    </div>
-  )}
-</div>
+        {activeSubTab === 'tab1' && (
+          <div>
+            {pasoAnalitico === 1 ? (
+              <RegistrarPaciente 
+                onSiguiente={(datosPaciente: any) => {
+                  setPacienteSeleccionado(datosPaciente);
+                  setPasoAnalitico(2);
+                }} 
+              />
+            ) : (
+              <RegistrarConsulta 
+                pacienteData={pacienteSeleccionado} 
+                onVolver={() => setPasoAnalitico(1)}
+                onGuardarLocal={guardarEnRisServer}
+              />
+            )}
+          </div>
+        )}
+      </div>
 
-     <RisModal
-  isOpen={isSimulatedModalOpen}
-  onClose={() => setIsSimulatedModalOpen(false)}
-  title="Procedimiento Integrado de Laboratorio"
-  maxWidth="max-w-6xl w-full"
->
-  <div className="w-full h-[80vh] min-h-[500px] flex flex-col p-4 overflow-y-auto bg-[#0a0f0d] rounded-lg border border-white/10">
-    {pasoAnalitico === 1 ? (
-      <RegistrarPaciente 
-        onSiguiente={(datosPaciente: any) => {
-          setPacienteSeleccionado(datosPaciente);
-          setPasoAnalitico(2);
-        }} 
-      />
-    ) : (
-      <RegistrarConsulta 
-        pacienteData={pacienteSeleccionado} 
-        onVolver={() => setPasoAnalitico(1)}
-        onGuardarLocal={guardarEnRisServer}
-      />
-    )}
-  </div>
-</RisModal>
+      <RisModal
+        isOpen={isSimulatedModalOpen}
+        onClose={() => setIsSimulatedModalOpen(false)}
+        title="Procedimiento Integrado de Laboratorio"
+        maxWidth="max-w-6xl w-full"
+      >
+        <div className="w-full h-[80vh] min-h-[500px] flex flex-col p-4 overflow-y-auto bg-[#0a0f0d] rounded-lg border border-white/10">
+          {pasoAnalitico === 1 ? (
+            <RegistrarPaciente 
+              onSiguiente={(datosPaciente: any) => {
+                setPacienteSeleccionado(datosPaciente);
+                setPasoAnalitico(2);
+              }} 
+            />
+          ) : (
+            <RegistrarConsulta 
+              pacienteData={pacienteSeleccionado} 
+              onVolver={() => setPasoAnalitico(1)}
+              onGuardarLocal={guardarEnRisServer}
+            />
+          )}
+        </div>
+      </RisModal>
     </div>
   );
 };
