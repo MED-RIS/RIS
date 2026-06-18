@@ -17,13 +17,12 @@ type MedicionExtra = {
   [key: string]: any;
 };
 
-import FormGlucosa from '../components/FormGlucosa';
-import FormHemograma from '../components/FormHemograma';
-import FormEgo from '../components/FormEgo'; 
-// ➕ Importamos los componentes que faltaban en el archivo principal
-import FormQuimica from '../components/FormQuimica';
-import FormSerologia from '../components/FormSerologia';
-import FormLiquidos from '../components/FormLiquidos';
+import FormGlucosa from '../RisWorklist/components/FormGlucosa';
+import FormHemograma from '../RisWorklist/components/FormHemograma';
+import FormEgo from '../RisWorklist/components/FormEgo'; 
+import FormQuimica from '../RisWorklist/components/FormQuimica';
+import FormSerologia from '../RisWorklist/components/FormSerologia';
+import FormLiquidos from '../RisWorklist/components/FormLiquidos';
 
 export interface RegistrarConsultaProps {
   pacienteData: any;
@@ -48,13 +47,10 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
 
   const [tipoLaboratorio, setTipoLaboratorio] = useState<string>('Lab_Glucosa_Curva');
 
-  // Estados de almacenamiento para cada formulario analítico
   const [glucosaFija, setGlucosaFija] = useState({ basal: 0, hora_basal: '', momento_medicion1: '1h', resultado_glucosa1: 0, momento_medicion2: '2h', resultado_glucosa2: 0 });
   const [medicionesExtra, setMedicionesExtra] = useState<MedicionExtra[]>([]);
   const [hematoDatos, setHematoDatos] = useState({ hto: 0, hb: 0, globulos_blancos: 0, seg: 0, linf: 0, plaquetas: 0, grupo_sanguineo: '', reticulocitos: 0, ves1hora: 0, indice_katz: 0, t_sangria_min: 0, t_sangria_seg: 0, t_coagulacion_min: 0, t_coagulacion_seg: 0, t_protrombina: 0, observaciones: '' });
   const [egoDatos, setEgoDatos] = useState({ volumen: 0, color: '', aspecto: '', ph: 5.0, densidad: 1.020, prot: 'Negativo', glucosa: 'Normal', nitritos: 'Negativo', leucocitos: '', eritrocitos: '', bacterias: 'Escasas', cel_epiteliales: 'Escasas', obs1: '' });
-  
-  // ➕ Nuevos estados iniciales agregados para soportar toda la guía oficial
   const [quimicaDatos, setQuimicaDatos] = useState({ glucemia_mgdl: 0, Hb_glicosilada_pct: 0, urea_mgdl: 0, creatinina_mgdl: 0, acido_urico_mgdl: 0, colesterol_mgdl: 0, trigliceridos_mgdl: 0, HDL_mgdl: 0, sodio_meql: 0, potasio_meql: 0, cloro_meql: 0, observaciones: '' });
   const [serologiaDatos, setSerologiaDatos] = useState({ pcr: 'Negativo', factor_reumatoideo: 'Negativo', aso: '', chagas: 'No Reactivo', tifico_o: '', tifico_h: '', paratifico: '', observaciones: '' });
   const [liquidosDatos, setLiquidosDatos] = useState({ tipo_liquido: '', aspecto: '', recuento_celular: 0, promedio: '', glucosa: 0, proteinas: 0, ldh: 0, observaciones: '' });
