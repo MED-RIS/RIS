@@ -1,152 +1,146 @@
 import React, { useState, useRef, useEffect } from 'react';
-
-interface PacienteEstructura {
-  id_paciente: number;
-  paterno: string;
-  materno: string;
-  nombres: string;
-  edad: number;
-  genero: string;
-  cod: string;
-  telefono: string;
-  tipo_seguro: string;
-}
-
+import { Calendar, FlaskConical, ClipboardList, Sparkles } from 'lucide-react';
+// 📦 Importamos los 10 pacientes que creamos en el Paso 1
+import { listaPacientesPrueba } from '../RisWorklist/components/pacientesMock'; 
 interface RegistrarPacienteProps {
-  onSiguiente: (datosPaciente: PacienteEstructura) => void;
+  onSiguiente: (datos: any) => void;
 }
 
 export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProps) {
-  const [paciente, setPaciente] = useState<PacienteEstructura>({
-    id_paciente: 12345,
-    paterno: '',
-    materno: '',
-    nombres: '',
-    edad: 0,
-    genero: 'Femenino',
-    cod: '', 
-    telefono: '',
-    tipo_seguro: 'CNS'
+  const [paciente, setPaciente] = useState({
+    cod: '', paterno: '', materno: '', nombres: '', edad: '', genero: 'Femenino'
   });
+  const [servicio, setServicio] = useState<'laboratorio' | 'imagenologia'>('laboratorio');
+  const [indiceExcel, setIndiceExcel] = useState(0);
 
-  const [qrInput, setQrInput] = useState<string>('');
-  const qrFieldRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (qrFieldRef && qrFieldRef.current) {
-      qrFieldRef.current.focus();
-    }
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setPaciente({ 
-      ...paciente, 
-      [name]: name === 'edad' ? parseInt(value, 10) || 0 : value 
+  // Carga dinámicamente un registro sin alterar la entrada manual
+  const manejarCargaPlantilla = () => {
+    const p = listaPacientesPrueba[indiceExcel];
+    setPaciente({
+      cod: p.cod,
+      paterno: p.paterno,
+      materno: p.materno,
+      nombres: p.nombres,
+      edad: String(p.edad),
+      genero: p.genero
     });
+    setIndiceExcel((prev) => (prev + 1) % listaPacientesPrueba.length);
   };
 
-  // Parser automático de la Boleta Física de la CNS El Alto
-  const handleQrScan = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cadenaQr = qrInput.trim();
-    if (!cadenaQr) return;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setPaciente({ ...paciente, [e.target.name]: e.target.value });
+  };
 
-    // Desglosamos la cadena nativa: CI|PATERNO|MATERNO|NOMBRES|EDAD|GENERO
-    const datosPartidos: string[] = cadenaQr.split('|');
-
-    if (datosPartidos.length >= 6) {
-      setPaciente({
-        id_paciente: Date.now(),       
-        cod: datosPartidos[0] || '',       
-        paterno: datosPartidos[1] || '',   
-        materno: datosPartidos[2] || '',   
-        nombres: datosPartidos[3] || '',   
-        edad: parseInt(datosPartidos[4], 10) || 0,
-        genero: datosPartidos[5] || 'Femenino',
-        telefono: '',
-        tipo_seguro: 'CNS'
-      });
-    } else {
-      setPaciente({ ...paciente, cod: cadenaQr });
+  const procesarContinuar = () => {
+    if (!paciente.nombres || !paciente.cod) {
+      alert("Por favor rellene los campos de filiación del paciente.");
+      return;
     }
-    setQrInput('');
-  };
-
-  const manejarEnvio = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSiguiente(paciente); // Envía los datos directo al paso 2 sin preguntar servicio
+    onSiguiente({ ...paciente, servicioSeleccionado: servicio });
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-[#0c1311] p-6 rounded-xl border border-[#005a43]/40 shadow-xl text-white">
+    <div className="w-full max-w-4xl mx-auto bg-[#070f0d] p-6 rounded-xl border border-[#172c26] text-white">
       
-      {/* ENTRADA DE ESCÁNER AUTOMÁTICO */}
-      <div className="mb-6 p-4 bg-[#050807] border-2 border-[#00bfa5]/40 rounded-lg">
-        <label className="block text-xs font-bold text-[#00bfa5] uppercase tracking-wider mb-2">
-          📷 Escáner de Boleta Física (CNS El Alto)
-        </label>
-        <form onSubmit={handleQrScan} className="flex gap-2">
-          <input
-            ref={qrFieldRef}
-            type="text"
-            placeholder="Dispare la lectora QR aquí para auto-completar..."
-            value={qrInput}
-            onChange={(e) => setQrInput(e.target.value)}
-            className="flex-1 p-2.5 bg-[#121b18] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]"
-          />
-          <button type="submit" className="px-4 py-2 bg-[#005a43] hover:bg-[#007a5c] text-white text-sm font-bold rounded-md transition-colors">
-            Procesar
-          </button>
-        </form>
+      {/* Botón de control superior para la simulación */}
+      <div className="flex justify-end mb-4">
+        <button 
+          type="button" 
+          onClick={manejarCargaPlantilla}
+          className="px-3 py-1.5 bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/30 rounded-lg text-xs font-semibold hover:bg-[#00bfa5]/20 transition-all active:scale-95"
+        >
+          ✨ Cargar Fila Excel ({indiceExcel + 1}/10)
+        </button>
       </div>
 
-      {/* FORMULARIO DE FILIACIÓN UNIFICADA */}
-      <form onSubmit={manejarEnvio} className="flex flex-col gap-5">
-        <div className="border-b border-[#1f332d] pb-2">
-          <h3 className="text-sm font-semibold text-[#00bfa5] tracking-wide">
-            📋 Datos de Filiación Unificada (Principio P1)
-          </h3>
+      {/* CAMINO PRIMARIO: PARSER QR (Exacto a tu captura) */}
+      <div className="p-4 bg-[#0a1412] border border-[#182e29] rounded-lg mb-6">
+        <label className="block text-[11px] font-bold text-[#00bfa5] uppercase tracking-wider mb-2">
+          📷 CAMINO PRIMARIO: PARSER QR BOLETA CNS EL ALTO
+        </label>
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            placeholder="Dispare la lectora QR sobre la boleta física..." 
+            className="flex-1 p-2.5 bg-[#050a09] border border-[#1c352f] rounded text-xs focus:outline-none focus:border-[#00bfa5]"
+          />
+          <button type="button" className="px-5 bg-[#005c47] hover:bg-[#007358] text-white text-xs font-bold rounded transition-colors">Procesar</button>
+        </div>
+      </div>
+
+      {/* DATOS DE FILIACIÓN (Exacto a tu captura) */}
+      <div className="space-y-4 mb-6">
+        <div className="border-b border-[#142823] pb-1">
+          <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada (Principio P1)</span>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">CI / MATRÍCULA:</label>
-            <input type="text" name="cod" value={paciente.cod} onChange={handleChange} required className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]" />
+            <label className="block text-gray-400 mb-1">CI / MATRÍCULA:</label>
+            <input type="text" name="cod" value={paciente.cod} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">APELLIDO PATERNO:</label>
-            <input type="text" name="paterno" value={paciente.paterno} onChange={handleChange} required className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]" />
+            <label className="block text-gray-400 mb-1">APELLIDO PATERNO:</label>
+            <input type="text" name="paterno" value={paciente.paterno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">APELLIDO MATERNO:</label>
-            <input type="text" name="materno" value={paciente.materno} onChange={handleChange} className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]" />
+            <label className="block text-gray-400 mb-1">APELLIDO MATERNO:</label>
+            <input type="text" name="materno" value={paciente.materno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">NOMBRES:</label>
-            <input type="text" name="nombres" value={paciente.nombres} onChange={handleChange} required className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]" />
+            <label className="block text-gray-400 mb-1">NOMBRES:</label>
+            <input type="text" name="nombres" value={paciente.nombres} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">EDAD:</label>
-            <input type="number" name="edad" value={paciente.edad === 0 ? '' : paciente.edad} onChange={handleChange} required className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]" />
+            <label className="block text-gray-400 mb-1">EDAD:</label>
+            <input type="number" name="edad" value={paciente.edad} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-400 font-medium mb-1">GÉNERO:</label>
-            <select name="genero" value={paciente.genero} onChange={handleChange} className="w-full p-2 bg-[#050807] border border-[#2a403a] rounded-md text-white text-sm focus:outline-none focus:border-[#00bfa5]">
+            <label className="block text-gray-400 mb-1">GÉNERO:</label>
+            <select name="genero" value={paciente.genero} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white focus:outline-none">
               <option value="Femenino">Femenino</option>
               <option value="Masculino">Masculino</option>
             </select>
           </div>
         </div>
+      </div>
 
-        {/* BOTÓN DIRECTO DE FLUJO LINEAL */}
-        <button type="submit" className="w-full mt-2 p-3 bg-[#005a43] hover:bg-[#007a5c] text-white font-bold rounded-lg tracking-wide transition-all text-sm shadow-md active:scale-[0.99]">
-          CONTINUAR A CARGA DE EXÁMENES →
-        </button>
-      </form>
+      {/* SELECTOR DE SERVICIO POST-REGISTRO (Exacto a tu captura) */}
+      <div className="space-y-3 mb-6">
+        <div className="border-b border-[#142823] pb-1">
+          <span className="text-xs text-gray-400 font-medium">🔄 Selector de Servicio Post-Registro</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            onClick={() => setServicio('imagenologia')}
+            className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicio === 'imagenologia' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-[#1c352f] bg-[#050a09]'}`}
+          >
+            <span className="block font-bold text-xs">🗓️ Imagenología</span>
+            <span className="block text-[11px] text-gray-400 mt-1">Flujo con agenda horaria fija.</span>
+          </div>
+
+          <div 
+            onClick={() => setServicio('laboratorio')}
+            className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicio === 'laboratorio' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-[#1c352f] bg-[#050a09]'}`}
+          >
+            <span className="block font-bold text-xs">🧪 Laboratorio Clínico</span>
+            <span className="block text-[11px] text-gray-400 mt-1">Sin agenda horaria. Proceso por lote.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTÓN DE ACCIÓN PRINCIPAL (Exacto a tu captura) */}
+      <button
+        type="button"
+        onClick={procesarContinuar}
+        className="w-full py-3 bg-[#005c47] hover:bg-[#007358] text-white font-bold text-xs rounded-lg uppercase tracking-wider transition-all active:scale-95"
+      >
+        Continuar al servicio seleccionado →
+      </button>
+
     </div>
   );
 }
