@@ -1,29 +1,11 @@
 // src/components/FormularioTab.tsx
 import React, { useState } from 'react';
-<<<<<<< HEAD
 import { FileDown, FileText, ExternalLink, Calendar as CalendarIcon, User } from 'lucide-react';
 import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 export default function FormularioTab() {
   const [paso, setPaso] = useState(1);
-=======
-import {
-  FileDown,
-  FileText,
-  ExternalLink,
-  Loader2
-} from 'lucide-react';
-import RisModal from './RisModal';
-import RegistrarPaciente from '../../pages/RegistrarPacientes';
-import RegistrarConsulta from '../../pages/RegistrarConsulta';
-
-const FormularioTab = () => {
-  const [activeSubTab, setActiveSubTab] = useState('tab1');
-  const [isSimulatedModalOpen, setIsSimulatedModalOpen] = useState(false);
-
-  const [pasoAnalitico, setPasoAnalitico] = useState<number>(1);
->>>>>>> 945927d0fd532ff4cf1288acba614220e08c249a
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
   
   // Historial local para acumular los pacientes que registres en la sesión y armar el reporte
@@ -32,7 +14,6 @@ const FormularioTab = () => {
     { cod: "MAT-20481-R", paciente: "María Elena Flores", servicio: "Laboratorio", estado: "Completado" } // Paciente marcado en rojo
   ]);
 
-<<<<<<< HEAD
   // REEMPLÁZALO POR ESTO EXACTAMENTE:
 const guardarEnRisServer = async (nuevoDocumento: any) => {
   console.log("Guardado local activo:", nuevoDocumento);
@@ -96,31 +77,6 @@ const guardarEnRisServer = async (nuevoDocumento: any) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-=======
-  const guardarEnRisServer = async (nuevoDocumento: any) => {
-    console.log("Insertando en la arquitectura NoSQL del RIS-SERVER Nube:", nuevoDocumento);
-    
-    try {
-
-      const respuesta = await fetch(`https://ris.paise.signa-engineering.com/api/lab/resultado/${nuevoDocumento.id_consulta}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoDocumento)
-      });
-      
-      if (respuesta.ok) {
-        alert("🎉 ¡Registro Clínico guardado con éxito en el servidor Nube de RIS!");
-      } else {
-        alert("⚠️ El servidor de la nube respondió, pero hubo un detalle al procesar el JSON.");
-      }
-    } catch (error) {
-      console.error("Error de conexión con el backend en la nube:", error);
-      alert("❌ No se pudo conectar con el servidor de la nube. Verifique su conexión.");
-    }
-
-    setPasoAnalitico(1); 
-    setIsSimulatedModalOpen(false); 
->>>>>>> 945927d0fd532ff4cf1288acba614220e08c249a
   };
 
   return (
@@ -157,7 +113,6 @@ const guardarEnRisServer = async (nuevoDocumento: any) => {
         </button>
       </div>
 
-<<<<<<< HEAD
       <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[400px]">
         {paso === 1 ? (
           <RegistrarPaciente 
@@ -215,52 +170,6 @@ const guardarEnRisServer = async (nuevoDocumento: any) => {
           </div>
         )}
       </div>
-=======
-      <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[300px]">
-        {activeSubTab === 'tab1' && (
-          <div>
-            {pasoAnalitico === 1 ? (
-              <RegistrarPaciente 
-                onSiguiente={(datosPaciente: any) => {
-                  setPacienteSeleccionado(datosPaciente);
-                  setPasoAnalitico(2);
-                }} 
-              />
-            ) : (
-              <RegistrarConsulta 
-                pacienteData={pacienteSeleccionado} 
-                onVolver={() => setPasoAnalitico(1)}
-                onGuardarLocal={guardarEnRisServer}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      <RisModal
-        isOpen={isSimulatedModalOpen}
-        onClose={() => setIsSimulatedModalOpen(false)}
-        title="Procedimiento Integrado de Laboratorio"
-        maxWidth="max-w-6xl w-full"
-      >
-        <div className="w-full h-[80vh] min-h-[500px] flex flex-col p-4 overflow-y-auto bg-[#0a0f0d] rounded-lg border border-white/10">
-          {pasoAnalitico === 1 ? (
-            <RegistrarPaciente 
-              onSiguiente={(datosPaciente: any) => {
-                setPacienteSeleccionado(datosPaciente);
-                setPasoAnalitico(2);
-              }} 
-            />
-          ) : (
-            <RegistrarConsulta 
-              pacienteData={pacienteSeleccionado} 
-              onVolver={() => setPasoAnalitico(1)}
-              onGuardarLocal={guardarEnRisServer}
-            />
-          )}
-        </div>
-      </RisModal>
->>>>>>> 945927d0fd532ff4cf1288acba614220e08c249a
     </div>
   );
 }
