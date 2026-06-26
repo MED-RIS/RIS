@@ -92,54 +92,31 @@ const [widalDatos, setWidalDatos] = useState({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEstaCargando(true);
+  e.preventDefault();
+  setEstaCargando(true);
 
-    let resultadoDatos: any = {};
-    let dinamicos: MedicionExtra[] = [];
-
-    // Mapeo del JSON para MongoDB según el selector independiente
-    if (tipoLaboratorio === 'Lab_Glucosa_Curva') {
-      resultadoDatos = glucosaFija;
-      dinamicos = medicionesExtra;
-    } else if (tipoLaboratorio === 'Lab_Hemato' || tipoLaboratorio === 'Lab_Coagulo') {
-      resultadoDatos = hematoDatos; // Ambos guardan en el mismo objeto común
-    } else if (tipoLaboratorio === 'Lab_EGO') {
-      resultadoDatos = egoDatos;
-    } else if (tipoLaboratorio === 'Lab_Quimica_Electrolitos') {
-      resultadoDatos = quimicaDatos;
-    } else if (tipoLaboratorio === 'Lab_Serologia') {
-      resultadoDatos = serologiaDatos;
-    } else if (tipoLaboratorio === 'Lab_Liquidos') {
-      resultadoDatos = liquidosDatos;
-    } else if (tipoLaboratorio === 'Lab_Widal') {
-  resultadoDatos = widalDatos;
-} else if (tipoLaboratorio === 'Lab_Microalbuminuria') {
-  resultadoDatos = microDatos; // <--- Envía solo este objeto limpio a Mongo
-}
-
-    const payloadCompleto = {
-      paciente: pacienteData,
-      id_consulta: Date.now(),
-      datos_orden: consulta,
-      nombre_laboratorio: tipoLaboratorio,
-      resultado_datos: resultadoDatos,
-      resultados_dinamicos: dinamicos
-    };
-
-    console.log("Documento estructurado listo para MongoDB:", payloadCompleto);
-
-    try {
-      console.log("Simulando respuesta exitosa del servidor localmente...");
-      alert(`🎉 ¡Simulación Exitosa! El laboratorio [${tipoLaboratorio}] se procesó localmente.`);
-      onGuardarLocal(payloadCompleto);
-    } catch (error: any) {
-      console.error("Error crítico en el canal de red HTTP:", error);
-      alert(`❌ Error al guardar el registro: ${error.message || 'Error de comunicación'}`);
-    } finally {
-      setEstaCargando(false);
-    }
+  // Enviamos todas las bolsas de datos recolectadas en la sesión juntas
+  const documentoConsolidado = {
+    tipoLaboratorio: tipoLaboratorio,
+    egoDatos: egoDatos,
+    glucosaFija: glucosaFija,
+    widalDatos: widalDatos,
+    microDatos: microDatos,
+    liquidosDatos: liquidosDatos,
+    hematoDatos: hematoDatos,
+    quimicaDatos: quimicaDatos,
+    serologiaDatos: serologiaDatos,
+    medicionesExtra: medicionesExtra || []
   };
+
+  console.log("Desplegando historial clínico multi-formulario:", documentoConsolidado);
+
+  if (typeof onGuardarLocal === 'function') {
+    await onGuardarLocal(documentoConsolidado);
+  }
+
+  setEstaCargando(false);
+};
 
   return (
     <div style={{ backgroundColor: '#0a0f0d', minHeight: '100vh', padding: '10px', color: '#ffffff', fontFamily: 'sans-serif' }}>
