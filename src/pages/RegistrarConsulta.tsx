@@ -199,6 +199,7 @@ const [widalDatos, setWidalDatos] = useState({
               <option value="Lab_EGO">Examen General de Orina</option>
               <option value="Lab_Liquidos">Análisis de Líquidos Corporales</option>
               <option value="Lab_Glucosa_Curva">Curva de Tolerancia a la Glucosa</option> 
+              <option value="Lab_Quimica">Química Sanguínea y Electrolitos</option>
             </select>
           </div>
 
