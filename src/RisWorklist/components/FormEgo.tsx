@@ -1,129 +1,183 @@
 import React from 'react';
 
-
-interface FormEgoProps {
-  egoDatos: {
-    volumen: number;
-    color: string;
-    aspecto: string;
-    ph: number;
-    densidad: number;
-    prot: string;
-    glucosa: string;
-    nitritos: string;
-    leucocitos: string;
-    eritrocitos: string;
-    bacterias: string;
-    cel_epiteliales: string;
-    obs1: string;
-  };
+interface EgoProps {
+  egoDatos: any;
   setEgoDatos: (datos: any) => void;
 }
 
-export default function FormEgo({ egoDatos, setEgoDatos }: FormEgoProps) {
+export default function FormEgo({ egoDatos, setEgoDatos }: EgoProps) {
   
-  const handleChange = (e: { target: { name: string; value: string; type?: string } }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEgoDatos({
       ...egoDatos,
-      [name]: e.target.type === 'number' ? parseFloat(value) || 0 : value
+      [name]: value
     });
   };
 
+  const datos = egoDatos || {};
+
   return (
-    <div style={{ padding: '15px', backgroundColor: '#16221f', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ padding: '15px', backgroundColor: '#16221f', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
       
-      {/* SECCIÓN 1: EXAMEN FÍSICO */}
+      {/* SECCIÓN 1: EXAMEN FÍSICO Y MACROSCÓPICO */}
       <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
-        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🧪 EXAMEN FÍSICO</legend>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🎨 EXAMEN FÍSICO</legend>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Color:</label>
-            <input type="text" name="color" value={egoDatos.color || ''} onChange={handleChange} placeholder="Ej: Amarillo, Ámbar" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>VOLUMEN:</label>
+            <input type="text" name="volumen" value={datos.volumen || ''} onChange={handleChange} placeholder="e.g. 50 mL" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Aspecto:</label>
-            <input type="text" name="aspecto" value={egoDatos.aspecto || ''} onChange={handleChange} placeholder="Ej: Límpido, Turbio" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>COLOR:</label>
+            <input type="text" name="color" value={datos.color || ''} onChange={handleChange} placeholder="e.g. Amarillo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Volumen Muestra (mL):</label>
-            <input type="number" name="volumen" value={egoDatos.volumen || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OLOR:</label>
+            <input type="text" name="olor" value={datos.olor || ''} onChange={handleChange} placeholder="e.g. Propio / Sui géneris" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>ASPECTO:</label>
+            <input type="text" name="aspecto" value={datos.aspecto || ''} onChange={handleChange} placeholder="e.g. Límpido / Turbio" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>ESPUMA:</label>
+            <input type="text" name="espuma" value={datos.espuma || ''} onChange={handleChange} placeholder="e.g. Blanca fugaz" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OTROS (Físico):</label>
+            <input type="text" name="otros_fisico" value={datos.otros_fisico || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
         </div>
       </fieldset>
 
-      {/* SECCIÓN 2: EXAMEN QUÍMICO */}
+      {/* SECCIÓN 2: EXAMEN QUÍMICO (TIRA REACTIVA) */}
       <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
-        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🧪 EXAMEN QUÍMICO (TIRA REACTIVA)</legend>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🧪 EXAMEN QUÍMICO</legend>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Densidad:</label>
-            <input type="number" name="densidad" step="0.001" value={egoDatos.densidad || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>DENSIDAD:</label>
+            <input type="text" name="densidad" value={datos.densidad || ''} onChange={handleChange} placeholder="1.020" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>pH (Acidez):</label>
-            <input type="number" name="ph" step="0.1" value={egoDatos.ph || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>pH:</label>
+            <input type="text" name="ph" value={datos.ph || ''} onChange={handleChange} placeholder="6.0" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Nitritos:</label>
-            <select name="nitritos" value={egoDatos.nitritos || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>
-              <option value="Negativo">Negativo</option>
-              <option value="Positivo (+)">Positivo (+)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Proteínas:</label>
-            <input type="text" name="prot" value={egoDatos.prot || ''} onChange={handleChange} placeholder="Ej: Negativo o 30 mg/dL" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>PROT (Proteínas):</label>
+            <input type="text" name="prot" value={datos.prot || ''} onChange={handleChange} placeholder="Negativo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Glucosa:</label>
-            <input type="text" name="glucosa" value={egoDatos.glucosa || ''} onChange={handleChange} placeholder="Ej: Normal o Positivo (+)" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>GLUCOSA:</label>
+            <input type="text" name="glucosa" value={datos.glucosa || ''} onChange={handleChange} placeholder="Normal" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>CETONAS:</label>
+            <input type="text" name="cetonas" value={datos.cetonas || ''} onChange={handleChange} placeholder="Negativo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>BILIRRUBINAS:</label>
+            <input type="text" name="bilirrubinas" value={datos.bilirrubinas || ''} onChange={handleChange} placeholder="Negativo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>SANGRE:</label>
+            <input type="text" name="sangre" value={datos.sangre || ''} onChange={handleChange} placeholder="Negativo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>UROBILINÓGENO:</label>
+            <input type="text" name="urobilinogeno" value={datos.urobilinogeno || ''} onChange={handleChange} placeholder="Normal" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>NITRITOS:</label>
+            <input type="text" name="nitritos" value={datos.nitritos || ''} onChange={handleChange}  style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
         </div>
       </fieldset>
 
-      {/* SECCIÓN 3: SEDIMENTO MICROSCÓPICO */}
+      {/* SECCIÓN 3: EXAMEN DEL SEDIMENTO MICROSCOPICO */}
       <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
-        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🔬 SEDIMENTO MICROSCOPIO</legend>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🔬 SEDIMENTO MICROSCOPICO</legend>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Leucocitos (por campo):</label>
-            <input type="text" name="leucocitos" value={egoDatos.leucocitos || ''} onChange={handleChange} placeholder="Ej: 1-2 o >50" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>SEDIMENTO:</label>
+            <input type="text" name="sedimento" value={datos.sedimento || ''} onChange={handleChange} placeholder="Escaso / Abundante" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Eritrocitos (por campo):</label>
-            <input type="text" name="eritrocitos" value={egoDatos.eritrocitos || ''} onChange={handleChange} placeholder="Ej: 0-1 o Abundantes" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>PIOCITOS:</label>
+            <input type="text" name="piocitos" value={datos.piocitos || ''} onChange={handleChange} placeholder="e.g. 0-2 x campo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Bacterias:</label>
-            <select name="bacterias" value={egoDatos.bacterias || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>
-              <option value="Escasas">Escasas</option>
-              <option value="Moderadas">Moderadas</option>
-              <option value="Abundantes">Abundantes</option>
-            </select>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>LEUCOCITOS:</label>
+            <input type="text" name="leucocitos" value={datos.leucocitos || ''} onChange={handleChange} placeholder="e.g. 1-3 x campo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Células Epiteliales:</label>
-            <select name="cel_epiteliales" value={egoDatos.cel_epiteliales || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>
-              <option value="Escasas">Escasas</option>
-              <option value="Moderadas">Moderadas</option>
-              <option value="Abundantes">Abundantes</option>
-            </select>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>ERITROCITOS:</label>
+            <input type="text" name="eritrocitos" value={datos.eritrocitos || ''} onChange={handleChange} placeholder="e.g. 0-1 x campo" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>C. EPITELIALES:</label>
+            <input type="text" name="cel_epiteliales" value={datos.cel_epiteliales || ''} onChange={handleChange} placeholder="Escasas" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>BACTERIAS:</label>
+            <input type="text" name="bacterias" value={datos.bacterias || ''} onChange={handleChange} placeholder="Escasas / Regular" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>CEL. RENALES:</label>
+            <input type="text" name="cel_renales" value={datos.cel_renales || ''} onChange={handleChange} placeholder="No se observan" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>FILAMENTO MUCOSO:</label>
+            <input type="text" name="filamento_mucoso" value={datos.filamento_mucoso || ''} onChange={handleChange} placeholder="Escaso" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>CRISTALES:</label>
+            <input type="text" name="cristales" value={datos.cristales || ''} onChange={handleChange} placeholder="e.g. Oxalato de Calcio" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
         </div>
       </fieldset>
 
-      {/* SECCIÓN 4: OBSERVACIONES GENERALES */}
-      <div>
-        <label style={{ display: 'block', fontSize: '12px', color: '#00bfa5', fontWeight: 'bold', marginBottom: '4px' }}>Observaciones del Sedimento / Cilindros / Cristales:</label>
-        <textarea name="obs1" value={egoDatos.obs1 || ''} onChange={handleChange} placeholder="Reportar presencia de moco, filamentos, cristales de oxalato de calcio..." style={{ width: '100%', padding: '10px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '60px', resize: 'none' }} />
-      </div>
+      {/* SECCIÓN 4: SUBSECCIÓN DE CILINDROS */}
+      <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>🌀 CILINDROS</legend>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>HIALINOS:</label>
+            <input type="text" name="cilindros_hialinos" value={datos.cilindros_hialinos || ''} onChange={handleChange} placeholder="e.g. No se observan" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>GRANULOSO:</label>
+            <input type="text" name="cilindros_granuloso" value={datos.cilindros_granuloso || ''} onChange={handleChange} placeholder="e.g. No se observan" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>HEMATICO:</label>
+            <input type="text" name="cilindros_hematico" value={datos.cilindros_hematico || ''} onChange={handleChange} placeholder="e.g. No se observan" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>CEREO:</label>
+            <input type="text" name="cilindros_cereo" value={datos.cilindros_cereo || ''} onChange={handleChange} placeholder="e.g. No se observan" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+          <div style={{ gridColumn: 'span 2' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OTROS (Cilindros):</label>
+            <input type="text" name="cilindros_otros" value={datos.cilindros_otros || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+          </div>
+        </div>
+      </fieldset>
+
+      {/* SECCIÓN 5: OBSERVACIONES */}
+      <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>📝 NOTAS CLÍNICAS</legend>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OBSERVACIONES 1:</label>
+            <textarea name="observaciones1" value={datos.observaciones1 || ''} onChange={handleChange} placeholder="Comentarios del análisis inicial..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '45px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OBSERVACIONES 2:</label>
+            <textarea name="observaciones2" value={datos.observaciones2 || ''} onChange={handleChange} placeholder="Notas adicionales o confirmaciones del supervisor..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '45px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
+          </div>
+        </div>
+      </fieldset>
 
     </div>
   );

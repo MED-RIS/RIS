@@ -17,12 +17,23 @@ type MedicionExtra = {
   [key: string]: any;
 };
 
+// IMPORTS DE LOS COMPONENTES (Alineados con tus nombres de archivos)
 import FormGlucosa from '../RisWorklist/components/FormGlucosa';
-import FormHemograma from '../RisWorklist/components/FormHemograma';
-import FormEgo from '../RisWorklist/components/FormEgo'; 
+import FormCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
+import FormularioHemograma from '../RisWorklist/components/FormularioHemograma'; 
 import FormQuimica from '../RisWorklist/components/FormQuimica';
+import FormElectrolitos from '../RisWorklist/components/FormElectrolitos';
+import FormOrina24Hrs from '../RisWorklist/components/FormOrina24Hrs';
 import FormSerologia from '../RisWorklist/components/FormSerologia';
+import FormWidal from '../RisWorklist/components/FormWidal';
+import FormMicroalbuminuria from '../RisWorklist/components/FormMicroalbuminuria';
+
+
+import FormEgo from '../RisWorklist/components/FormEgo'; 
+
+
 import FormLiquidos from '../RisWorklist/components/FormLiquidos';
+import FormularioCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
 
 export interface RegistrarConsultaProps {
   pacienteData: any;
@@ -45,15 +56,24 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
     responsable: 'Heidy Arancibia'
   });
 
-  const [tipoLaboratorio, setTipoLaboratorio] = useState<string>('Lab_Glucosa_Curva');
+  // Iniciamos por defecto con el módulo de Hemograma
+  const [tipoLaboratorio, setTipoLaboratorio] = useState<string>('Lab_Hemato');
 
-  const [glucosaFija, setGlucosaFija] = useState({ basal: 0, hora_basal: '', momento_medicion1: '1h', resultado_glucosa1: 0, momento_medicion2: '2h', resultado_glucosa2: 0 });
+  const [glucosaFija, setGlucosaFija] = useState({ basal: '', hora_basal: '', resultado_glucosa1: '', hora_1h: '', resultado_glucosa2: '', hora_2h: '', observaciones_glucosa: '' }); 
   const [medicionesExtra, setMedicionesExtra] = useState<MedicionExtra[]>([]);
-  const [hematoDatos, setHematoDatos] = useState({ hto: 0, hb: 0, globulos_blancos: 0, seg: 0, linf: 0, plaquetas: 0, grupo_sanguineo: '', reticulocitos: 0, ves1hora: 0, indice_katz: 0, t_sangria_min: 0, t_sangria_seg: 0, t_coagulacion_min: 0, t_coagulacion_seg: 0, t_protrombina: 0, observaciones: '' });
-  const [egoDatos, setEgoDatos] = useState({ volumen: 0, color: '', aspecto: '', ph: 5.0, densidad: 1.020, prot: 'Negativo', glucosa: 'Normal', nitritos: 'Negativo', leucocitos: '', eritrocitos: '', bacterias: 'Escasas', cel_epiteliales: 'Escasas', obs1: '' });
+  const [hematoDatos, setHematoDatos] = useState<any>({ hto: 0, hb: 0, globulos_blancos: 0, seg: 0, linf: 0, plaquetas: 0, grupo_sanguineo: '', reticulocitos: 0, ves1hora: 0, indice_katz: 0, t_sangria_min: 0, t_sangria_seg: 0, t_coagulacion_min: 0, t_coagulacion_seg: 0, t_protrombina: 0, observaciones: '' });
+  const [microDatos, setMicroDatos] = useState({ micro_albumina: '', micro_creatinina: '', relacion_ac: '', observaciones_micro: '' });
+  const [egoDatos, setEgoDatos] = useState({ volumen: '', color: '', olor: '', aspecto: '', espuma: '', otros_fisico: '', sedimento: '', densidad: '', ph: '', prot: '', glucosa: '', cetonas: '', bilirrubinas: '', sangre: '', urobilinogeno: '', nitritos: '', piocitos: '', leucocitos: '', eritrocitos: '', cel_epiteliales: '', bacterias: '', cel_renales: '', filamento_mucoso: '', cristales: '', cilindros_hialinos: '', cilindros_granuloso: '', cilindros_hematico: '', cilindros_cereo: '', cilindros_otros: '', observaciones1: '', observaciones2: '' });
   const [quimicaDatos, setQuimicaDatos] = useState({ glucemia_mgdl: 0, Hb_glicosilada_pct: 0, urea_mgdl: 0, creatinina_mgdl: 0, acido_urico_mgdl: 0, colesterol_mgdl: 0, trigliceridos_mgdl: 0, HDL_mgdl: 0, sodio_meql: 0, potasio_meql: 0, cloro_meql: 0, observaciones: '' });
-  const [serologiaDatos, setSerologiaDatos] = useState({ pcr: 'Negativo', factor_reumatoideo: 'Negativo', aso: '', chagas: 'No Reactivo', tifico_o: '', tifico_h: '', paratifico: '', observaciones: '' });
-  const [liquidosDatos, setLiquidosDatos] = useState({ tipo_liquido: '', aspecto: '', recuento_celular: 0, promedio: '', glucosa: 0, proteinas: 0, ldh: 0, observaciones: '' });
+  const [serologiaDatos, setSerologiaDatos] = useState({ pcr: 0, factor_reumatoideo: 0, aso: '', chagas: 0, tifico_o: '', tifico_h: '', paratifico: '', observaciones: '' });
+ const [liquidosDatos, setLiquidosDatos] = useState({ tipo_liquido: '', volumen: '', color: '', aspecto: '', ph: '', reaccion: '', centrif_color: '', centrif_aspecto: '', centrif_obs: '', quimico_glucosa: '', quimico_proteinas: '', quimico_obs: '', micro_leucocitos: '', micro_pmn: '', micro_mn: '', micro_no_procede_obs: '', sedimento_leucocitos: '', sedimento_hematies: '', sedimento_bacterias: '', sedimento_otros: '', otros: '' });
+const [widalDatos, setWidalDatos] = useState({
+  widal_o: '',
+  widal_h: '',
+  widal_a: '',
+  widal_b: '',
+  observaciones_widal: ''
+});
 
   const simularEscaneoQR = () => {
     setConsulta(prev => ({
@@ -78,12 +98,12 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
     let resultadoDatos: any = {};
     let dinamicos: MedicionExtra[] = [];
 
-    // Mapeo dinámico del JSON según el tipo de laboratorio para MongoDB
+    // Mapeo del JSON para MongoDB según el selector independiente
     if (tipoLaboratorio === 'Lab_Glucosa_Curva') {
       resultadoDatos = glucosaFija;
       dinamicos = medicionesExtra;
-    } else if (tipoLaboratorio === 'Lab_Hemato_Coag') {
-      resultadoDatos = hematoDatos;
+    } else if (tipoLaboratorio === 'Lab_Hemato' || tipoLaboratorio === 'Lab_Coagulo') {
+      resultadoDatos = hematoDatos; // Ambos guardan en el mismo objeto común
     } else if (tipoLaboratorio === 'Lab_EGO') {
       resultadoDatos = egoDatos;
     } else if (tipoLaboratorio === 'Lab_Quimica_Electrolitos') {
@@ -92,7 +112,11 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
       resultadoDatos = serologiaDatos;
     } else if (tipoLaboratorio === 'Lab_Liquidos') {
       resultadoDatos = liquidosDatos;
-    }
+    } else if (tipoLaboratorio === 'Lab_Widal') {
+  resultadoDatos = widalDatos;
+} else if (tipoLaboratorio === 'Lab_Microalbuminuria') {
+  resultadoDatos = microDatos; // <--- Envía solo este objeto limpio a Mongo
+}
 
     const payloadCompleto = {
       paciente: pacienteData,
@@ -161,40 +185,82 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
             </div>
           </fieldset>
 
-          {/* SELECTOR DE MÓDULO ACTUALIZADO CON LAS 6 OPCIONES DE LA GUÍA */}
+          {/* SELECTOR CORREGIDO: SEPARADOS E INDEPENDIENTES */}
           <div style={{ padding: '15px', backgroundColor: '#002d21', borderRadius: '8px', border: '1px solid #005a43', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <label style={{ fontWeight: 'bold', color: '#00bfa5', fontSize: '14px' }}>🧪 Seleccionar Tipo de Laboratorio:</label>
             <select value={tipoLaboratorio} onChange={(e) => setTipoLaboratorio(e.target.value)} style={{ padding: '8px 12px', fontSize: '14px', borderRadius: '4px', backgroundColor: '#0a0f0d', color: '#fff', border: '1px solid #005a43', width: '55%', cursor: 'pointer' }}>
-              <option value="Lab_Glucosa_Curva">Curva de Glucosa (LAB_01)</option>
-              <option value="Lab_Hemato_Coag">Hematología y Coagulograma (LAB_02)</option>
-              <option value="Lab_EGO">Examen General de Orina (LAB_03)</option>
-              <option value="Lab_Quimica_Electrolitos">Química Sanguínea y Electrolitos (LAB_04)</option>
-              <option value="Lab_Serologia">Serología e Inmunología (LAB_05)</option>
-              <option value="Lab_Liquidos">Análisis de Líquidos Corporales (LAB_06)</option>
+              <option value="Lab_Hemato">Hemograma</option>
+              <option value="Lab_Coagulo">Coagulograma</option>
+              <option value="Lab_Electrolitos">Electrolitos</option>
+              <option value="Lab_Orina_24h">Orina de 24 Horas</option>
+              <option value="Lab_Serologia">Serología</option>
+              <option value="Lab_Widal">Reacción de Widal </option>
+              <option value="Lab_Microalbuminuria">Microalbuminuria</option>
+              <option value="Lab_EGO">Examen General de Orina</option>
+              <option value="Lab_Liquidos">Análisis de Líquidos Corporales</option>
+              <option value="Lab_Glucosa_Curva">Curva de Tolerancia a la Glucosa</option> 
             </select>
           </div>
 
-          {/* RENDERIZADO CONDICIONAL DE TODAS LAS PLANTILLAS ANALÍTICAS */}
+          {/* RENDERIZADO CONDICIONAL DE COPIAS LIMPIAS POR SEPARADO */}
           <div style={{ backgroundColor: '#16221f', borderRadius: '8px', border: '1px solid #1f332d', padding: '5px' }}>
-            {tipoLaboratorio === 'Lab_Glucosa_Curva' && (
-              <FormGlucosa glucosaFija={glucosaFija} setGlucosaFija={setGlucosaFija} medicionesExtra={medicionesExtra} setMedicionesExtra={setMedicionesExtra} />
-            )}
-            {tipoLaboratorio === 'Lab_Hemato_Coag' && (
-              <FormHemograma hematoDatos={hematoDatos} setHematoDatos={setHematoDatos} />
-            )}
-            {tipoLaboratorio === 'Lab_EGO' && (
-              <FormEgo egoDatos={egoDatos} setEgoDatos={setEgoDatos} />
-            )}
-            {tipoLaboratorio === 'Lab_Quimica_Electrolitos' && (
-              <FormQuimica quimicaDatos={quimicaDatos} setQuimicaDatos={setQuimicaDatos} />
-            )}
-            {tipoLaboratorio === 'Lab_Serologia' && (
-              <FormSerologia serologiaDatos={serologiaDatos} setSerologiaDatos={setSerologiaDatos} />
-            )}
-            {tipoLaboratorio === 'Lab_Liquidos' && (
-              <FormLiquidos liquidosDatos={liquidosDatos} setLiquidosDatos={setLiquidosDatos} />
-            )}
-          </div>
+  
+  {/* 1. Curva de Glucosa */}
+  {tipoLaboratorio === 'Lab_Glucosa_Curva' && (
+    <FormGlucosa glucosaFija={glucosaFija} setGlucosaFija={setGlucosaFija} />
+  )}
+
+  {/* 2. Hemograma */}
+  {tipoLaboratorio === 'Lab_Hemato' && (
+    <FormularioHemograma hematoDatos={hematoDatos} setHematoDatos={setHematoDatos} />
+  )}
+
+  {/* 3. Coagulograma */}
+  {tipoLaboratorio === 'Lab_Coagulo' && (
+    <FormularioCoagulograma hematoDatos={hematoDatos} setHematoDatos={setHematoDatos} />
+  )}
+
+  {/* 4. Electrolitos Séricos */}
+  {tipoLaboratorio === 'Lab_Electrolitos' && (
+    <FormElectrolitos quimicaDatos={quimicaDatos} setQuimicaDatos={setQuimicaDatos} />
+  )}
+
+  {/* 5. Orina 24 Horas */}
+  {tipoLaboratorio === 'Lab_Orina_24h' && (
+    <FormOrina24Hrs egoDatos={egoDatos} setEgoDatos={setEgoDatos} />
+  )}
+
+  {/* 6. Serología */}
+  {tipoLaboratorio === 'Lab_Serologia' && (
+    <FormSerologia serologiaDatos={serologiaDatos} setSerologiaDatos={setSerologiaDatos} />
+  )}
+
+  {/* 7. Reacción de Widal */}
+  {tipoLaboratorio === 'Lab_Widal' && (
+    <FormWidal widalDatos={widalDatos} setWidalDatos={setWidalDatos} />
+  )}
+
+  {/* 8. Microalbuminuria */}
+  {tipoLaboratorio === 'Lab_Microalbuminuria' && (
+    <FormMicroalbuminuria microDatos={microDatos} setMicroDatos={setMicroDatos} />
+  )}
+
+  {/* 9. Examen General de Orina */}
+  {tipoLaboratorio === 'Lab_EGO' && (
+    <FormEgo egoDatos={egoDatos} setEgoDatos={setEgoDatos} />
+  )}
+
+  {/* 10. Química Sanguínea (Corregido el nombre de la condición) */}
+  {tipoLaboratorio === 'Lab_Quimica' && (
+    <FormQuimica quimicaDatos={quimicaDatos} setQuimicaDatos={setQuimicaDatos} />
+  )}
+
+  {/* 11. Líquidos Corporales */}
+  {tipoLaboratorio === 'Lab_Liquidos' && (
+    <FormLiquidos liquidosDatos={liquidosDatos} setLiquidosDatos={setLiquidosDatos} />
+  )}
+
+</div>
 
           <button type="submit" disabled={estaCargando} style={{ padding: '14px', backgroundColor: estaCargando ? '#16221f' : '#005a43', color: estaCargando ? '#a0b2ae' : 'white', border: estaCargando ? '1px solid #2a403a' : 'none', cursor: estaCargando ? 'not-allowed' : 'pointer', fontSize: '15px', borderRadius: '6px', fontWeight: 'bold', marginTop: '10px' }}>
             {estaCargando ? 'PROCESANDO...' : 'Guardar Registro Clínico Completo'}

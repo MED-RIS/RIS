@@ -1,15 +1,13 @@
 import React from 'react';
 
-interface FormGlucosaProps {
+interface GlucosaProps {
   glucosaFija: any;
   setGlucosaFija: (datos: any) => void;
-  medicionesExtra: any[];
-  setMedicionesExtra: (datos: any[]) => void;
 }
 
-export default function FormGlucosa({ glucosaFija, setGlucosaFija, medicionesExtra, setMedicionesExtra }: FormGlucosaProps) {
+export default function FormGlucosa({ glucosaFija, setGlucosaFija }: GlucosaProps) {
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setGlucosaFija({
       ...glucosaFija,
@@ -17,102 +15,59 @@ export default function FormGlucosa({ glucosaFija, setGlucosaFija, medicionesExt
     });
   };
 
-  const agregarMedicion = () => {
-    const nuevaNum = medicionesExtra.length + 3; // t3, t4...
-    setMedicionesExtra([
-      ...medicionesExtra,
-      { nombre_parametro: `Medición ${nuevaNum}`, numero_medicion: nuevaNum, valor: 0 }
-    ]);
-  };
-
-  const handleExtraChange = (index: number, valor: string) => {
-    const copia = [...medicionesExtra];
-    copia[index].valor = parseFloat(valor) || 0;
-    setMedicionesExtra(copia);
-  };
+  const datos = glucosaFija || {};
 
   return (
-    <div style={{ padding: '15px', backgroundColor: '#16221f', borderRadius: '8px' }}>
+    <div style={{ padding: '15px', backgroundColor: '#16221f', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
       
-      {/* CORRECCIÓN DE CONTRASTE EN LOS INPUTS FIJOS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-        <div>
-          {/* Cambiamos el color a #00bfa5 o #a0b2ae para que resalte en el modo oscuro */}
-          <label style={{ display: 'block', fontSize: '12px', color: '#00bfa5', fontWeight: 'bold', marginBottom: '4px' }}>
-            Glucosa Basal (mg/dL):
-          </label>
-          <input 
-            type="number" 
-            name="basal" 
-            value={glucosaFija.basal} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} 
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#00bfa5', fontWeight: 'bold', marginBottom: '4px' }}>
-            Hora Basal:
-          </label>
-          <input 
-            type="time" 
-            name="hora_basal" 
-            value={glucosaFija.hora_basal} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} 
-          />
-        </div>
-      </div>
+      <fieldset style={{ border: '1px solid #2a403a', padding: '15px', borderRadius: '6px', backgroundColor: '#121b18' }}>
+        <legend style={{ color: '#00bfa5', fontWeight: 'bold', fontSize: '13px', padding: '0 8px' }}>📈 TEST DE TOLERANCIA A LA GLUCOSA</legend>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* FASE BASAL */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px dashed #1f332d', paddingBottom: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#00bfa5', marginBottom: '4px', fontWeight: 'bold' }}>MUESTRA BASAL (En Ayunas):</label>
+              <input type="text" name="basal" value={datos.basal || ''} onChange={handleChange} placeholder="e.g. 95 mg/dL" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>HORA BASAL:</label>
+              <input type="text" name="hora_basal" value={datos.hora_basal || ''} onChange={handleChange} placeholder="e.g. 07:30" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+          </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#00bfa5', fontWeight: 'bold', marginBottom: '4px' }}>
-            Medición 1 (1 hora):
-          </label>
-          <input 
-            type="number" 
-            name="resultado_glucosa1" 
-            value={glucosaFija.resultado_glucosa1} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} 
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#00bfa5', fontWeight: 'bold', marginBottom: '4px' }}>
-            Medición 2 (2 horas):
-          </label>
-          <input 
-            type="number" 
-            name="resultado_glucosa2" 
-            value={glucosaFija.resultado_glucosa2} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} 
-          />
-        </div>
-      </div>
+          {/* FASE 1 HORA */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px dashed #1f332d', paddingBottom: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#00bfa5', marginBottom: '4px', fontWeight: 'bold' }}>MEDICIÓN 1 HORA (Post-Carga):</label>
+              <input type="text" name="resultado_glucosa1" value={datos.resultado_glucosa1 || ''} onChange={handleChange} placeholder="e.g. 145 mg/dL" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>HORA 1 HORA:</label>
+              <input type="text" name="hora_1h" value={datos.hora_1h || ''} onChange={handleChange} placeholder="e.g. 08:30" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+          </div>
 
-      {/* SECCIÓN DINÁMICA (TOLERANCIA EXTENDIDA) */}
-      {medicionesExtra.map((med, idx) => (
-        <div key={idx} style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: '#a0b2ae', marginBottom: '4px' }}>
-            {med.nombre_parametro}:
-          </label>
-          <input 
-            type="number" 
-            value={med.valor} 
-            onChange={(e) => handleExtraChange(idx, e.target.value)} 
-            style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} 
-          />
-        </div>
-      ))}
+          {/* FASE 2 HORAS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#00bfa5', marginBottom: '4px', fontWeight: 'bold' }}>MEDICIÓN 2 HORAS (Post-Carga):</label>
+              <input type="text" name="resultado_glucosa2" value={datos.resultado_glucosa2 || ''} onChange={handleChange} placeholder="e.g. 120 mg/dL" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>HORA 2 HORAS:</label>
+              <input type="text" name="hora_2h" value={datos.hora_2h || ''} onChange={handleChange} placeholder="e.g. 09:30" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            </div>
+          </div>
 
-      <div style={{ marginTop: '15px', textAlign: 'center' }}>
-        <button 
-          type="button" 
-          onClick={agregarMedicion} 
-          style={{ padding: '6px 12px', backgroundColor: '#2a403a', color: '#00bfa5', border: '1px solid #00bfa5', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-        >
-          + Agregar Medición Extra (Caso Especial t0-t120)
-        </button>
+        </div>
+      </fieldset>
+
+      {/* OBSERVACIONES ADICIONALES */}
+      <div>
+        <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Observaciones de la Curva de Tolerancia:</label>
+        <textarea name="observaciones_glucosa" value={datos.observaciones_glucosa || ''} onChange={handleChange} placeholder="e.g. Carga administrada: 75g de glucosa anhidra. Tolerancia adecuada." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '50px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
       </div>
 
     </div>
