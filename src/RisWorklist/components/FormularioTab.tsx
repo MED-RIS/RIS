@@ -58,104 +58,145 @@ export default function FormularioTab() {
   };
 
   // 📄 FUNCIÓN DE DESCARGA DIRECTA DESDE LA TARJETA DEL PACIENTE
-  const descargarPdfIndividual = (p: any) => {
+const descargarPdfIndividual = (p: any) => {
     const datosRaiz = p.datos || {};
     const tipoActivo = p.tipoLaboratorio || "GENERAL";
 
-    let doc = "==================================================================\n";
-    doc += "                CAJA NACIONAL DE SALUD - BOLIVIA                  \n";
-    doc += "              INFORME INTEGRAL DE LABORATORIO CLÍNICO             \n";
-    doc += ` FECHA DE EMISIÓN: ${p.fecha || new Date().toLocaleDateString()} a hrs ${new Date().toLocaleTimeString()} \n`;
-    doc += "==================================================================\n\n";
-    
-    doc += " DATOS DEL PACIENTE:\n";
-    doc += " -------------------\n";
-    doc += ` PACIENTE:  ${p.paciente.toUpperCase()}\n`;
-    doc += ` MATRÍCULA: ${p.cod}\n`;
-    doc += ` SERVICIO:  ${p.servicio.toUpperCase()}\n`;
-    doc += " ------------------------------------------------------------------\n\n";
-    doc += " HISTORIAL DETALLADO DE RESULTADOS CLÍNICOS:\n";
-    doc += " ===========================================\n\n";
-
-    // 🚀 MOTOR DE EXTRACCIÓN DINÁMICA: Aplana y extrae todo valor real sin importar dónde se guardó
+    // 🚀 MOTOR DE EXTRACCIÓN DINÁMICA DE CAMPOS
     const valoresMapeados: Record<string, string> = {};
-
     const extraerValoresRecursivos = (obj: any) => {
       if (!obj || typeof obj !== "object") return;
-      
       Object.entries(obj).forEach(([key, val]) => {
-        // Si es un sub-objeto (como egoDatos, quimicaDatos, etc.), entramos a buscar dentro
         if (val && typeof val === "object" && !Array.isArray(val)) {
           extraerValoresRecursivos(val);
         } else if (typeof val === "string" || typeof val === "number") {
-          // Ignoramos variables de control interno de React
           if (!["tipoLaboratorio", "id", "estado", "servicio"].includes(key) && val !== "") {
             valoresMapeados[key] = String(val);
           }
         }
       });
     };
-
-    // Procesamos toda la bolsa de datos que tenga el registro del paciente
     extraerValoresRecursivos(datosRaiz);
 
-    // Separamos los resultados por bloques lógicos según las llaves encontradas
     const examenFisicoQuimico: string[] = [];
     const sedimentoMicroscopico: string[] = [];
     const quimicaYLiquidos: string[] = [];
 
     Object.entries(valoresMapeados).forEach(([key, val]) => {
       const nombreFormateado = key.toUpperCase().replace(/_/g, ' ');
-      const linea = `  - ${nombreFormateado.padEnd(25)}: ${val}\n`;
+      const filaHtml = `
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e0; padding: 6px 0; font-size: 12px;">
+          <span style="color: #4a5568; font-weight: 500;">${nombreFormateado}:</span>
+          <span style="color: #1a202c; font-weight: bold;">${val}</span>
+        </div>
+      `;
 
-      // Clasificación por palabras clave para que el informe se vea impecable y estructurado
       if (["volumen", "color", "olor", "aspecto", "espuma", "densidad", "ph", "nitritos", "glucosa", "cetonas", "bilirrubinas", "sangre", "urobilinogeno", "prot"].some(k => key.toLowerCase().includes(k))) {
-        examenFisicoQuimico.push(linea);
+        examenFisicoQuimico.push(filaHtml);
       } else if (["leucocitos", "eritrocitos", "bacterias", "piocitos", "epitelial", "mucoso", "cristales", "cilindros"].some(k => key.toLowerCase().includes(k))) {
-        sedimentoMicroscopico.push(linea);
+        sedimentoMicroscopico.push(filaHtml);
       } else {
-        quimicaYLiquidos.push(linea);
+        quimicaYLiquidos.push(filaHtml);
       }
     });
 
-    // 🟢 RENDERIZADO EN EL TXT POR SECCIONES SI CONTIENEN INFORMACIÓN
+    // 📝 ESTRUCTURA VISUAL DE CALIDAD CLÍNICA
+    let htmlContent = `
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Informe_Laboratorio_${p.paciente.replace(/ /g, "_")}</title>
+        <style>
+          @page { size: letter; margin: 30px; }
+          body { font-family: Arial, sans-serif; color: #2d3748; margin: 0; padding: 10px; }
+          .header { border-bottom: 3px solid #00bfa5; padding-bottom: 8px; margin-bottom: 15px; text-align: center; }
+          .title { font-size: 22px; font-weight: bold; color: #1a202c; margin: 0; }
+          .subtitle { font-size: 12px; color: #718096; margin-top: 3px; font-weight: bold; letter-spacing: 1px; }
+          .paciente-box { background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+          .paciente-prop { font-size: 12px; color: #4a5568; }
+          .paciente-val { font-weight: bold; color: #1a202c; }
+          .section-title { background-color: #e6fffa; color: #00a389; font-size: 11px; font-weight: bold; padding: 6px 10px; border-left: 4px solid #00bfa5; margin-top: 15px; margin-bottom: 8px; text-transform: uppercase; }
+          .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #a0aec0; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+          
+          /* Esconde botones e interfaces del sistema al compilar */
+          @media print {
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">CAJA NACIONAL DE SALUD</div>
+          <div class="subtitle">INFORME INTEGRAL DE LABORATORIO CLÍNICO</div>
+          <div style="font-size: 10px; color: #a0aec0; margin-top: 3px;">Fecha Emisión: ${p.fecha || new Date().toLocaleDateString()}</div>
+        </div>
+
+        <div class="paciente-box">
+          <div class="paciente-prop">Paciente: <span class="paciente-val">${p.paciente.toUpperCase()}</span></div>
+          <div class="paciente-prop">Matrícula: <span class="paciente-val">${p.cod}</span></div>
+          <div class="paciente-prop">Servicio: <span class="paciente-val">${p.servicio.toUpperCase()}</span></div>
+          <div class="paciente-prop">Origen: <span class="paciente-val">RIS-SERVER DIGITAL</span></div>
+        </div>
+    `;
+
     if (examenFisicoQuimico.length > 0) {
-      doc += " [🧪 EXAMEN FÍSICO-QUÍMICO / GENERAL]\n";
-      examenFisicoQuimico.forEach(l => doc += l);
-      doc += "\n";
+      htmlContent += `<div class="section-title">🧪 Examen Físico-Químico / General</div><div class="grid-datos">`;
+      examenFisicoQuimico.forEach(f => htmlContent += f);
+      htmlContent += `</div>`;
     }
 
     if (sedimentoMicroscopico.length > 0) {
-      doc += " [🔬 SEDIMENTO MICROSCÓPICO / ANÁLISIS CELULAR]\n";
-      sedimentoMicroscopico.forEach(l => doc += l);
-      doc += "\n";
+      htmlContent += `<div class="section-title">🔬 Sedimento Microscópico / Análisis Celular</div><div class="grid-datos">`;
+      sedimentoMicroscopico.forEach(f => htmlContent += f);
+      htmlContent += `</div>`;
     }
 
     if (quimicaYLiquidos.length > 0) {
-      doc += " [📊 PARÁMETROS BIOQUÍMICOS Y EXÁMENES COMPLEMENTARIOS]\n";
-      quimicaYLiquidos.forEach(l => doc += l);
-      doc += "\n";
+      htmlContent += `<div class="section-title">📊 Bioquímica y Exámenes Complementarios</div><div class="grid-datos">`;
+      quimicaYLiquidos.forEach(f => htmlContent += f);
+      htmlContent += `</div>`;
     }
 
-    // Caso extremo de contingencia si no se logran clasificar
     if (Object.keys(valoresMapeados).length === 0) {
-      doc += "  No se encontraron parámetros clínicos registrados para esta consulta en la sesión.\n\n";
+      htmlContent += `<div style="text-align: center; padding: 30px; color: #a0aec0; font-style: italic; font-size: 12px;">No se encontraron parámetros clínicos registrados.</div>`;
     }
 
-    doc += "==================================================================\n";
-    doc += " * Documento Oficial firmado digitalmente mediante RIS-SERVER.    \n";
-    doc += " * Respaldo íntegro de resultados del Historial Clínico - C.N.S.   \n";
-    doc += "==================================================================\n";
+    htmlContent += `
+        <div class="footer">
+          <p>* Documento oficial firmado digitalmente. Disponible en el Historial Clínico Electrónico de la C.N.S. *</p>
+        </div>
+      </body>
+      </html>
+    `;
 
-    // Trigger inmediato de descarga
-    const blob = new Blob([doc], { type: 'text/plain;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Informe_Laboratorio_${p.paciente.replace(/ /g, "_")}.txt`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // 🚀 INYECCIÓN MEDIANTE IFRAME SEGURO (Evita bloqueos de ventanas y fallas de carga)
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const docIframe = iframe.contentWindow?.document || iframe.contentDocument;
+    if (docIframe) {
+      docIframe.open();
+      docIframe.write(htmlContent);
+      docIframe.close();
+
+      // Forzamos un breve retraso para garantizar la carga completa del CSS antes de compilar
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        
+        // Removemos el contenedor temporal del DOM de forma limpia
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500);
+    }
   };
 
   const exportarExcelSimulado = () => {
