@@ -9,110 +9,43 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
     return String(val);
   };
 
-  // ... (Toda tu extracción de filiación se queda igual)
-
   // 🩸 JALANDO DIRECTAMENTE DESDE EL HISTORIAL DE HEMATOLOGÍA O LA RAÍZ CONSOLIDADA
-  const grupoSanguineoReal = 
-    p.grupo_sanguineo ??                     // Si viene en la raíz del objeto principal
-    d.grupo_sanguineo ??                     // Si tu motor lo aplanó en la raíz de datos
-    p.datos?.hematoDatos?.grupo_sanguineo ?? // Ruta directa si viene del formulario de hematología
-    d.hematoDatos?.grupo_sanguineo ??        // Capa interna consolidada
-    p.hematoDatos?.grupo_sanguineo ??        // Respaldo por si se guardó suelto
-    "-";
-  const pacienteNombre = String(
-    p?.paciente?.nombre ??
-    d?.paciente?.nombre ??
-    p?.nombre ??
-    d?.nombre ??
-    p?.datos?.paciente?.nombre ??
-    d?.datos?.paciente?.nombre ??
-    p?.datos?.nombre ??
-    d?.datos?.nombre ??
-    "Paciente"
-  ).trim() || "Paciente";
+const grupoSanguineoReal = 
+  p.grupo_sanguineo ?? 
+  d.grupo_sanguineo ?? 
+  p.datos?.grupo_sanguineo ?? 
+  p.datos?.hematoDatos?.grupo_sanguineo ?? 
+  d.hematoDatos?.grupo_sanguineo ?? 
+  "-";
 
-  // Código beneficiario (respaldo en varias rutas posibles)
-  const codBeneficiario =
-    p.cod_beneficiario ??
-    d.cod_beneficiario ??
-    p.datos?.cod_beneficiario ??
-    d.datos?.cod_beneficiario ??
-    p.paciente?.codigo ??
-    d.paciente?.codigo ??
-    p?.codBeneficiario ??
-    "-";
+// 👤 CORRECCIÓN DE LLAVES DE FILIACIÓN PARA HEIDY (Mapeado con FormularioTab)
+const pacienteNombre = String(
+  p.paciente ?? 
+  d.paciente ?? 
+  p.nombre ?? 
+  d.nombre ?? 
+  "Paciente"
+).trim().toUpperCase();
 
-  const institucion =
-    p?.institucion ??
-    d?.institucion ??
-    p?.datos?.institucion ??
-    d?.datos?.institucion ??
-    "CNS";
+const codBeneficiario = p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? "-";
 
-  const numeroOrden =
-    p?.numero_orden ??
-    d?.numero_orden ??
-    p?.numeroOrden ??
-    d?.numeroOrden ??
-    p?.orden ??
-    d?.orden ??
-    "";
+const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
 
-  const aseguradoReal =
-    p?.asegurado ??
-    d?.asegurado ??
-    p?.num_asegurado ??
-    d?.num_asegurado ??
-    p?.datos?.asegurado ??
-    d?.datos?.asegurado ??
-    "";
+const numeroOrden = p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1";
 
-  const edad =
-    p?.edad ??
-    d?.edad ??
-    p?.paciente?.edad ??
-    d?.paciente?.edad ??
-    p?.datos?.edad ??
-    d?.datos?.edad ??
-    "";
+const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
 
-  const medico =
-    p?.medico ??
-    d?.medico ??
-    p?.datos?.medico ??
-    d?.datos?.medico ??
-    "";
+const edad = p.edad || d.edad || p.pacienteData?.edad || "-";
 
-  const centro =
-    p?.centro ??
-    d?.centro ??
-    p?.datos?.centro ??
-    d?.datos?.centro ??
-    "";
+const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
 
-  const servicio =
-    p?.servicio ??
-    d?.servicio ??
-    p?.datos?.servicio ??
-    d?.datos?.servicio ??
-    "";
+const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? "-";
 
-  const consultorio =
-    p?.consultorio ??
-    d?.consultorio ??
-    p?.datos?.consultorio ??
-    d?.datos?.consultorio ??
-    "";
+const servicio = p.servicio ?? d.servicio ?? "";
 
-  const fechaSolicitud =
-    p?.fecha_solicitud ??
-    d?.fecha_solicitud ??
-    p?.fechaSolicitud ??
-    d?.fechaSolicitud ??
-    p?.datos?.fecha_solicitud ??
-    d?.datos?.fecha_solicitud ??
-    "";
+const consultorio = p.consultorio ?? d.consultorio ?? "-";
 
+const fechaSolicitud = p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud ?? "-";
   const htmlContent = `
     <html>
     <head>
