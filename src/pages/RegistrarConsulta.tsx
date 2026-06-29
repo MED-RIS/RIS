@@ -54,7 +54,8 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
     medico_solicitante: '',
     fecha_solicitud: new Date().toISOString().split('T')[0],
     diagnostico: '',
-    responsable: ''
+    responsable: '',
+    edad: pacienteData?.edad || '',
   });
 
   // Iniciamos por defecto con el módulo de Hemograma

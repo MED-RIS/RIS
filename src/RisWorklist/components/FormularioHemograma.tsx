@@ -28,6 +28,7 @@ interface HemogramaData {
   comentario_blanca: string;
   comentario_plaquetas: string;
   codigo_asegurado: string;
+
 }
 
 
