@@ -5,6 +5,7 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 // 🚀 IMPORTACIÓN DE REPORTES MODULARES (Mantiene el código limpio y ordenado)
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
+import { imprimirGrupoSanguineoCNS } from '../reports/ReporteGrupoSanguineo';
 // Aquí irás importando tus otros reportes a medida que los crees:
 // import { imprimirOrinaCNS } from '../RisWorklist/reports/ReporteOrina';
 
@@ -206,6 +207,26 @@ export default function FormularioTab() {
                               <span className="text-[10px] bg-teal-600/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded font-bold">🧪 BIOQUÍMICA / EGO</span>
                               <Layers className="w-4 h-4 text-teal-500" />
                             </div>
+                            {/* 🔵 EXAMEN 3: REPORTES DE QUÍMICA SANGUÍNEA / GRUPO SANGUÍNEO */}
+{(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Quimica') || pacienteFichaActiva.datos?.gli) && (
+  <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-blue-500/40 transition-all">
+    <div>
+      <div className="flex justify-between items-start">
+        <span className="text-[10px] bg-blue-600/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold">QUÍMICA SANGUÍNEA</span>
+        <Layers className="w-4 h-4 text-blue-500" />
+      </div>
+      <h5 className="font-bold text-sm text-white mt-3">Examen de Químicas y Análisis</h5>
+      <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
+    </div>
+    <button 
+      // 🔥 Llamamos limpiamente a tu nueva función importada
+      onClick={() => imprimirGrupoSanguineoCNS(pacienteFichaActiva)}
+      className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
+    >
+      <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+    </button>
+  </div>
+)}
                             <h5 className="font-bold text-sm text-white mt-3">Examen General de Orina</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Físico-Químico y Sedimento Analítico.</p>
                           </div>
