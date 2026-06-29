@@ -1,37 +1,41 @@
-// src/RisWorklist/reports/ReporteHematologia.ts
-
 export const imprimirHematologiaCNS = (p: any) => {
-  // Extraemos los datos estructurados guardados desde el FormularioTab
-  const d = p.datos || {};
+  // Extraemos los datos clínicos o la raíz si vienen juntos
+  const d = p.datos || p || {};
   
-  // Función auxiliar para renderizar el valor real o un guion si está vacío
+  // Función auxiliar para valores vacíos
   const v = (val: any) => {
     if (val === undefined || val === null || val === "") return "-";
     return String(val);
   };
 
-  // 🧮 CÁLCULO DINÁMICO DEL TOTAL DE LA FÓRMULA DIFERENCIAL
+  // 🧮 FÓRMULA DIFERENCIAL TOTAL
   const n = (val: any) => {
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
   };
 
-  // Sumamos exactamente las llaves que vienen de tu componente React
   const { mielo, metamie, cay, seg, eosi, baso, linf, mon } = d;
   const sumaTotalFormula = n(mielo) + n(metamie) + n(cay) + n(seg) + n(eosi) + n(baso) + n(linf) + n(mon);
-
-  // Si se ingresaron datos muestra el total sumado, si no, lo que se guarde por defecto
   const totalMostrar = sumaTotalFormula > 0 ? String(sumaTotalFormula) : (d.total ? v(d.total) : "-");
 
-  // 📝 OBTENER EL NÚMERO DE ORDEN / INFORME CONSECUTIVO 
-  // Si no viene en p.orden, usamos por defecto d.orden o un "-" temporal
-  const numeroOrden = p.orden ?? d.orden ?? "-";
+  // 📝 EXTRACCIÓN 100% DINÁMICA (Sin datos quemados)
+  const numeroOrden = p.orden ?? d.orden ?? p.id ?? "-";
+  const sector = p.sector ?? d.sector ?? "-";
+  const aseguradoReal = p.codigoAsegurado ?? p.cod ?? p.codigo_asegurado ?? p["Nº de Asegurado"] ?? d.codigoAsegurado ?? d.cod;
+  
+  const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? p.medico ?? d.medico;
+  const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? p.centro ?? d.centro;
+  
+  // 🏢 Aquí jalamos lo que pones en el formulario. Si no hay nada, el guion te avisará que falta mapear en el Front.
+  const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "-"; 
+  const servicio = p.servicio ?? d.servicio ?? "-";
+  const consultorio = p.consultorio ?? d.consultorio ?? p.nro_consultorio ?? d.nro_consultorio;
 
   const htmlContent = `
     <html>
     <head>
       <meta charset="utf-8">
-      <title>CNS_Hematologia_${(p.paciente || 'Paciente').replace(/ /g, "_")}</title>
+      <title>CNS_Hematologia_${(p.paciente || p.nombre || 'Paciente').replace(/ /g, "_")}</title>
       <style>
         body { font-family: Arial, sans-serif; color: #000; margin: 0; padding: 20px; font-size: 11px; }
         .red-header { background-color: #ff0000; color: #000; padding: 14px; font-weight: bold; font-size: 16px; text-align: center; border: 1px solid #000; }
@@ -49,31 +53,26 @@ export const imprimirHematologiaCNS = (p: any) => {
       </style>
     </head>
     <body>
+      <!-- 🏢 TITULO TOTALMENTE DINÁMICO SEGÚN TU INPUT -->
       <div class="red-header">
-        POLICLÍNICO PAISE EL ALTO - LABORATORIO<br>HEMATOLOGÍA
+        ${v(institucion).toUpperCase()}<br>HEMATOLOGÍA
       </div>
 
       <table class="filiacion-table">
         <tr>
-          <!-- 🔢 ANTES ERA '0', AHORA MUESTRA EL NÚMERO CORRELATIVO DINÁMICO -->
           <td style="width: 25%; text-align: center;" class="val-bold">${v(numeroOrden)}</td>
-          
-          <!-- 🏢 ANTES ERA '12', AQUÍ PODEMOS PASAR UN CÓDIGO DE SECTOR O DEJARLO DINÁMICO -->
-          <td style="width: 20%; text-align: center;" class="val-bold">${v(p.sector || '1')}</td>
-          
-          <!-- 📥 JALANDO EL CÓDIGO DE ASEGURADO REAL DESDE EL PACIENTE -->
-          <td style="width: 55%; text-align: right;">Nº de Asegurado: <span class="val-bold" style="font-size: 14px; border-bottom: 1px solid #000; padding: 0 10px;">${v(p.codigoAsegurado ?? p.cod)}</span></td>
+          <td style="width: 20%; text-align: center;" class="val-bold">${v(sector)}</td>
+          <td style="width: 55%; text-align: right;">Nº de Asegurado: <span class="val-bold" style="font-size: 14px; border-bottom: 1px solid #000; padding: 0 10px;">${v(aseguradoReal)}</span></td>
         </tr>
         <tr>
-          <!-- 📥 JALANDO LAS LLAVES EXACTAS DE FILIACIÓN QUE ESTÁN EN TU FORMTAB -->
-          <td style="text-align: center;" class="val-bold">${v(d.medico_solicitante ?? d.medicoSolicitante)}<span class="filiacion-label">Médico Solicitante</span></td>
-          <td style="text-align: center;" class="val-bold">${v(d.centro_asistencial ?? d.centroAsistencial)}<span class="filiacion-label">Centro Asistencial</span></td>
-          <td style="text-align: center;" class="val-bold">${(p.paciente || '').toUpperCase()}<span class="filiacion-label">Nombre y Apellidos</span></td>
+          <td style="text-align: center;" class="val-bold">${v(medico)}<span class="filiacion-label">Médico Solicitante</span></td>
+          <td style="text-align: center;" class="val-bold">${v(centro)}<span class="filiacion-label">Centro Asistencial</span></td>
+          <td style="text-align: center;" class="val-bold">${(p.paciente || p.nombre || '').toUpperCase()}<span class="filiacion-label">Nombre y Apellidos</span></td>
         </tr>
         <tr>
-          <td style="text-align: center;" class="val-bold">${v(d.servicio ?? 'POLICLÍNICO PAISE EL ALTO')}<span class="filiacion-label">Policlínico o Servicio</span></td>
-          <td style="text-align: center;" class="val-bold">${v(d.consultorio)}<span class="filiacion-label">Consultorio</span></td>
-          <td style="text-align: center;" class="val-bold">${v(p.fecha)}<span class="filiacion-label">Fecha de Solicitud</span></td>
+          <td style="text-align: center;" class="val-bold">${v(servicio)}<span class="filiacion-label">Policlínico o Servicio</span></td>
+          <td style="text-align: center;" class="val-bold">${v(consultorio)}<span class="filiacion-label">Consultorio</span></td>
+          <td style="text-align: center;" class="val-bold">${v(p.fecha || p.fechaSolicitud)}<span class="filiacion-label">Fecha de Solicitud</span></td>
         </tr>
       </table>
 
