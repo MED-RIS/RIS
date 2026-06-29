@@ -5,7 +5,7 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 // 🚀 IMPORTACIÓN DE REPORTES MODULARES (Mantiene el código limpio y ordenado)
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
-import { imprimirGrupoSanguineoCNS } from '../reports/ReporteGrupoSanguineo';
+import { imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
 // Aquí irás importando tus otros reportes a medida que los crees:
 // import { imprimirOrinaCNS } from '../RisWorklist/reports/ReporteOrina';
 
@@ -214,7 +214,7 @@ export default function FormularioTab() {
       <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
     </div>
     <button 
-      onClick={() => imprimirGrupoSanguineoCNS(pacienteFichaActiva)}
+      onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
       className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
     >
       <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
