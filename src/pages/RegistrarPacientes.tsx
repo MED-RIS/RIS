@@ -8,7 +8,7 @@ interface RegistrarPacienteProps {
 
 export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProps) {
   const [paciente, setPaciente] = useState({
-    cod: '', paterno: '', materno: '', nombres: '', edad: '', genero: 'Femenino'
+    cod: '', paterno: '', materno: '', nombres: '', edad: '', genero: 'Femenino', cod_asegurado: ''
   });
   const [servicio, setServicio] = useState<'laboratorio' | 'imagenologia'>('laboratorio');
   const [indiceExcel, setIndiceExcel] = useState(0);
@@ -22,7 +22,8 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
       materno: p.materno,
       nombres: p.nombres,
       edad: String(p.edad),
-      genero: p.genero
+      genero: p.genero,
+      cod_asegurado: (p as any).cod_asegurado ?? ''
     });
     setIndiceExcel((prev) => (prev + 1) % listaPacientesPrueba.length);
   };
@@ -32,7 +33,7 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
   };
 
   const procesarContinuar = () => {
-    if (!paciente.nombres || !paciente.cod) {
+    if (!paciente.nombres || !paciente.cod || !paciente.cod_asegurado) {
       alert("Por favor rellene los campos de filiación del paciente.");
       return;
     }
@@ -80,6 +81,10 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
             <input type="text" name="cod" value={paciente.cod} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
+            <label className="block text-gray-400 mb-1">CÓDIGO ASEGURADO:</label>
+            <input type="text" name="cod_asegurado" value={paciente.cod_asegurado} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
+          </div>
+          <div>
             <label className="block text-gray-400 mb-1">APELLIDO PATERNO:</label>
             <input type="text" name="paterno" value={paciente.paterno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
@@ -87,6 +92,7 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
             <label className="block text-gray-400 mb-1">APELLIDO MATERNO:</label>
             <input type="text" name="materno" value={paciente.materno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
+           
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">

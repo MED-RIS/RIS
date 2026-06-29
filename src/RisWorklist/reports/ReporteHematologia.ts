@@ -23,6 +23,10 @@ export const imprimirHematologiaCNS = (p: any) => {
   // Si se ingresaron datos muestra el total sumado, si no, lo que se guarde por defecto
   const totalMostrar = sumaTotalFormula > 0 ? String(sumaTotalFormula) : (d.total ? v(d.total) : "-");
 
+  // 📝 OBTENER EL NÚMERO DE ORDEN / INFORME CONSECUTIVO 
+  // Si no viene en p.orden, usamos por defecto d.orden o un "-" temporal
+  const numeroOrden = p.orden ?? d.orden ?? "-";
+
   const htmlContent = `
     <html>
     <head>
@@ -51,9 +55,14 @@ export const imprimirHematologiaCNS = (p: any) => {
 
       <table class="filiacion-table">
         <tr>
-          <td style="width: 25%; text-align: center;" class="val-bold">0</td>
-          <td style="width: 20%; text-align: center;" class="val-bold">12</td>
-          <td style="width: 55%; text-align: right;">Nº de Asegurado: <span class="val-bold" style="font-size: 14px; border-bottom: 1px solid #000; padding: 0 10px;">${v(p.cod)}</span></td>
+          <!-- 🔢 ANTES ERA '0', AHORA MUESTRA EL NÚMERO CORRELATIVO DINÁMICO -->
+          <td style="width: 25%; text-align: center;" class="val-bold">${v(numeroOrden)}</td>
+          
+          <!-- 🏢 ANTES ERA '12', AQUÍ PODEMOS PASAR UN CÓDIGO DE SECTOR O DEJARLO DINÁMICO -->
+          <td style="width: 20%; text-align: center;" class="val-bold">${v(p.sector || '1')}</td>
+          
+          <!-- 📥 JALANDO EL CÓDIGO DE ASEGURADO REAL DESDE EL PACIENTE -->
+          <td style="width: 55%; text-align: right;">Nº de Asegurado: <span class="val-bold" style="font-size: 14px; border-bottom: 1px solid #000; padding: 0 10px;">${v(p.codigoAsegurado ?? p.cod)}</span></td>
         </tr>
         <tr>
           <!-- 📥 JALANDO LAS LLAVES EXACTAS DE FILIACIÓN QUE ESTÁN EN TU FORMTAB -->
