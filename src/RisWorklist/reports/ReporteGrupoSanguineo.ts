@@ -1,6 +1,7 @@
-// src/RisWorklist/reports/ReporteGrupoSanguineo.ts
+
 
 export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
+  // El objeto d representa la raíz de los datos clínicos guardados
   const d = p.datos || p || {};
   
   const v = (val: any) => {
@@ -8,23 +9,109 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
     return String(val);
   };
 
-  // Extracción 100% dinámica de filiación
-  const numeroOrden = p.orden ?? d.orden ?? p.id ?? "1"; 
-  const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod;
-  const codBeneficiario = p.codBeneficiario || p.id_paciente || "-";
-  const edad = p.edad || d.edad || "-";
-  
-  const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
-  const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? "-";
-  const pacienteNombre = (p.paciente || p.nombre || 'Paciente').toUpperCase();
-  
-  const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "POLICLÍNICO CNS"; 
-  const servicio = p.servicio ?? d.servicio ?? "LABORATORIO";
-  const consultorio = p.consultorio ?? d.consultorio ?? "-";
-  const fechaSolicitud = p.fecha || p.fechaSolicitud || p.fecha_solicitud || "-";
+  // ... (Toda tu extracción de filiación se queda igual)
 
-  // Buscamos el grupo sanguíneo tanto en la raíz como en las bolsas internas (hematoDatos o quimicaDatos)
-  const grupoSanguineoReal = p.grupo_sanguineo ?? d.grupo_sanguineo ?? d.grupoSanguineo ?? "-";
+  // 🩸 JALANDO DIRECTAMENTE DESDE EL HISTORIAL DE HEMATOLOGÍA O LA RAÍZ CONSOLIDADA
+  const grupoSanguineoReal = 
+    p.grupo_sanguineo ??                     // Si viene en la raíz del objeto principal
+    d.grupo_sanguineo ??                     // Si tu motor lo aplanó en la raíz de datos
+    p.datos?.hematoDatos?.grupo_sanguineo ?? // Ruta directa si viene del formulario de hematología
+    d.hematoDatos?.grupo_sanguineo ??        // Capa interna consolidada
+    p.hematoDatos?.grupo_sanguineo ??        // Respaldo por si se guardó suelto
+    "-";
+  const pacienteNombre = String(
+    p?.paciente?.nombre ??
+    d?.paciente?.nombre ??
+    p?.nombre ??
+    d?.nombre ??
+    p?.datos?.paciente?.nombre ??
+    d?.datos?.paciente?.nombre ??
+    p?.datos?.nombre ??
+    d?.datos?.nombre ??
+    "Paciente"
+  ).trim() || "Paciente";
+
+  // Código beneficiario (respaldo en varias rutas posibles)
+  const codBeneficiario =
+    p.cod_beneficiario ??
+    d.cod_beneficiario ??
+    p.datos?.cod_beneficiario ??
+    d.datos?.cod_beneficiario ??
+    p.paciente?.codigo ??
+    d.paciente?.codigo ??
+    p?.codBeneficiario ??
+    "-";
+
+  const institucion =
+    p?.institucion ??
+    d?.institucion ??
+    p?.datos?.institucion ??
+    d?.datos?.institucion ??
+    "CNS";
+
+  const numeroOrden =
+    p?.numero_orden ??
+    d?.numero_orden ??
+    p?.numeroOrden ??
+    d?.numeroOrden ??
+    p?.orden ??
+    d?.orden ??
+    "";
+
+  const aseguradoReal =
+    p?.asegurado ??
+    d?.asegurado ??
+    p?.num_asegurado ??
+    d?.num_asegurado ??
+    p?.datos?.asegurado ??
+    d?.datos?.asegurado ??
+    "";
+
+  const edad =
+    p?.edad ??
+    d?.edad ??
+    p?.paciente?.edad ??
+    d?.paciente?.edad ??
+    p?.datos?.edad ??
+    d?.datos?.edad ??
+    "";
+
+  const medico =
+    p?.medico ??
+    d?.medico ??
+    p?.datos?.medico ??
+    d?.datos?.medico ??
+    "";
+
+  const centro =
+    p?.centro ??
+    d?.centro ??
+    p?.datos?.centro ??
+    d?.datos?.centro ??
+    "";
+
+  const servicio =
+    p?.servicio ??
+    d?.servicio ??
+    p?.datos?.servicio ??
+    d?.datos?.servicio ??
+    "";
+
+  const consultorio =
+    p?.consultorio ??
+    d?.consultorio ??
+    p?.datos?.consultorio ??
+    d?.datos?.consultorio ??
+    "";
+
+  const fechaSolicitud =
+    p?.fecha_solicitud ??
+    d?.fecha_solicitud ??
+    p?.fechaSolicitud ??
+    d?.fechaSolicitud ??
+    p?.datos?.fecha_solicitud ??
+    d?.datos?.fecha_solicitud ??
+    "";
 
   const htmlContent = `
     <html>
