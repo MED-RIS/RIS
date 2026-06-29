@@ -5,7 +5,8 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 // 🚀 IMPORTACIÓN DE REPORTES MODULARES (Mantiene el código limpio y ordenado)
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
-import { imprimirGrupoSanguineoCNS } from '../reports/ReporteGrupoSanguineo';
+// Aquí irás importando tus otros reportes a medida que los crees:
+// import { imprimirOrinaCNS } from '../RisWorklist/reports/ReporteOrina';
 
 export default function FormularioTab() {
   const [paso, setPaso] = useState(1);
@@ -33,7 +34,7 @@ export default function FormularioTab() {
     const matriculaActual = pacienteSeleccionado?.cod || "S/M";
     const nombreCompleto = `${pacienteSeleccionado?.nombres || ''} ${pacienteSeleccionado?.paterno || ''}`.trim();
     
-    // 🔍 EXTRACCIÓN ULTRA-SEGURA
+    // 🔍 EXTRACCIÓN ULTRA-SEGURA: Si los datos vienen dentro de "hematoDatos" o variables internas, los aplanamos
     const datosFormularioSueltos = nuevoDocumento?.hematoDatos || nuevoDocumento?.datos || nuevoDocumento || {};
 
     let listaActualizada: any[] = [];
@@ -53,7 +54,7 @@ export default function FormularioTab() {
           datos: {
             ...datosExistentes,
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos // Forzamos aplanar las llaves (hto, hb, seg, etc.) en la raíz
           }
         };
         listaActualizada = historialActualizado;
@@ -69,7 +70,7 @@ export default function FormularioTab() {
           estudiosRealizados: [tipoLab],
           datos: { 
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos // Aseguramos que hto, hb, seg entren directamente aquí
           }
         };
         listaActualizada = [...prev, nuevoRegistro];
@@ -93,7 +94,7 @@ export default function FormularioTab() {
   return (
     <div className="w-full text-white space-y-6 relative">
       
-      {/* 🖥️ MODAL PANTALLA COMPLETA: BANDEJA CENTRAL DE AUDITORÍA */}
+      {/* 🖥️ MODAL PANTALLA COMPLETA: BANDEJA CENTRAL DE AUDITORÍA (DISEÑO DE 2 COLUMNAS) */}
       {verReportesGlobal && (
         <div className="fixed inset-0 bg-[#060b09] z-50 flex flex-col p-6 overflow-y-auto">
           
@@ -113,7 +114,7 @@ export default function FormularioTab() {
             </button>
           </div>
 
-          {/* Grilla Principal */}
+          {/* Grilla Principal Reestructurada */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
             
             {/* 🚪 COLUMNA IZQUIERDA: SECTOR PERSONAS */}
@@ -174,7 +175,7 @@ export default function FormularioTab() {
                       <FolderOpen className="w-4 h-4 text-[#00bfa5]" /> Informes Médicos Registrados en Servidor:
                     </h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                       
                       {/* 🔴 EXAMEN 1: REPORTES DE HEMATOLOGÍA */}
                       {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Hemato') || pacienteFichaActiva.datos?.hemoglobina) && (
@@ -188,6 +189,7 @@ export default function FormularioTab() {
                             <p className="text-[11px] text-gray-400 mt-1">Formato Estructurado del Policlínico CNS El Alto.</p>
                           </div>
                           <button 
+                            // Llamamos limpiamente a la función importada modularmente
                             onClick={() => imprimirHematologiaCNS(pacienteFichaActiva)}
                             className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-red-900/10"
                           >
@@ -196,27 +198,7 @@ export default function FormularioTab() {
                         </div>
                       )}
 
-                      {/* 🔵 EXAMEN 2: REPORTES DE QUÍMICA SANGUÍNEA / GRUPO SANGUÍNEO */}
-                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Quimica') || pacienteFichaActiva.datos?.gli) && (
-                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-blue-500/40 transition-all">
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <span className="text-[10px] bg-blue-600/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold">QUÍMICA SANGUÍNEA</span>
-                              <Layers className="w-4 h-4 text-blue-500" />
-                            </div>
-                            <h5 className="font-bold text-sm text-white mt-3">Examen de Químicas y Análisis</h5>
-                            <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
-                          </div>
-                          <button 
-                            onClick={() => imprimirGrupoSanguineoCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
-                        </div>
-                      )}
-
-                      {/* 🟢 EXAMEN 3: REPORTES DE ORINA (EGO) */}
+                      {/* 🟢 EXAMEN 2: REPORTES DE ORINA (EGO) */}
                       {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_EGO') || pacienteFichaActiva.datos?.volumen) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-teal-500/40 transition-all">
                           <div>
@@ -228,7 +210,7 @@ export default function FormularioTab() {
                             <p className="text-[11px] text-gray-400 mt-1">Físico-Químico y Sedimento Analítico.</p>
                           </div>
                           <button 
-                            onClick={() => alert("Generando Formato Oficial EGO...")}
+                            onClick={() => alert("Generando Formato Oficial EGO Modular...")}
                             className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs transition-colors"
                           >
                             <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
