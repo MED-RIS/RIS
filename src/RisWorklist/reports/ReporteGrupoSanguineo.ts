@@ -1,5 +1,3 @@
-
-
 export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
   // El objeto d representa la raíz de los datos clínicos guardados
   const d = p.datos || p || {};
@@ -10,59 +8,57 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
   };
 
   // 🩸 JALANDO DIRECTAMENTE DESDE EL HISTORIAL DE HEMATOLOGÍA O LA RAÍZ CONSOLIDADA
-const grupoSanguineoReal = 
-  p.grupo_sanguineo ?? 
-  d.grupo_sanguineo ?? 
-  p.datos?.grupo_sanguineo ?? 
-  p.datos?.hematoDatos?.grupo_sanguineo ?? 
-  d.hematoDatos?.grupo_sanguineo ?? 
+  const grupoSanguineoReal = 
+    p.grupo_sanguineo ?? 
+    d.grupo_sanguineo ?? 
+    p.datos?.grupo_sanguineo ?? 
+    p.datos?.hematoDatos?.grupo_sanguineo ?? 
+    d.hematoDatos?.grupo_sanguineo ?? 
+    "-"; // 🌟 ¡Corregido el operador suelto aquí!
 
-  "-";
+  // 👤 CORRECCIÓN DE LLAVES DE FILIACIÓN PARA HEIDY (Mapeado con FormularioTab)
+  const pacienteNombre = String(
+    p.paciente ?? 
+    d.paciente ?? 
+    p.nombre ?? 
+    d.nombre ?? 
+    "Paciente"
+  ).trim().toUpperCase();
 
-// 👤 CORRECCIÓN DE LLAVES DE FILIACIÓN PARA HEIDY (Mapeado con FormularioTab)
-const pacienteNombre = String(
-  p.paciente ?? 
-  d.paciente ?? 
-  p.nombre ?? 
-  d.nombre ?? 
-  
-  "Paciente"
-).trim().toUpperCase();
-// 🔍 BUSQUEDA EXPANDIDA PARA EL CÓDIGO DE BENEFICIARIO (ID)
-const codBeneficiario = 
-  p.codBeneficiario ?? 
-  p.id_paciente ?? 
-  p.pacienteData?.id_paciente ?? 
-  d.id_paciente ?? 
-  d.codBeneficiario ?? 
-  "-";
+  // 🔍 BUSQUEDA EXPANDIDA PARA EL CÓDIGO DE BENEFICIARIO (ID)
+  const codBeneficiario = 
+    p.codBeneficiario ?? 
+    p.id_paciente ?? 
+    p.pacienteData?.id_paciente ?? 
+    d.id_paciente ?? 
+    d.codBeneficiario ?? 
+    "-";
 
-// 🔍 BUSQUEDA EXPANDIDA PARA LA EDAD DEL PACIENTE
-const edad = 
-  p.edad ?? 
-  d.edad ?? 
-  p.pacienteData?.edad ?? 
-  p.datos?.edad ?? 
-  d.paciente?.edad ?? 
-  "-";
+  // 🔍 BUSQUEDA EXPANDIDA PARA LA EDAD DEL PACIENTE
+  const edad = 
+    p.edad ?? 
+    d.edad ?? 
+    p.pacienteData?.edad ?? 
+    p.datos?.edad ?? 
+    d.paciente?.edad ?? 
+    "-";
 
+  const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
 
-const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
+  const numeroOrden = p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1";
 
-const numeroOrden = p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1";
+  const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
 
-const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
+  const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
 
+  const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? "-";
 
-const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
+  const servicio = p.servicio ?? d.servicio ?? "";
 
-const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? "-";
+  const consultorio = p.consultorio ?? d.consultorio ?? "-";
 
-const servicio = p.servicio ?? d.servicio ?? "";
+  const fechaSolicitud = p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud ?? "-";
 
-const consultorio = p.consultorio ?? d.consultorio ?? "-";
-
-const fechaSolicitud = p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud ?? "-";
   const htmlContent = `
     <html>
     <head>
