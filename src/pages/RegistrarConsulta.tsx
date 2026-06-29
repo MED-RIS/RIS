@@ -10,6 +10,7 @@ type Consulta = {
   fecha_solicitud?: string;
   diagnostico?: string;
   responsable?: string;
+  edad?: string;
   [key: string]: any;
 };
 

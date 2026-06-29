@@ -33,6 +33,7 @@ export default function FormularioTab() {
     alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
     
     const matriculaActual = pacienteSeleccionado?.cod || "S/M";
+    const idPaciente = pacienteSeleccionado?.id || pacienteSeleccionado?.cod || "S/M";
     const nombreCompleto = `${pacienteSeleccionado?.nombres || ''} ${pacienteSeleccionado?.paterno || ''}`.trim();
     
     // 🔍 EXTRACCIÓN ULTRA-SEGURA: Si los datos vienen dentro de "hematoDatos" o variables internas, los aplanamos
@@ -51,6 +52,8 @@ export default function FormularioTab() {
         
         historialActualizado[indicePaciente] = {
           ...historialActualizado[indicePaciente],
+          edad: nuevoDocumento?.edad ?? pacienteSeleccionado?.edad,        // 🌟 Guardamos la edad en la raíz
+          id_paciente: idPaciente,
           estudiosRealizados: Array.from(new Set([...(historialActualizado[indicePaciente].estudiosRealizados || []), tipoLab])),
           datos: {
             ...datosExistentes,
