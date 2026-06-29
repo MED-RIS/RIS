@@ -16,6 +16,7 @@ const grupoSanguineoReal =
   p.datos?.grupo_sanguineo ?? 
   p.datos?.hematoDatos?.grupo_sanguineo ?? 
   d.hematoDatos?.grupo_sanguineo ?? 
+
   "-";
 
 // 👤 CORRECCIÓN DE LLAVES DE FILIACIÓN PARA HEIDY (Mapeado con FormularioTab)
@@ -24,10 +25,27 @@ const pacienteNombre = String(
   d.paciente ?? 
   p.nombre ?? 
   d.nombre ?? 
+  
   "Paciente"
 ).trim().toUpperCase();
+// 🔍 BUSQUEDA EXPANDIDA PARA EL CÓDIGO DE BENEFICIARIO (ID)
+const codBeneficiario = 
+  p.codBeneficiario ?? 
+  p.id_paciente ?? 
+  p.pacienteData?.id_paciente ?? 
+  d.id_paciente ?? 
+  d.codBeneficiario ?? 
+  "-";
 
-const codBeneficiario = p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? "-";
+// 🔍 BUSQUEDA EXPANDIDA PARA LA EDAD DEL PACIENTE
+const edad = 
+  p.edad ?? 
+  d.edad ?? 
+  p.pacienteData?.edad ?? 
+  p.datos?.edad ?? 
+  d.paciente?.edad ?? 
+  "-";
+
 
 const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
 
@@ -35,7 +53,6 @@ const numeroOrden = p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1";
 
 const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
 
-const edad = p.edad || d.edad || p.pacienteData?.edad || "-";
 
 const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
 
