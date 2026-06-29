@@ -199,7 +199,11 @@ export default function FormularioTab() {
                         </div>
                       )}
                       {/* 🔵 EXAMEN 2: REPORTES DE QUÍMICA SANGUÍNEA / GRUPO SANGUÍNEO */}
-{(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Quimica') || pacienteFichaActiva.datos?.gli) && (
+{(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Quimica') || 
+  pacienteFichaActiva.estudiosRealizados?.includes('Lab_Hemato') || 
+  pacienteFichaActiva.estudiosRealizados?.includes('Lab_Coagulo') || 
+  pacienteFichaActiva.datos?.gli || 
+  pacienteFichaActiva.datos?.grupo_sanguineo) && (
   <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-blue-500/40 transition-all">
     <div>
       <div className="flex justify-between items-start">
@@ -210,7 +214,6 @@ export default function FormularioTab() {
       <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
     </div>
     <button 
-      // Llamamos a la nueva función de tu reporte
       onClick={() => imprimirGrupoSanguineoCNS(pacienteFichaActiva)}
       className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
     >
