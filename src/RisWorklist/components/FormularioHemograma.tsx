@@ -30,6 +30,7 @@ interface HemogramaData {
   codigo_asegurado: string;
 }
 
+
 interface FormHemogramaProps {
   hematoDatos: HemogramaData;
   setHematoDatos: (datos: any) => void;

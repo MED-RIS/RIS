@@ -49,11 +49,11 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
     id_paciente: pacienteData?.id_paciente || 1, 
     emergencia: false,
     policlinico: '',
-    consultorio: 'Ginecología',
+    consultorio: '',
     medico_solicitante: '',
     fecha_solicitud: new Date().toISOString().split('T')[0],
     diagnostico: '',
-    responsable: 'Heidy Arancibia'
+    responsable: ''
   });
 
   // Iniciamos por defecto con el módulo de Hemograma
@@ -92,32 +92,50 @@ const [widalDatos, setWidalDatos] = useState({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setEstaCargando(true);
+    e.preventDefault();
+    setEstaCargando(true);
 
-  // Enviamos todas las bolsas de datos recolectadas en la sesión juntas
-  const documentoConsolidado = {
-    tipoLaboratorio: tipoLaboratorio,
-    egoDatos: egoDatos,
-    glucosaFija: glucosaFija,
-    widalDatos: widalDatos,
-    microDatos: microDatos,
-    liquidosDatos: liquidosDatos,
-    hematoDatos: hematoDatos,
-    quimicaDatos: quimicaDatos,
-    serologiaDatos: serologiaDatos,
-    medicionesExtra: medicionesExtra || []
+    // 📦 CONSOLIDACIÓN TOTAL DE DATOS PARA HEIDY (Paciente + Orden + Clínicos)
+    const documentoConsolidado = {
+      // 1️⃣ Filiación e Identificadores Base
+      paciente: `${pacienteData?.nombres || 'De Prueba'} ${pacienteData?.paterno || ''}`.trim(),
+      fecha: consulta.fecha_solicitud,
+      codigoAsegurado: pacienteData?.cod || 'S/M', // Mapea tu Matrícula/Código de asegurado
+      orden: consulta.id_consulta || 1,             // Mapea tu identificador numérico correlativo
+
+      // 2️⃣ Datos Generales de la Orden (Capturados de los inputs)
+      medico_solicitante: consulta.medico_solicitante || '',
+      centro_asistencial: consulta.policlinico || '', 
+      policlinico: consulta.policlinico || '',
+      consultorio: consulta.consultorio || '',       
+      servicio: consulta.policlinico || '',
+      institucion: consulta.policlinico || '',
+
+      // 3️⃣ Bolsas de datos clínicos de tus submódulos
+      tipoLaboratorio: tipoLaboratorio,
+      egoDatos: egoDatos,
+      glucosaFija: glucosaFija,
+      widalDatos: widalDatos,
+      microDatos: microDatos,
+      liquidosDatos: liquidosDatos,
+      
+      // Mapeamos los datos de hematología directo a la llave 'datos' para tu reporte
+      datos: hematoDatos, 
+      hematoDatos: hematoDatos,
+      
+      quimicaDatos: quimicaDatos,
+      serologiaDatos: serologiaDatos,
+      medicionesExtra: medicionesExtra || []
+    };
+
+    console.log("Desplegando historial clínico multi-formulario unificado:", documentoConsolidado);
+
+    if (typeof onGuardarLocal === 'function') {
+      await onGuardarLocal(documentoConsolidado);
+    }
+
+    setEstaCargando(false);
   };
-
-  console.log("Desplegando historial clínico multi-formulario:", documentoConsolidado);
-
-  if (typeof onGuardarLocal === 'function') {
-    await onGuardarLocal(documentoConsolidado);
-  }
-
-  setEstaCargando(false);
-};
-
   return (
     <div style={{ backgroundColor: '#0a0f0d', minHeight: '100vh', padding: '10px', color: '#ffffff', fontFamily: 'sans-serif' }}>
       
@@ -145,21 +163,21 @@ const [widalDatos, setWidalDatos] = useState({
               👤 <strong>Paciente:</strong> {pacienteData?.nombres || 'De Prueba'} {pacienteData?.paterno || ''} | 🪪 <strong>Matrícula:</strong> {pacienteData?.cod || 'S/M'}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Médico Solicitante:</label>
-                <input type="text" name="medico_solicitante" value={consulta.medico_solicitante || ''} onChange={handleConsultaChange} required style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', marginTop: '4px' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Policlínico:</label>
-                <input type="text" name="policlinico" value={consulta.policlinico || ''} onChange={handleConsultaChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', marginTop: '4px' }} />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '15px' }}>
-              <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Diagnóstico de Orientación:</label>
-              <textarea name="diagnostico" value={consulta.diagnostico || ''} onChange={handleConsultaChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '45px', resize: 'none', marginTop: '4px' }} />
-            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+  <div>
+    <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Médico Solicitante:</label>
+    <input type="text" name="medico_solicitante" value={consulta.medico_solicitante || ''} onChange={handleConsultaChange} required style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', marginTop: '4px' }} />
+  </div>
+  <div>
+    <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Policlínico:</label>
+    <input type="text" name="policlinico" value={consulta.policlinico || ''} onChange={handleConsultaChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', marginTop: '4px' }} />
+  </div>
+  {/* 🏢 ¡INPUT DE CONSULTORIO AGREGADO AQUÍ! */}
+  <div>
+    <label style={{ fontSize: '12px', color: '#a0b2ae' }}>Consultorio:</label>
+    <input type="text" name="consultorio" value={consulta.consultorio || ''} onChange={handleConsultaChange} placeholder="Ej. 104" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', marginTop: '4px' }} />
+  </div>
+</div>
           </fieldset>
 
           {/* SELECTOR CORREGIDO: SEPARADOS E INDEPENDIENTES */}
