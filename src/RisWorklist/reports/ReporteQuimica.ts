@@ -5,17 +5,35 @@ export const imprimirQuimicaCNS = (p: any) => {
   const q = d.quimicaDatos || p.quimicaDatos || d || {};
   const f = resolverFiliacion(p);
 
-  // Fila de resultado con flag alto/bajo según rango del laboratorio.
-  const fila = (label: string, val: any, unidad: string, rango: string) => {
-    const flag = flagRango(val, rango);
+  // Fila de resultado protegida contra bucles infinitos en rangos asimétricos
+  const fila = (label: string, val: any, unidad: string, rangoOriginal: string) => {
+    // 🌟 PROTECCIÓN CRÍTICA: Convertimos rangos de un solo extremo en rangos numéricos seguros para evitar bucles infinitos
+    let rangoSaneadoParaValidar = rangoOriginal;
+    
+    if (!rangoOriginal || rangoOriginal.trim() === "") {
+      rangoSaneadoParaValidar = "0 - 999999"; // Para campos sin rango como Globulinas
+    } else if (rangoOriginal.includes(">")) {
+      const num = rangoOriginal.replace(">", "").trim();
+      rangoSaneadoParaValidar = `${num} - 999999`; // Convierte ">55" en "55 - 999999"
+    } else if (rangoOriginal.includes("<")) {
+      const num = rangoOriginal.replace("<", "").trim();
+      rangoSaneadoParaValidar = `0 - ${num}`;      // Convierte "<150" en "0 - 150"
+    } else if (rangoOriginal.includes("hasta")) {
+      const num = rangoOriginal.replace("hasta", "").trim();
+      rangoSaneadoParaValidar = `0 - ${num}`;      // Convierte "hasta 0.3" en "0 - 0.3"
+    }
+
+    // Ejecuta flagRango de forma 100% segura sin colgar el navegador
+    const flag = flagRango(val, rangoSaneadoParaValidar);
     const color = flag === "H" ? "#c62828" : flag === "L" ? "#1565c0" : "#000";
     const marca = flag === "H" ? " ↑" : flag === "L" ? " ↓" : "";
+    
     return `
       <tr>
         <td class="lbl">${label}</td>
         <td class="val" style="color:${color}">${v(val)}${marca}</td>
         <td class="uni">${unidad}</td>
-        <td class="ref">${rango}</td>
+        <td class="ref">${rangoOriginal}</td> <!-- Muestra el rango original de la CNS intacto -->
       </tr>`;
   };
 
