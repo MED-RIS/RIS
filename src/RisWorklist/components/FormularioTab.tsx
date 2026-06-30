@@ -3,40 +3,36 @@ import { FileDown, Eye, X, Clipboard, User, Calendar, FolderOpen, Layers } from 
 import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
-// 🚀 IMPORTACIÓN DE REPORTES MODULARES (Mantiene el código limpio y ordenado)
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
-// Aquí irás importando tus otros reportes a medida que los crees:
-// import { imprimirOrinaCNS } from '../RisWorklist/reports/ReporteOrina';
+
 
 export default function FormularioTab() {
   const [paso, setPaso] = useState(1);
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
   const [verReportesGlobal, setVerReportesGlobal] = useState(false);
   
-  // Estados para la gestión de la nueva bandeja de dos columnas
   const [pacienteFichaActiva, setPacienteFichaActiva] = useState<any>(null);
 
-  // 💾 PERSISTENCIA: Carga inicial desde LocalStorage para evitar borrados al actualizar (F5)
   const [historialSimulado, setHistorialSimulado] = useState<any[]>(() => {
     const datosGuardados = localStorage.getItem('ris_historial_cns');
     return datosGuardados ? JSON.parse(datosGuardados) : [];
   });
 
-  // Sincronización automática con LocalStorage al detectar cambios en el historial
   useEffect(() => {
     localStorage.setItem('ris_historial_cns', JSON.stringify(historialSimulado));
   }, [historialSimulado]);
 
-  // 📥 MOTOR DE GUARDADO CONSOLIDADO (Une laboratorios consecutivos en una sola ficha)
+
   const guardarEnRisServer = async (nuevoDocumento: any) => {
     alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
     
     const matriculaActual = pacienteSeleccionado?.cod || "S/M";
-    const idPaciente = pacienteSeleccionado?.id || pacienteSeleccionado?.cod || "S/M";
+    const idPaciente = pacienteSeleccionado?.id || pacienteSeleccionado?.id_paciente || pacienteSeleccionado?.cod || "S/M";
     const nombreCompleto = `${pacienteSeleccionado?.nombres || ''} ${pacienteSeleccionado?.paterno || ''}`.trim();
-    
-    // 🔍 EXTRACCIÓN ULTRA-SEGURA: Si los datos vienen dentro de "hematoDatos" o variables internas, los aplanamos
+ 
+    const edadPaciente = pacienteSeleccionado?.edad || "-";
+
     const datosFormularioSueltos = nuevoDocumento?.hematoDatos || nuevoDocumento?.datos || nuevoDocumento || {};
 
     let listaActualizada: any[] = [];
@@ -46,35 +42,37 @@ export default function FormularioTab() {
       const tipoLab = nuevoDocumento?.tipoLaboratorio || "Lab_Hemato";
 
       if (indicePaciente !== -1) {
-        // 🔄 SI EL PACIENTE YA EXISTE
+   
         const historialActualizado = [...prev];
         const datosExistentes = historialActualizado[indicePaciente].datos || {};
         
         historialActualizado[indicePaciente] = {
           ...historialActualizado[indicePaciente],
-          edad: nuevoDocumento?.edad ?? pacienteSeleccionado?.edad,        // 🌟 Guardamos la edad en la raíz
-          id_paciente: idPaciente,
+          edad: edadPaciente,      
+          id_paciente: idPaciente,  
           estudiosRealizados: Array.from(new Set([...(historialActualizado[indicePaciente].estudiosRealizados || []), tipoLab])),
           datos: {
             ...datosExistentes,
             ...nuevoDocumento,
-            ...datosFormularioSueltos // Forzamos aplanar las llaves (hto, hb, seg, etc.) en la raíz
+            ...datosFormularioSueltos
           }
         };
         listaActualizada = historialActualizado;
         return historialActualizado;
       } else {
-        // 🆕 SI ES UN PACIENTE NUEVO
+       
         const nuevoRegistro = {
           cod: matriculaActual,
           paciente: nombreCompleto,
+          edad: edadPaciente,       
+          id_paciente: idPaciente,  
           servicio: "Laboratorio",
           estado: "Completado",
           fecha: new Date().toLocaleDateString(),
           estudiosRealizados: [tipoLab],
           datos: { 
             ...nuevoDocumento,
-            ...datosFormularioSueltos // Aseguramos que hto, hb, seg entren directamente aquí
+            ...datosFormularioSueltos
           }
         };
         listaActualizada = [...prev, nuevoRegistro];
@@ -82,7 +80,6 @@ export default function FormularioTab() {
       }
     });
 
-    // Escritura en memoria inmediata
     setTimeout(() => {
       localStorage.setItem('ris_historial_cns', JSON.stringify(listaActualizada));
     }, 50);

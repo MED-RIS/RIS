@@ -1,14 +1,12 @@
 export const imprimirHematologiaCNS = (p: any) => {
-  // Extraemos los datos clínicos o la raíz si vienen juntos
+ 
   const d = p.datos || p || {};
   
-  // Función auxiliar para valores vacíos
   const v = (val: any) => {
     if (val === undefined || val === null || val === "") return "-";
     return String(val);
   };
 
-  // 🧮 FÓRMULA DIFERENCIAL TOTAL
   const n = (val: any) => {
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
@@ -18,7 +16,6 @@ export const imprimirHematologiaCNS = (p: any) => {
   const sumaTotalFormula = n(mielo) + n(metamie) + n(cay) + n(seg) + n(eosi) + n(baso) + n(linf) + n(mon);
   const totalMostrar = sumaTotalFormula > 0 ? String(sumaTotalFormula) : (d.total ? v(d.total) : "-");
 
-  // 📝 EXTRACCIÓN 100% DINÁMICA (Sin datos quemados)
   const numeroOrden = p.orden ?? d.orden ?? p.id ?? "-";
   const sector = p.sector ?? d.sector ?? "-";
   const aseguradoReal = p.codigoAsegurado ?? p.cod ?? p.codigo_asegurado ?? p["Nº de Asegurado"] ?? d.codigoAsegurado ?? d.cod;

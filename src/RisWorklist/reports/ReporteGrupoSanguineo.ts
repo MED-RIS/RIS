@@ -1,5 +1,5 @@
 export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
-  // El objeto d representa la raíz de los datos clínicos guardados
+
   const d = p.datos || p || {};
   
   const v = (val: any) => {
@@ -7,16 +7,13 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
     return String(val);
   };
 
-  // 🩸 JALANDO DIRECTAMENTE DESDE EL HISTORIAL DE HEMATOLOGÍA O LA RAÍZ CONSOLIDADA
   const grupoSanguineoReal = 
     p.grupo_sanguineo ?? 
     d.grupo_sanguineo ?? 
     p.datos?.grupo_sanguineo ?? 
     p.datos?.hematoDatos?.grupo_sanguineo ?? 
     d.hematoDatos?.grupo_sanguineo ?? 
-    "-"; // 🌟 ¡Corregido el operador suelto aquí!
-
-  // 👤 CORRECCIÓN DE LLAVES DE FILIACIÓN PARA HEIDY (Mapeado con FormularioTab)
+    "-"; 
   const pacienteNombre = String(
     p.paciente ?? 
     d.paciente ?? 
@@ -25,7 +22,7 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
     "Paciente"
   ).trim().toUpperCase();
 
-  // 🔍 BUSQUEDA EXPANDIDA PARA EL CÓDIGO DE BENEFICIARIO (ID)
+  
   const codBeneficiario = 
     p.codBeneficiario ?? 
     p.id_paciente ?? 
@@ -34,7 +31,6 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
     d.codBeneficiario ?? 
     "-";
 
-  // 🔍 BUSQUEDA EXPANDIDA PARA LA EDAD DEL PACIENTE
   const edad = 
     p.edad ?? 
     d.edad ?? 
