@@ -1,3 +1,4 @@
+// src/RisWorklist/reports/ReporteHtoHbLeucoWidal.ts
 import { v, resolverFiliacion, cabeceraHTML, renderizarEImprimir } from "./_reporteBase";
 
 // Hematocrito, Hemoglobina, Leucocitos + fórmula diferencial + Reacción de Widal.
@@ -40,12 +41,13 @@ export const imprimirHtoHbLeucoWidalCNS = (p: any) => {
 
   const estilos = `
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; align-items: start; }
-    .col-box { border: 1px solid #000; }
-    .col-title { background-color: #fce4ec; font-weight: bold; text-align: center; padding: 5px; border-bottom: 1px solid #000; font-size: 11px; }
+    .col-box { border: 1px solid #000; background: #fff; }
+    .col-title { background-color: #fce4ec; font-weight: bold; text-align: center; padding: 5px; border-bottom: 1px solid #000; font-size: 11px; color: #000; }
     .col-title.sub { border-top: 1px solid #000; }
-    .row-item { display: flex; justify-content: space-between; padding: 4px 10px; border-bottom: 1px dotted #999; min-height: 18px; font-size: 11.5px; }
+    .row-item { display: flex; justify-content: space-between; padding: 4px 10px; border-bottom: 1px dotted #999; min-height: 18px; font-size: 11.5px; color: #000; }
     .row-item span:last-child { font-family: monospace; font-weight: bold; text-align: right; }
     .row-item.total { background-color: #f5f5f5; font-weight: bold; }
+    .obs-box { color: #000; }
   `;
 
   renderizarEImprimir(`CNS_HtoHbLeucoWidal_${f.pacienteNombre.replace(/ /g, "_")}`, cuerpo, estilos);

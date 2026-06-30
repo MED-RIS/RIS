@@ -8,16 +8,34 @@ export const imprimirElectrolitosProtCNS = (p: any) => {
   const o = d.egoDatos || {};
   const f = resolverFiliacion(p);
 
-  const fila = (label: string, val: any, unidad: string, rango: string) => {
-    const flag = flagRango(val, rango);
+  // Fila de resultado protegida contra bucles infinitos en rangos asimétricos (<30, etc.)
+  const fila = (label: string, val: any, unidad: string, rangoOriginal: string) => {
+    // 🌟 PROTECCIÓN CRÍTICA: Convertimos operadores de un solo extremo en rangos numéricos estándar
+    let rangoSaneadoParaValidar = rangoOriginal;
+    
+    if (!rangoOriginal || rangoOriginal.trim() === "") {
+      rangoSaneadoParaValidar = "0 - 999999"; 
+    } else if (rangoOriginal.includes(">")) {
+      const num = rangoOriginal.replace(">", "").trim();
+      rangoSaneadoParaValidar = `${num} - 999999`; 
+    } else if (rangoOriginal.includes("<")) {
+      const num = rangoOriginal.replace("<", "").trim();
+      rangoSaneadoParaValidar = `0 - ${num}`;      
+    } else if (rangoOriginal.includes("hasta")) {
+      const num = rangoOriginal.replace("hasta", "").trim();
+      rangoSaneadoParaValidar = `0 - ${num}`;      
+    }
+
+    const flag = flagRango(val, rangoSaneadoParaValidar);
     const color = flag === "H" ? "#c62828" : flag === "L" ? "#1565c0" : "#000";
     const marca = flag === "H" ? " ↑" : flag === "L" ? " ↓" : "";
+    
     return `
       <tr>
         <td class="lbl">${label}</td>
         <td class="val" style="color:${color}">${v(val)}${marca}</td>
         <td class="uni">${unidad}</td>
-        <td class="ref">${rango}</td>
+        <td class="ref">${rangoOriginal}</td>
       </tr>`;
   };
 
@@ -63,15 +81,16 @@ export const imprimirElectrolitosProtCNS = (p: any) => {
   `;
 
   const estilos = `
-    .sec-title { background-color: #e0f7fa; font-weight: bold; padding: 5px 8px; margin: 14px 0 0 0; border: 1px solid #000; font-size: 11px; }
+    .sec-title { background-color: #e0f7fa; font-weight: bold; padding: 5px 8px; margin: 14px 0 0 0; border: 1px solid #000; font-size: 11px; color: #000; }
     .tbl { width: 100%; border-collapse: collapse; }
-    .tbl th { background-color: #e0f7fa; border: 1px solid #000; padding: 4px; font-size: 10px; }
-    .tbl td { border: 1px solid #999; padding: 4px 8px; font-size: 11px; }
+    .tbl th { background-color: #e0f7fa; border: 1px solid #000; padding: 4px; font-size: 10px; color: #000; }
+    .tbl td { border: 1px solid #999; padding: 4px 8px; font-size: 11px; color: #000; }
     .tbl td.lbl { font-weight: bold; width: 45%; }
     .tbl td.val { text-align: right; font-family: monospace; font-weight: bold; width: 20%; }
     .tbl td.uni { color: #555; font-size: 10px; width: 17%; }
     .tbl td.ref { color: #555; font-size: 10px; text-align: center; width: 18%; }
   `;
 
+  // Al invocar renderizarEImprimir, el archivo heredará de inmediato los botones superiores de la base corregida
   renderizarEImprimir(`CNS_Electrolitos_${f.pacienteNombre.replace(/ /g, "_")}`, cuerpo, estilos);
 };

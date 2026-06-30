@@ -1,3 +1,4 @@
+// src/RisWorklist/reports/ReporteEspermato.ts
 import { v, resolverFiliacion, cabeceraHTML, renderizarEImprimir } from "./_reporteBase";
 
 export const imprimirEspermatoCNS = (p: any) => {
@@ -50,14 +51,15 @@ export const imprimirEspermatoCNS = (p: any) => {
   `;
 
   const estilos = `
-    .muestra { display: flex; justify-content: space-around; font-size: 10.5px; border: 1px solid #000; padding: 6px; margin-top: 6px; background-color: #eceff1; }
+    .muestra { display: flex; justify-content: space-around; font-size: 10.5px; border: 1px solid #000; padding: 6px; margin-top: 6px; background-color: #eceff1; color: #000; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; align-items: start; }
-    .col-box { border: 1px solid #000; }
-    .col-title { background-color: #eceff1; font-weight: bold; text-align: center; padding: 5px; border-bottom: 1px solid #000; font-size: 11px; }
-    .row-item { display: grid; grid-template-columns: 1.3fr 1fr 0.6fr; padding: 4px 10px; border-bottom: 1px dotted #999; min-height: 18px; font-size: 11px; align-items: center; }
+    .col-box { border: 1px solid #000; background: #fff; }
+    .col-title { background-color: #eceff1; font-weight: bold; text-align: center; padding: 5px; border-bottom: 1px solid #000; font-size: 11px; color: #000; }
+    .row-item { display: grid; grid-template-columns: 1.3fr 1fr 0.6fr; padding: 4px 10px; border-bottom: 1px dotted #999; min-height: 18px; font-size: 11px; align-items: center; color: #000; }
     .row-item .val { font-family: monospace; font-weight: bold; text-align: right; }
-    .row-item .ref { color: #888; font-size: 9px; text-align: right; }
+    .row-item .ref { color: #555; font-size: 9px; text-align: right; }
     .ref-nota { margin-top: 10px; font-size: 9px; color: #555; font-style: italic; text-align: center; }
+    .obs-box { color: #000; }
   `;
 
   renderizarEImprimir(`CNS_Espermato_${f.pacienteNombre.replace(/ /g, "_")}`, cuerpo, estilos);

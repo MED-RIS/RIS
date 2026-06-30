@@ -1,3 +1,4 @@
+// src/RisWorklist/reports/_reporteBase.ts
 // Helpers compartidos por los reportes de laboratorio CNS.
 // Mantiene un único punto de verdad para filiación, formato y evaluación de rangos.
 
@@ -40,12 +41,19 @@ export interface Filiacion {
 // Resuelve los datos de filiación con la misma cadena que usan los reportes existentes.
 export const resolverFiliacion = (p: any): Filiacion => {
   const d = p.datos || p || {};
+  
+  // 🌟 Limpieza segura de correlativos largos
+  let ordenLimpia = String(p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1");
+  if (ordenLimpia.length > 6) {
+    ordenLimpia = "1";
+  }
+
   return {
     pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
     codBeneficiario: p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-",
     edad: p.edad ?? d.edad ?? p.datos?.edad ?? "-",
     institucion: p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS",
-    numeroOrden: p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1",
+    numeroOrden: ordenLimpia,
     aseguradoReal: p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-",
     medico: p.medico_solicitante ?? d.medico_solicitante ?? "-",
     centro: p.centro_asistencial ?? d.centro_asistencial ?? "-",
@@ -103,10 +111,47 @@ export const cabeceraHTML = (f: Filiacion, subtitulo: string, color: string, col
   </table>
 `;
 
-// Estilos base compartidos (cabecera + filiación + footer). Cada reporte agrega los suyos.
+// Estilos base compartidos con BARRA SUPERIOR ANTI-CONGELAMIENTO integrada
 export const estilosBase = `
-  @page { size: letter; margin: 38px; }
+  @page { size: letter; margin: 40px; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #000; margin: 0; padding: 0; font-size: 11px; line-height: 1.4; }
+  
+  /* Barra de herramientas superior flotante */
+  .no-print-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    background: #111827;
+    padding: 12px;
+    border-bottom: 2px solid #00bfa5;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+  }
+  .btn-report {
+    padding: 8px 16px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-print { background: #00bfa5; color: white; }
+  .btn-print:hover { background: #009688; }
+  .btn-close { background: #ef4444; color: white; }
+  .btn-close:hover { background: #dc2626; }
+
+  /* Papel del reporte */
+  .print-area {
+    padding: 30px;
+    background: #ffffff;
+    max-width: 800px;
+    margin: 0 auto;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+
   .header-container { display: table; width: 100%; border: 2px solid #000; box-sizing: border-box; margin-bottom: 5px; }
   .blue-box { display: table-cell; color: #fff; padding: 14px; text-align: center; font-weight: bold; font-size: 14px; vertical-align: middle; }
   .blue-box .sub { font-size: 15px; margin-top: 5px; letter-spacing: 2px; font-weight: 900; }
@@ -116,8 +161,14 @@ export const estilosBase = `
   .border-dotted { border-bottom: 1px dotted #000; font-weight: bold; font-size: 12px; font-family: monospace; text-align: center; padding-bottom: 1px; }
   .filiacion-label { font-size: 9px; color: #333; display: block; text-align: center; margin-top: 2px; border-top: 1px solid #000; width: 95%; margin-left: auto; margin-right: auto; padding-top: 1px; }
   .main-title { text-align: center; font-size: 15px; font-weight: bold; margin: 16px 0; text-decoration: underline; letter-spacing: 1.2px; }
-  .obs-box { margin-top: 16px; border-top: 1px dashed #000; padding-top: 8px; font-size: 10.5px; line-height: 1.6; }
-  .footer-notes { position: fixed; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 9px; border-top: 1px dashed #000; padding-top: 6px; }
+  .obs-box { margin-top: 16px; border-top: 1px dashed #000; padding-top: 8px; font-size: 10.5px; line-height: 1.6; color: #000; }
+  .footer-notes { margin-top: 35px; border-top: 1px dashed #000; padding-top: 6px; display: flex; justify-content: space-between; font-size: 9px; }
+
+  @media print {
+    .no-print-bar { display: none !important; }
+    body { background: white; }
+    .print-area { padding: 0; margin: 0; max-width: 100%; box-shadow: none; }
+  }
 `;
 
 export const footerHTML = () => `
@@ -128,7 +179,7 @@ export const footerHTML = () => `
   </div>
 `;
 
-// Abre la ventana e imprime (mismo comportamiento que los reportes existentes).
+// 🌟 TOTALMENTE REDISEÑADA PARA INTEGRAR EL FLUJO SEGURO DE COMANDOS DE MANERA MODULAR
 export const renderizarEImprimir = (titulo: string, cuerpo: string, estilosExtra = "") => {
   const html = `
     <html>
@@ -137,15 +188,15 @@ export const renderizarEImprimir = (titulo: string, cuerpo: string, estilosExtra
       <title>${titulo}</title>
       <style>${estilosBase}${estilosExtra}</style>
     </head>
-    <body>
-      ${cuerpo}
-      ${footerHTML()}
-      <script>
-        window.onload = function() {
-          window.print();
-          setTimeout(function(){ window.close(); }, 350);
-        }
-      </script>
+    <body style="margin:0; background:#f3f4f6;">
+      <div class="no-print-bar">
+        <button class="btn-report btn-print" onclick="window.print()">🖨️ Imprimir Reporte Oficial</button>
+        <button class="btn-report btn-close" onclick="window.close()">❌ Cerrar Vista Previa</button>
+      </div>
+      <div class="print-area">
+        ${cuerpo}
+        ${footerHTML()}
+      </div>
     </body>
     </html>
   `;
@@ -156,8 +207,7 @@ export const renderizarEImprimir = (titulo: string, cuerpo: string, estilosExtra
   }
 };
 
-// Evalúa un valor numérico contra un rango textual del laboratorio.
-// Soporta formatos: "70 - 110", "<125", ">55", "hasta 1". Devuelve 'H' | 'L' | '' (normal/no aplica).
+// Evalúa un valor numérico contra un rango de forma segura sin loops
 export const flagRango = (valor: any, rango: string): "H" | "L" | "" => {
   const n = num(valor);
   if (isNaN(n) || !rango) return "";

@@ -19,7 +19,7 @@ export const imprimirHtoHbCNS = (p: any) => {
 
   const estilos = `
     .tbl { width: 80%; margin: 20px auto 0 auto; border-collapse: collapse; }
-    .tbl td { border-bottom: 1px dotted #000; padding: 12px 14px; font-size: 14px; }
+    .tbl td { border-bottom: 1px dotted #000; padding: 12px 14px; font-size: 14px; color: #000; }
     .tbl td.lbl { font-weight: bold; width: 40%; }
     .tbl td.val { text-align: right; font-family: monospace; font-weight: bold; font-size: 16px; width: 20%; }
     .tbl td.uni { color: #555; font-size: 11px; width: 15%; }
