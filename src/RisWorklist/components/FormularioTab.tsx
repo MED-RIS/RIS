@@ -23,6 +23,7 @@ export default function FormularioTab() {
   const [verReportesGlobal, setVerReportesGlobal] = useState(false);
   
   const [pacienteFichaActiva, setPacienteFichaActiva] = useState<any>(null);
+  const [resetKey, setResetKey] = useState(0);
 
   const [historialSimulado, setHistorialSimulado] = useState<any[]>(() => {
     const datosGuardados = localStorage.getItem('ris_historial_cns');
@@ -30,8 +31,12 @@ export default function FormularioTab() {
   });
 
   useEffect(() => {
-    localStorage.setItem('ris_historial_cns', JSON.stringify(historialSimulado));
-  }, [historialSimulado]);
+  if (!verReportesGlobal) {
+    document.body.style.overflow = 'unset';
+  } else {
+    document.body.style.overflow = 'hidden';
+  }
+}, [verReportesGlobal]);
 
 
   const guardarEnRisServer = async (nuevoDocumento: any) => {
@@ -110,6 +115,7 @@ export default function FormularioTab() {
   const reiniciarModulo = () => {
     setPaso(1);
     setPacienteSeleccionado(null);
+    setResetKey(prev => prev + 1); 
   };
 
   // Un valor cuenta como "llenado" si no es vacío ni el default 0.
@@ -135,11 +141,11 @@ export default function FormularioTab() {
               <p className="text-xs text-gray-400 mt-1">Selecciona un paciente a la izquierda para desplegar sus carpetas e informes individuales oficiales.</p>
             </div>
             <button 
-              onClick={() => { setVerReportesGlobal(false); setPacienteFichaActiva(null); }}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold hover:bg-red-600/20 transition-all"
-            >
-              <X className="w-4 h-4" /> Cerrar Módulo
-            </button>
+  onClick={() => { setVerReportesGlobal(false); setPacienteFichaActiva(null); }}
+  className="flex items-center gap-2 px-4 py-2 bg-red-600/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-semibold hover:bg-red-600/20 transition-all"
+>
+  <X className="w-4 h-4" /> Cerrar Módulo
+</button>
           </div>
 
           {/* Grilla Principal Reestructurada */}
@@ -484,9 +490,17 @@ export default function FormularioTab() {
 
       <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[400px]">
         {paso === 1 ? (
-          <RegistrarPaciente onSiguiente={(datos) => { setPacienteSeleccionado(datos); setPaso(2); }} />
+          <RegistrarPaciente 
+            key={resetKey}
+            onSiguiente={(datos) => { setPacienteSeleccionado(datos); setPaso(2); }} 
+          />
         ) : (
-          <RegistrarConsulta pacienteData={pacienteSeleccionado} onVolver={reiniciarModulo} onGuardarLocal={guardarEnRisServer} />
+          <RegistrarConsulta 
+            key={resetKey} 
+            pacienteData={pacienteSeleccionado} 
+            onVolver={reiniciarModulo} 
+            onGuardarLocal={guardarEnRisServer} 
+          />
         )}
       </div>
 
