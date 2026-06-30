@@ -19,22 +19,23 @@ type MedicionExtra = {
 };
 
 // IMPORTS DE LOS COMPONENTES (Alineados con tus nombres de archivos)
-import FormGlucosa from '../RisWorklist/components/FormGlucosa';
-import FormCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
-import FormularioHemograma from '../RisWorklist/components/FormularioHemograma'; 
-import FormQuimica from '../RisWorklist/components/FormQuimica';
-import FormElectrolitos from '../RisWorklist/components/FormElectrolitos';
-import FormOrina24Hrs from '../RisWorklist/components/FormOrina24Hrs';
-import FormSerologia from '../RisWorklist/components/FormSerologia';
-import FormWidal from '../RisWorklist/components/FormWidal';
-import FormMicroalbuminuria from '../RisWorklist/components/FormMicroalbuminuria';
+import FormGlucosa from '../RisWorklist/forms/FormGlucosa';
+import FormCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
+import FormularioHemograma from '../RisWorklist/forms/FormularioHemograma'; 
+import FormQuimica from '../RisWorklist/forms/FormQuimica';
+import FormElectrolitos from '../RisWorklist/forms/FormElectrolitos';
+import FormOrina24Hrs from '../RisWorklist/forms/FormOrina24Hrs';
+import FormSerologia from '../RisWorklist/forms/FormSerologia';
+import FormWidal from '../RisWorklist/forms/FormWidal';
+import FormMicroalbuminuria from '../RisWorklist/forms/FormMicroalbuminuria';
 
 
-import FormEgo from '../RisWorklist/components/FormEgo'; 
+import FormEgo from '../RisWorklist/forms/FormEgo'; 
 
 
-import FormLiquidos from '../RisWorklist/components/FormLiquidos';
-import FormularioCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
+import FormLiquidos from '../RisWorklist/forms/FormLiquidos';
+import FormularioCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
+import FormEspermato from '../RisWorklist/forms/FormEspermato';
 
 export interface RegistrarConsultaProps {
   pacienteData: any;
@@ -76,6 +77,9 @@ const [widalDatos, setWidalDatos] = useState({
   widal_b: '',
   observaciones_widal: ''
 });
+  const [espermatoDatos, setEspermatoDatos] = useState({
+    fecha_obtencion: '', hora_recepcion: '', dias_abstinencia: '', volumen: '', color: '', ph: '', viscosidad: '', aspecto: '', licuefaccion: '', coagulacion: '', olor: '', concentracion: '', concentracion_total: '', recuento_total: '', motilidad_progresiva: '', motilidad_no_progresiva: '', inmoviles: '', vitalidad: '', morfologia_normal: '', leucocitos: '', aglutinacion: '', observaciones: ''
+  });
 
   const simularEscaneoQR = () => {
     setConsulta(prev => ({
@@ -120,6 +124,7 @@ const [widalDatos, setWidalDatos] = useState({
       widalDatos: widalDatos,
       microDatos: microDatos,
       liquidosDatos: liquidosDatos,
+      espermatoDatos: espermatoDatos,
       
       // Mapeamos los datos de hematología directo a la llave 'datos' para tu reporte
       datos: hematoDatos, 
@@ -197,6 +202,7 @@ const [widalDatos, setWidalDatos] = useState({
               <option value="Lab_Liquidos">Análisis de Líquidos Corporales</option>
               <option value="Lab_Glucosa_Curva">Curva de Tolerancia a la Glucosa</option> 
               <option value="Lab_Quimica">Química Sanguínea y Electrolitos</option>
+              <option value="Lab_Espermato">Espermatograma</option>
             </select>
           </div>
 
@@ -256,6 +262,11 @@ const [widalDatos, setWidalDatos] = useState({
   {/* 11. Líquidos Corporales */}
   {tipoLaboratorio === 'Lab_Liquidos' && (
     <FormLiquidos liquidosDatos={liquidosDatos} setLiquidosDatos={setLiquidosDatos} />
+  )}
+
+  {/* 12. Espermatograma */}
+  {tipoLaboratorio === 'Lab_Espermato' && (
+    <FormEspermato espermatoDatos={espermatoDatos} setEspermatoDatos={setEspermatoDatos} />
   )}
 
 </div>

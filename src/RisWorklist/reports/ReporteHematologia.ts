@@ -117,8 +117,8 @@ export const imprimirHematologiaCNS = (p: any) => {
           <div class="row-item"><span>Plaquetas:</span><span class="val-bold">${v(d.plaquetas)} Ul</span></div>
           <div style="margin-top: 10px;" class="row-item"><span>VES 2 HORA:</span><span class="val-bold">${v(d.ves_2_hora)}</span></div>
           <div class="row-item"><span>INDICE DE KATZ:</span><span class="val-bold">${v(d.indice_katz)}</span></div>
-          <div class="row-item"><span>T. de Protrombina:</span><span class="val-bold">${v(d.tiempo_protrombina)}</span></div>
-          <div class="row-item"><span>Actividad:</span><span class="val-bold">${v(d.actividad_protrombina)}</span></div>
+          <div class="row-item"><span>T. de Protrombina:</span><span class="val-bold">${v(d.tiempo_protrombina ?? d.t_protrombina)}</span></div>
+          <div class="row-item"><span>Actividad:</span><span class="val-bold">${v(d.actividad_protrombina ?? d.actividad)}</span></div>
           <div class="row-item"><span>INR:</span><span class="val-bold">${v(d.inr)}</span></div>
         </div>
 

@@ -5,6 +5,16 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
+import { imprimirCoagulogramaCNS } from '../reports/ReporteCoagulograma';
+import { imprimirEgoCNS } from '../reports/ReporteEgo';
+import { imprimirQuimicaCNS } from '../reports/ReporteQuimica';
+import { imprimirElectrolitosProtCNS } from '../reports/ReporteElectrolitos';
+import { imprimirSerologiaCNS } from '../reports/ReporteSerologia';
+import { imprimirToleranciaGlucosaCNS } from '../reports/ReporteToleranciaGlucosa';
+import { imprimirHtoHbCNS } from '../reports/ReporteHtoHb';
+import { imprimirHtoHbLeucoWidalCNS } from '../reports/ReporteHtoHbLeucoWidal';
+import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
+import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
 
 
 export default function FormularioTab() {
@@ -41,38 +51,48 @@ export default function FormularioTab() {
       const indicePaciente = prev.findIndex(item => item.cod === matriculaActual);
       const tipoLab = nuevoDocumento?.tipoLaboratorio || "Lab_Hemato";
 
+      // Número correlativo secuencial (1, 2, 3...) basado en el mayor ya asignado.
+      const maxOrden = prev.reduce((max, item) => Math.max(max, Number(item.orden) || 0), 0);
+
       if (indicePaciente !== -1) {
-   
+
         const historialActualizado = [...prev];
         const datosExistentes = historialActualizado[indicePaciente].datos || {};
-        
+        // El mismo paciente conserva su número; no se reasigna en cada estudio.
+        const ordenPaciente = historialActualizado[indicePaciente].orden ?? (maxOrden + 1);
+
         historialActualizado[indicePaciente] = {
           ...historialActualizado[indicePaciente],
-          edad: edadPaciente,      
-          id_paciente: idPaciente,  
+          edad: edadPaciente,
+          id_paciente: idPaciente,
+          orden: ordenPaciente,
           estudiosRealizados: Array.from(new Set([...(historialActualizado[indicePaciente].estudiosRealizados || []), tipoLab])),
           datos: {
             ...datosExistentes,
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos,
+            orden: ordenPaciente
           }
         };
         listaActualizada = historialActualizado;
         return historialActualizado;
       } else {
-       
+
+        const nuevoOrden = maxOrden + 1;
         const nuevoRegistro = {
           cod: matriculaActual,
+          orden: nuevoOrden,
           paciente: nombreCompleto,
-          edad: edadPaciente,       
-          id_paciente: idPaciente,  
+          edad: edadPaciente,
+          id_paciente: idPaciente,
           servicio: "Laboratorio",
           estado: "Completado",
           fecha: new Date().toLocaleDateString(),
           estudiosRealizados: [tipoLab],
-          datos: { 
+          datos: {
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos,
+            orden: nuevoOrden
           }
         };
         listaActualizada = [...prev, nuevoRegistro];
@@ -91,6 +111,13 @@ export default function FormularioTab() {
     setPaso(1);
     setPacienteSeleccionado(null);
   };
+
+  // Un valor cuenta como "llenado" si no es vacío ni el default 0.
+  const tieneValor = (val: any) =>
+    val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim() !== '0';
+  // Una bolsa de datos está "llenada" si al menos uno de sus campos clave tiene valor real.
+  const algunCampo = (obj: any, campos: string[]) =>
+    !!obj && campos.some((c) => tieneValor(obj[c]));
 
   return (
     <div className="w-full text-white space-y-6 relative">
@@ -178,8 +205,9 @@ export default function FormularioTab() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                       
-                      {/* 🔴 EXAMEN 1: REPORTES DE HEMATOLOGÍA */}
-                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Hemato') || pacienteFichaActiva.datos?.hemoglobina) && (
+                      {/* 🔴 EXAMEN 1: REPORTES DE HEMATOLOGÍA (hemograma completo: clave la serie blanca) */}
+                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Hemato') ||
+                        algunCampo(pacienteFichaActiva.datos, ['globulos_blancos', 'globulos_rojos', 'plaquetas', 'seg', 'linf', 'mon'])) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-red-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
@@ -198,20 +226,16 @@ export default function FormularioTab() {
                           </button>
                         </div>
                       )}
-                      {/* 🔵 EXAMEN 2: REPORTES DE QUÍMICA SANGUÍNEA / GRUPO SANGUÍNEO */}
-{(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Quimica') || 
-  pacienteFichaActiva.estudiosRealizados?.includes('Lab_Hemato') || 
-  pacienteFichaActiva.estudiosRealizados?.includes('Lab_Coagulo') || 
-  pacienteFichaActiva.datos?.gli || 
-  pacienteFichaActiva.datos?.grupo_sanguineo) && (
+                      {/* 🔵 EXAMEN 2: GRUPO SANGUÍNEO (derivado de Hematología) */}
+{tieneValor(pacienteFichaActiva.datos?.grupo_sanguineo) && (
   <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-blue-500/40 transition-all">
     <div>
       <div className="flex justify-between items-start">
-        <span className="text-[10px] bg-blue-600/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold">QUÍMICA SANGUÍNEA</span>
+        <span className="text-[10px] bg-blue-600/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-bold">GRUPO SANGUÍNEO</span>
         <Layers className="w-4 h-4 text-blue-500" />
       </div>
-      <h5 className="font-bold text-sm text-white mt-3">Examen de Químicas y Análisis</h5>
-      <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
+      <h5 className="font-bold text-sm text-white mt-3">Grupo Sanguíneo y Factor Rh</h5>
+      <p className="text-[11px] text-gray-400 mt-1">Derivado del Hemograma. Formato Oficial CNS con correlativo.</p>
     </div>
     <button 
       onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
@@ -222,8 +246,9 @@ export default function FormularioTab() {
   </div>
 )}
 
-                      {/* 🟢 EXAMEN 2: REPORTES DE ORINA (EGO) */}
-                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_EGO') || pacienteFichaActiva.datos?.volumen) && (
+                      {/* 🟢 EXAMEN 3: REPORTE DE ORINA (EGO) */}
+                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_EGO') ||
+                        algunCampo(pacienteFichaActiva.datos?.egoDatos, ['volumen', 'color', 'ph', 'densidad', 'aspecto', 'leucocitos', 'sedimento'])) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-teal-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
@@ -233,9 +258,194 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Examen General de Orina</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Físico-Químico y Sedimento Analítico.</p>
                           </div>
-                          <button 
-                            onClick={() => alert("Generando Formato Oficial EGO Modular...")}
+                          <button
+                            onClick={() => imprimirEgoCNS(pacienteFichaActiva)}
                             className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs transition-colors"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟣 EXAMEN 4: REPORTE DE COAGULOGRAMA / TIEMPO DE PROTROMBINA */}
+                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Coagulo') ||
+                        algunCampo(pacienteFichaActiva.datos, ['t_protrombina', 'actividad', 't_coagulacion_min', 't_coagulacion_seg', 't_sangria_min', 't_sangria_seg'])) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-purple-600/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded font-bold">COAGULOGRAMA</span>
+                              <Layers className="w-4 h-4 text-purple-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Tiempo de Protrombina y Hemostasia</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">TP, Actividad, INR y Tiempos de Coagulación/Sangría.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirCoagulogramaCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-purple-900/10"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🔵 EXAMEN 5: QUÍMICA SANGUÍNEA */}
+                      {algunCampo(pacienteFichaActiva.datos?.quimicaDatos, ['gli', 'crea', 'urea', 'nus', 'acido_urico', 'col', 'tri', 'got', 'gpt', 'prot', 'alb']) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-sky-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-sky-600/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded font-bold">QUÍMICA SANGUÍNEA</span>
+                              <Layers className="w-4 h-4 text-sky-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Perfil Bioquímico Completo</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Glucosa, renal, hepático, lípidos y proteínas con rangos.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirQuimicaCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟦 EXAMEN 6: ELECTROLITOS / PROTEÍNAS / MICROALBUMINURIA */}
+                      {(algunCampo(pacienteFichaActiva.datos?.quimicaDatos, ['sodio_meql', 'potasio_meql', 'cloro_meql']) ||
+                        algunCampo(pacienteFichaActiva.datos?.microDatos, ['micro_albumina', 'micro_creatinina', 'relacion_ac']) ||
+                        algunCampo(pacienteFichaActiva.datos?.egoDatos, ['volumen_24h', 'prot_24h', 'crea_orina_24h'])) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-cyan-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-cyan-600/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded font-bold">ELECTROLITOS / PROT</span>
+                              <Layers className="w-4 h-4 text-cyan-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Electrolitos, Prot. en Orina y Microalbuminuria</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Na/K/Cl, Orina 24h e índice Albúmina/Creatinina.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirElectrolitosProtCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟪 EXAMEN 7: SEROLOGÍA */}
+                      {algunCampo(pacienteFichaActiva.datos?.serologiaDatos, ['pcr', 'fr', 'asto', 'hiv', 'test_embarazo', 'rpr', 'psa_prueba_rapida', 'h_pylori_suero', 'hepatitis_b']) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-fuchsia-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-fuchsia-600/10 text-fuchsia-400 border border-fuchsia-500/20 px-2 py-0.5 rounded font-bold">SEROLOGÍA</span>
+                              <Layers className="w-4 h-4 text-fuchsia-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Pruebas Inmunológicas</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">PCR, FR, ASTO, VIH, RPR, H. Pylori, Hepatitis B.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirSerologiaCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟩 EXAMEN 8: TOLERANCIA A LA GLUCOSA */}
+                      {algunCampo(pacienteFichaActiva.datos?.glucosaFija, ['basal', 'resultado_glucosa1', 'resultado_glucosa2']) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-green-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-green-600/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded font-bold">TOLERANCIA GLUCOSA</span>
+                              <Layers className="w-4 h-4 text-green-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Curva de Tolerancia a la Glucosa</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Basal, 60' y 120' post-carga con criterios OMS.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirToleranciaGlucosaCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟥 EXAMEN 9: HTO-HB AISLADO (deriva de Hematología, sin fórmula diferencial) */}
+                      {((tieneValor(pacienteFichaActiva.datos?.hto) || tieneValor(pacienteFichaActiva.datos?.hb)) &&
+                        !algunCampo(pacienteFichaActiva.datos, ['globulos_blancos', 'seg', 'linf', 'mon', 'eosi'])) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-rose-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-rose-600/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded font-bold">HTO - HB</span>
+                              <Layers className="w-4 h-4 text-rose-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Hematocrito y Hemoglobina</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Estudio aislado derivado de Hematología.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirHtoHbCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🩷 EXAMEN 10: HTO-HB-LEUCO + WIDAL (deriva de Hematología + Widal) */}
+                      {algunCampo(pacienteFichaActiva.datos?.widalDatos, ['widal_o', 'widal_h', 'widal_a', 'widal_b']) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-pink-500/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-pink-600/10 text-pink-400 border border-pink-500/20 px-2 py-0.5 rounded font-bold">HTO-HB-LEUCO + WIDAL</span>
+                              <Layers className="w-4 h-4 text-pink-500" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Hematología + Reacción de Widal</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Hto, Hb, leucocitos, diferencial y títulos Widal.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirHtoHbLeucoWidalCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 🟫 EXAMEN 11: ANÁLISIS DE LÍQUIDOS BIOLÓGICOS */}
+                      {algunCampo(pacienteFichaActiva.datos?.liquidosDatos, ['tipo_liquido', 'volumen', 'color', 'quimico_glucosa', 'micro_leucocitos']) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-amber-700/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-amber-700/10 text-amber-500 border border-amber-700/20 px-2 py-0.5 rounded font-bold">LÍQUIDOS</span>
+                              <Layers className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Análisis de Líquidos Biológicos</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Físico, químico, citológico y sedimento.</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirLiquidosCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ⬜ EXAMEN 12: ESPERMATOGRAMA */}
+                      {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Espermato') ||
+                        algunCampo(pacienteFichaActiva.datos?.espermatoDatos, ['volumen', 'concentracion', 'motilidad_progresiva', 'color', 'ph', 'morfologia_normal'])) && (
+                        <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-slate-400/40 transition-all">
+                          <div>
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] bg-slate-500/10 text-slate-300 border border-slate-400/20 px-2 py-0.5 rounded font-bold">ESPERMATOGRAMA</span>
+                              <Layers className="w-4 h-4 text-slate-400" />
+                            </div>
+                            <h5 className="font-bold text-sm text-white mt-3">Espermatograma Completo</h5>
+                            <p className="text-[11px] text-gray-400 mt-1">Examen macroscópico y microscópico (OMS).</p>
+                          </div>
+                          <button
+                            onClick={() => imprimirEspermatoCNS(pacienteFichaActiva)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                           >
                             <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
                           </button>
