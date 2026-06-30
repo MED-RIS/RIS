@@ -35,10 +35,7 @@ import FormEgo from '../RisWorklist/forms/FormEgo';
 
 import FormLiquidos from '../RisWorklist/forms/FormLiquidos';
 import FormularioCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
-<<<<<<< HEAD
 import FormEspermato from '../RisWorklist/forms/FormEspermato';
-=======
->>>>>>> a48a8b6d573f04ce541c7f5331e7be25f33d6e0c
 
 export interface RegistrarConsultaProps {
   pacienteData: any;
