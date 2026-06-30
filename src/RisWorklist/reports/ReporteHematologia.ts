@@ -35,6 +35,35 @@ export const imprimirHematologiaCNS = (p: any) => {
       <title>CNS_Hematologia_${(p.paciente || p.nombre || 'Paciente').replace(/ /g, "_")}</title>
       <style>
         body { font-family: Arial, sans-serif; color: #000; margin: 0; padding: 20px; font-size: 11px; }
+        
+        /* 🎛️ BOTÓN INTERACTIVO SÓLO PARA PANTALLA (No bloquea la vista previa) */
+        .no-print-btn {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background-color: #dc2626;
+          color: white;
+          border: 2px solid #ffffff;
+          padding: 10px 20px;
+          font-size: 12px;
+          font-weight: bold;
+          border-radius: 8px;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          font-family: Arial, sans-serif;
+          z-index: 9999;
+          transition: all 0.2s ease;
+        }
+        .no-print-btn:hover { 
+          background-color: #b91c1c; 
+          transform: scale(1.05);
+        }
+
+        /* 🖨️ REGLA MÁGICA: Oculta el botón por completo en la impresión física o PDF final */
+        @media print {
+          .no-print-btn { display: none !important; }
+        }
+
         .red-header { background-color: #ff0000; color: #000; padding: 14px; font-weight: bold; font-size: 16px; text-align: center; border: 1px solid #000; }
         .filiacion-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
         .filiacion-table td { padding: 4px; border-bottom: 1px dotted #000; vertical-align: bottom; }
@@ -50,6 +79,10 @@ export const imprimirHematologiaCNS = (p: any) => {
       </style>
     </head>
     <body>
+
+      <!-- 🖨️ Botón manual: Te permite inspeccionar visualmente todo el reporte primero -->
+      <button class="no-print-btn" onclick="window.print()">🖨️ IMPRIMIR / REPORTE PDF</button>
+
       <!-- 🏢 TITULO TOTALMENTE DINÁMICO SEGÚN TU INPUT -->
       <div class="red-header">
         ${v(institucion).toUpperCase()}<br>HEMATOLOGÍA
@@ -135,16 +168,9 @@ export const imprimirHematologiaCNS = (p: any) => {
         <span>Fecha de Reporte: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString().slice(0,5)}</span>
       </div>
 
-      <script>
-        window.onload = function() { 
-          window.print(); 
-          setTimeout(function(){ window.close(); }, 300); 
-        }
-      </script>
     </body>
     </html>
   `;
-
   const win = window.open('', '_blank');
   if (win) {
     win.document.write(htmlContent);

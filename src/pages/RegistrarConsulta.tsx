@@ -19,22 +19,22 @@ type MedicionExtra = {
 };
 
 // IMPORTS DE LOS COMPONENTES (Alineados con tus nombres de archivos)
-import FormGlucosa from '../RisWorklist/components/FormGlucosa';
-import FormCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
-import FormularioHemograma from '../RisWorklist/components/FormularioHemograma'; 
-import FormQuimica from '../RisWorklist/components/FormQuimica';
-import FormElectrolitos from '../RisWorklist/components/FormElectrolitos';
-import FormOrina24Hrs from '../RisWorklist/components/FormOrina24Hrs';
-import FormSerologia from '../RisWorklist/components/FormSerologia';
-import FormWidal from '../RisWorklist/components/FormWidal';
-import FormMicroalbuminuria from '../RisWorklist/components/FormMicroalbuminuria';
+import FormGlucosa from '../RisWorklist/forms/FormGlucosa';
+import FormCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
+import FormularioHemograma from '../RisWorklist/forms/FormularioHemograma'; 
+import FormQuimica from '../RisWorklist/forms/FormQuimica';
+import FormElectrolitos from '../RisWorklist/forms/FormElectrolitos';
+import FormOrina24Hrs from '../RisWorklist/forms/FormOrina24Hrs';
+import FormSerologia from '../RisWorklist/forms/FormSerologia';
+import FormWidal from '../RisWorklist/forms/FormWidal';
+import FormMicroalbuminuria from '../RisWorklist/forms/FormMicroalbuminuria';
 
 
-import FormEgo from '../RisWorklist/components/FormEgo'; 
+import FormEgo from '../RisWorklist/forms/FormEgo'; 
 
 
-import FormLiquidos from '../RisWorklist/components/FormLiquidos';
-import FormularioCoagulograma from '../RisWorklist/components/FormularioCoagulograma';
+import FormLiquidos from '../RisWorklist/forms/FormLiquidos';
+import FormularioCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
 
 export interface RegistrarConsultaProps {
   pacienteData: any;

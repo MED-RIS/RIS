@@ -5,7 +5,8 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
-
+import { imprimirCoagulogramaCNS } from '../reports/ReporteCoagulacion';
+import { imprimirQuimicaSanguineaCNS } from '../reports/ReporteQuimica';
 
 export default function FormularioTab() {
   const [paso, setPaso] = useState(1);
@@ -41,38 +42,54 @@ export default function FormularioTab() {
       const indicePaciente = prev.findIndex(item => item.cod === matriculaActual);
       const tipoLab = nuevoDocumento?.tipoLaboratorio || "Lab_Hemato";
 
+      // 🌟 CALCULAMOS EL CORRELATIVO LIMPIO SEGÚN LA POSICIÓN REAL
+      // Si el paciente ya existe, mantiene su número. Si es nuevo, toma el tamaño de la lista + 1.
+      const numeroSecuencial = indicePaciente !== -1 
+        ? String(prev[indicePaciente].orden || 1) 
+        : String(prev.length + 1);
+
       if (indicePaciente !== -1) {
-   
+        // 🔄 SI EL PACIENTE YA EXISTE
         const historialActualizado = [...prev];
         const datosExistentes = historialActualizado[indicePaciente].datos || {};
         
         historialActualizado[indicePaciente] = {
           ...historialActualizado[indicePaciente],
-          edad: edadPaciente,      
-          id_paciente: idPaciente,  
+          edad: edadPaciente,
+          id_paciente: idPaciente,
+          orden: numeroSecuencial,
+          numero_orden: numeroSecuencial,
           estudiosRealizados: Array.from(new Set([...(historialActualizado[indicePaciente].estudiosRealizados || []), tipoLab])),
           datos: {
             ...datosExistentes,
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos,
+            orden: numeroSecuencial,
+            numero_orden: numeroSecuencial,
+            id_consulta: numeroSecuencial // 🌟 Pisamos el Date.now() con el número limpio
           }
         };
         listaActualizada = historialActualizado;
         return historialActualizado;
       } else {
-       
+        // 🆕 SI ES UN PACIENTE NUEVO
         const nuevoRegistro = {
           cod: matriculaActual,
           paciente: nombreCompleto,
-          edad: edadPaciente,       
-          id_paciente: idPaciente,  
+          edad: edadPaciente,
+          id_paciente: idPaciente,
+          orden: numeroSecuencial,             // 🌟 María Elena será "1"
+          numero_orden: numeroSecuencial,
           servicio: "Laboratorio",
           estado: "Completado",
           fecha: new Date().toLocaleDateString(),
           estudiosRealizados: [tipoLab],
           datos: { 
             ...nuevoDocumento,
-            ...datosFormularioSueltos
+            ...datosFormularioSueltos,
+            orden: numeroSecuencial,
+            numero_orden: numeroSecuencial,
+            id_consulta: numeroSecuencial     // 🌟 Pisamos el Date.now() con el número limpio
           }
         };
         listaActualizada = [...prev, nuevoRegistro];
@@ -214,14 +231,33 @@ export default function FormularioTab() {
       <p className="text-[11px] text-gray-400 mt-1">Formato Oficial de la CNS con Identificador Correlativo.</p>
     </div>
     <button 
-      onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
+      onClick={() => imprimirQuimicaSanguineaCNS(pacienteFichaActiva)}
       className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
     >
       <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
     </button>
   </div>
 )}
-
+{/* 🟠 EXAMEN 3: REPORTES DE COAGULOGRAMA (TP) */}
+{(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Coagulo') || 
+  pacienteFichaActiva.datos?.tiempo_protrombina) && (
+  <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-orange-500/40 transition-all">
+    <div>
+      <div className="flex justify-between items-start">
+        <span className="text-[10px] bg-orange-600/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded font-bold">COAGULOGRAMA</span>
+        <Layers className="w-4 h-4 text-orange-500" />
+      </div>
+      <h5 className="font-bold text-sm text-white mt-3">Tiempos de Coagulación y TP</h5>
+      <p className="text-[11px] text-gray-400 mt-1">Reporte de Protrombina, Actividad, INR y Sangría.</p>
+    </div>
+    <button 
+      onClick={() => imprimirCoagulogramaCNS(pacienteFichaActiva)}
+      className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-orange-900/10"
+    >
+      <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
+    </button>
+  </div>
+)}
                       {/* 🟢 EXAMEN 2: REPORTES DE ORINA (EGO) */}
                       {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_EGO') || pacienteFichaActiva.datos?.volumen) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-teal-500/40 transition-all">
