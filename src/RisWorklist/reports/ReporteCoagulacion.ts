@@ -65,9 +65,8 @@ export const imprimirCoagulogramaCNS = (p: any) => {
           transform: scale(1.03);
         }
 
-        @media print {
-          .no-print-btn { display: none !important; }
-        }
+          <!-- 🖨️ Botón manual: Te permite inspeccionar visualmente todo el reporte primero -->
+      <button class="no-print-btn" onclick="window.print()">🖨️ IMPRIMIR / REPORTE PDF</button>
 
         /* 🔵 CABECERA INSTITUCIONAL CNS */
         .header-container { display: table; width: 100%; border: 2px solid #000; box-sizing: border-box; margin-bottom: 5px; }

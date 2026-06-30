@@ -87,10 +87,8 @@ export const imprimirGrupoSanguineoUnicoCNS = (p: any) => {
           transform: scale(1.05);
         }
 
-        /* 🖨️ REGLA MÁGICA: Oculta el botón por completo en la impresión física o PDF final */
-        @media print {
-          .no-print-btn { display: none !important; }
-        }
+          <!-- 🖨️ Botón manual: Te permite inspeccionar visualmente todo el reporte primero -->
+      <button class="no-print-btn" onclick="window.print()">🖨️ IMPRIMIR / REPORTE PDF</button>
 
         /* 🔵 CABECERA INSTITUCIONAL (Formato exacto image_dc1179.png) */
         .header-container { display: table; width: 100%; border: 2px solid #000; box-sizing: border-box; margin-bottom: 5px; }
