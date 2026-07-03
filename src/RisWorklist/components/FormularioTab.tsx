@@ -4,7 +4,7 @@ import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
 
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
-import { imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
+import { imprimirHematologiaCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
 import { imprimirCoagulogramaCNS } from '../reports/ReporteCoagulograma';
 import { imprimirEgoCNS } from '../reports/ReporteEgo';
 import { imprimirQuimicaCNS } from '../reports/ReporteQuimica';
