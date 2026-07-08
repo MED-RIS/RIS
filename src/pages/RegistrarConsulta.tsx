@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { obtenerParentesco } from '../utils/helpers';
 type Consulta = {
   id_consulta?: number;
   id_paciente?: number;
@@ -18,7 +18,6 @@ type MedicionExtra = {
   [key: string]: any;
 };
 
-// IMPORTS DE LOS COMPONENTES (Alineados con tus nombres de archivos)
 import FormGlucosa from '../RisWorklist/forms/FormGlucosa';
 import FormCoagulograma from '../RisWorklist/forms/FormularioCoagulograma';
 import FormularioHemograma from '../RisWorklist/forms/FormularioHemograma'; 
@@ -59,7 +58,6 @@ export default function RegistrarConsulta({ pacienteData, onVolver, onGuardarLoc
     edad: pacienteData?.edad || '',
   });
 
-  // Iniciamos por defecto con el módulo de Hemograma
   const [tipoLaboratorio, setTipoLaboratorio] = useState<string>('Lab_Hemato');
 
   const [glucosaFija, setGlucosaFija] = useState({ basal: '', hora_basal: '', resultado_glucosa1: '', hora_1h: '', resultado_glucosa2: '', hora_2h: '', observaciones_glucosa: '' }); 
@@ -106,8 +104,8 @@ const [widalDatos, setWidalDatos] = useState({
       // 1️⃣ Filiación e Identificadores Base
       paciente: `${pacienteData?.nombres || 'De Prueba'} ${pacienteData?.paterno || ''}`.trim(),
       fecha: consulta.fecha_solicitud,
-      codigoAsegurado: pacienteData?.cod || 'S/M', // Mapea tu Matrícula/Código de asegurado
-      orden: consulta.id_consulta || 1,             // Mapea tu identificador numérico correlativo
+      codigoAsegurado: pacienteData?.cod || 'S/M', 
+      orden: consulta.id_consulta || 1,             
 
       // 2️⃣ Datos Generales de la Orden (Capturados de los inputs)
       medico_solicitante: consulta.medico_solicitante || '',

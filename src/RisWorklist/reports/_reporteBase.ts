@@ -1,6 +1,3 @@
-// src/RisWorklist/reports/_reporteBase.ts
-// Helpers compartidos por los reportes de laboratorio CNS.
-// Mantiene un único punto de verdad para filiación, formato y evaluación de rangos.
 
 export const v = (val: any) => {
   if (val === undefined || val === null || val === "") return "-";

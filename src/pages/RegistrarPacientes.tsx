@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, FlaskConical, ClipboardList, Sparkles } from 'lucide-react';
-// 📦 Importamos los 10 pacientes que creamos en el Paso 1
+import { obtenerParentesco } from '../utils/helpers';
 import { listaPacientesPrueba } from '../RisWorklist/components/pacientesMock'; 
 interface RegistrarPacienteProps {
   onSiguiente: (datos: any) => void;
@@ -80,9 +80,9 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
             <label className="block text-gray-400 mb-1">CI / MATRÍCULA:</label>
             <input type="text" name="cod" value={paciente.cod} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
-          <div>
-            <label className="block text-gray-400 mb-1">CÓDIGO ASEGURADO:</label>
-            <input type="text" name="cod_asegurado" value={paciente.cod_asegurado} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 font-medium">CODIGO BENEFICIARIO</span>
+            <span className="text-sm text-white font-bold">{paciente.cod_asegurado || 'No disponible'}</span>
           </div>
           <div>
             <label className="block text-gray-400 mb-1">APELLIDO PATERNO:</label>
