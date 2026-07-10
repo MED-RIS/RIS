@@ -7,6 +7,5 @@ export const obtenerCodigoBeneficiarioTexto = (codigoIdentificador: number | str
   if (!cod || cod === "undefined" || cod === "null") {
     return "No especificado";
   }
-
-  return `Cod: ${cod}`;
+  return ` ${cod}`;
 };

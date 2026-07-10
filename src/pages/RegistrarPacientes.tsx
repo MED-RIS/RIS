@@ -35,12 +35,18 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
   };
 
   const procesarContinuar = () => {
-    if (!paciente.nombres || !paciente.cod || !paciente.cod_asegurado) {
-      alert("Por favor rellene los campos de filiación del paciente.");
-      return;
-    }
-    onSiguiente({ ...paciente, servicioSeleccionado: servicio });
-  };
+  if (!paciente.nombres || !paciente.cod) {
+    alert("Por favor rellene los campos de filiación del paciente.");
+    return;
+  }
+
+  onSiguiente({ 
+    ...paciente, 
+    id_paciente: paciente.codigoBeneficiario, 
+    codBeneficiario: paciente.codigoBeneficiario, 
+    servicioSeleccionado: servicio 
+  });
+};
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-[#070f0d] p-6 rounded-xl border border-[#172c26] text-white">

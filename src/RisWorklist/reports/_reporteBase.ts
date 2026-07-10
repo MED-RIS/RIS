@@ -44,7 +44,7 @@ export const resolverFiliacion = (p: any): Filiacion => {
 
   return {
    pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
-  codBeneficiario: obtenerCodigoBeneficiarioTexto(p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-"),
+ codBeneficiario: obtenerCodigoBeneficiarioTexto(p.codigoBeneficiario ?? d.codigoBeneficiario ?? p.codBeneficiario ?? d.codBeneficiario ?? p.id_paciente ?? "-"),
   edad: p.edad ?? d.edad ?? p.datos?.edad ?? "-",
     institucion: p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS",
     numeroOrden: ordenLimpia,
