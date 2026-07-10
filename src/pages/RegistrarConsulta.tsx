@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { obtenerParentesco } from '../utils/helpers';
+import { obtenerCodigoBeneficiarioTexto } from '../utils/helpers';
+
 type Consulta = {
   id_consulta?: number;
   id_paciente?: number;

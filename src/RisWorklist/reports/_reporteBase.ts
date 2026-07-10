@@ -1,16 +1,15 @@
+import { obtenerCodigoBeneficiarioTexto } from "../../utils/helpers";
 
 export const v = (val: any) => {
   if (val === undefined || val === null || val === "") return "-";
   return String(val);
 };
 
-// Normaliza coma decimal y parsea. Devuelve NaN si no es numérico.
 export const num = (val: any): number => {
   if (val === undefined || val === null || val === "") return NaN;
   return parseFloat(String(val).replace(",", "."));
 };
 
-// Formatea fecha: acepta string ISO, Date o serial Excel.
 export const vFecha = (val: any) => {
   if (val === undefined || val === null || val === "") return "-";
   if (typeof val === "number" || /^\d{5}$/.test(String(val))) {
@@ -35,20 +34,18 @@ export interface Filiacion {
   fechaSolicitud: string;
 }
 
-// Resuelve los datos de filiación con la misma cadena que usan los reportes existentes.
 export const resolverFiliacion = (p: any): Filiacion => {
   const d = p.datos || p || {};
-  
-  // 🌟 Limpieza segura de correlativos largos
+
   let ordenLimpia = String(p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1");
   if (ordenLimpia.length > 6) {
     ordenLimpia = "1";
   }
 
   return {
-    pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
-    codBeneficiario: p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-",
-    edad: p.edad ?? d.edad ?? p.datos?.edad ?? "-",
+   pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
+  codBeneficiario: obtenerCodigoBeneficiarioTexto(p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-"),
+  edad: p.edad ?? d.edad ?? p.datos?.edad ?? "-",
     institucion: p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS",
     numeroOrden: ordenLimpia,
     aseguradoReal: p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-",
@@ -60,7 +57,6 @@ export const resolverFiliacion = (p: any): Filiacion => {
   };
 };
 
-// Cabecera institucional + bloque de filiación (HTML). color = acento del header.
 export const cabeceraHTML = (f: Filiacion, subtitulo: string, color: string, colorClaro: string) => `
   <div class="header-container">
     <div class="blue-box" style="background-color: ${color};">
@@ -108,7 +104,6 @@ export const cabeceraHTML = (f: Filiacion, subtitulo: string, color: string, col
   </table>
 `;
 
-// Estilos base compartidos con BARRA SUPERIOR ANTI-CONGELAMIENTO integrada
 export const estilosBase = `
   @page { size: letter; margin: 40px; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #000; margin: 0; padding: 0; font-size: 11px; line-height: 1.4; }
@@ -176,7 +171,6 @@ export const footerHTML = () => `
   </div>
 `;
 
-// 🌟 TOTALMENTE REDISEÑADA PARA INTEGRAR EL FLUJO SEGURO DE COMANDOS DE MANERA MODULAR
 export const renderizarEImprimir = (titulo: string, cuerpo: string, estilosExtra = "") => {
   const html = `
     <html>

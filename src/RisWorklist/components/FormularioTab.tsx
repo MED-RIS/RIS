@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileDown, Eye, X, Clipboard, User, Calendar, FolderOpen, Layers } from 'lucide-react';
 import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
-
+import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirHematologiaCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
 import { imprimirCoagulogramaCNS } from '../reports/ReporteCoagulograma';

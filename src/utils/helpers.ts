@@ -1,6 +1,6 @@
-export const obtenerParentesco = (codigoIdentificador: number | string, nombreParentesco?: string): string => {
-  if (nombreParentesco && nombreParentesco.trim() !== "") {
-    return nombreParentesco;
+export const obtenerCodigoBeneficiarioTexto = (codigoIdentificador: number | string, nombreTexto?: string): string => {
+  if (nombreTexto && nombreTexto.trim() !== "") {
+    return nombreTexto;
   }
 
   const cod = String(codigoIdentificador).trim();
@@ -8,5 +8,5 @@ export const obtenerParentesco = (codigoIdentificador: number | string, nombrePa
     return "No especificado";
   }
 
-  return `Beneficiario (Cod: ${cod})`;
+  return `Cod: ${cod}`;
 };

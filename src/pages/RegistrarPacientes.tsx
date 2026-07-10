@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, FlaskConical, ClipboardList, Sparkles } from 'lucide-react';
-import { obtenerParentesco } from '../utils/helpers';
+import { obtenerCodigoBeneficiarioTexto } from '../utils/helpers';
 import { listaPacientesPrueba } from '../RisWorklist/components/pacientesMock'; 
 interface RegistrarPacienteProps {
   onSiguiente: (datos: any) => void;
@@ -8,7 +8,7 @@ interface RegistrarPacienteProps {
 
 export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProps) {
   const [paciente, setPaciente] = useState({
-    cod: '', paterno: '', materno: '', nombres: '', edad: '', genero: 'Femenino', cod_asegurado: ''
+    cod: '', paterno: '', materno: '', nombres: '', edad: '', genero: 'Femenino', cod_asegurado: '', codigoBeneficiario: ''
   });
   const [servicio, setServicio] = useState<'laboratorio' | 'imagenologia'>('laboratorio');
   const [indiceExcel, setIndiceExcel] = useState(0);
@@ -23,7 +23,9 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
       nombres: p.nombres,
       edad: String(p.edad),
       genero: p.genero,
-      cod_asegurado: (p as any).cod_asegurado ?? ''
+      cod_asegurado: (p as any).cod_asegurado ?? '',
+      codigoBeneficiario: (p as any).codigoBeneficiario ?? ''
+     
     });
     setIndiceExcel((prev) => (prev + 1) % listaPacientesPrueba.length);
   };
@@ -80,10 +82,20 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
             <label className="block text-gray-400 mb-1">CI / MATRÍCULA:</label>
             <input type="text" name="cod" value={paciente.cod} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium">CODIGO BENEFICIARIO</span>
-            <span className="text-sm text-white font-bold">{paciente.cod_asegurado || 'No disponible'}</span>
-          </div>
+          <div>
+  <label className="block text-gray-400 mb-1">CÓDIGO BENEFICIARIO:</label>
+  <input 
+    type="text" 
+    name="codigoBeneficiario" 
+    value={paciente.codigoBeneficiario} 
+    onChange={handleInputChange} 
+    placeholder="Ej. 0, 50, 51..."
+    className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white focus:outline-none focus:border-[#00bfa5]" 
+  />
+  <span className="text-[11px] text-[#00bfa5] font-semibold mt-1 block">
+    Interpretación: {obtenerCodigoBeneficiarioTexto(paciente.codigoBeneficiario)}
+  </span>
+</div>
           <div>
             <label className="block text-gray-400 mb-1">APELLIDO PATERNO:</label>
             <input type="text" name="paterno" value={paciente.paterno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
