@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FileDown, Eye, X, Clipboard, User, Calendar, FolderOpen, Layers } from 'lucide-react';
+import { FileDown, Eye, X, Clipboard, User, Calendar, FolderOpen, Layers, Pencil } from 'lucide-react';
 import RegistrarPaciente from '../../pages/RegistrarPacientes';
 import RegistrarConsulta from '../../pages/RegistrarConsulta';
+import EditarReporteModal from './EditarReporteModal';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirHematologiaCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
@@ -24,6 +25,9 @@ export default function FormularioTab() {
   
   const [pacienteFichaActiva, setPacienteFichaActiva] = useState<any>(null);
   const [resetKey, setResetKey] = useState(0);
+
+  // Reporte que se está editando: { id, paciente }. null = modal cerrado.
+  const [reporteEnEdicion, setReporteEnEdicion] = useState<{ id: string; paciente: any } | null>(null);
 
   const [historialSimulado, setHistorialSimulado] = useState<any[]>(() => {
     const datosGuardados = localStorage.getItem('ris_historial_cns');
@@ -125,6 +129,32 @@ export default function FormularioTab() {
   const algunCampo = (obj: any, campos: string[]) =>
     !!obj && campos.some((c) => tieneValor(obj[c]));
 
+  // Botón "Editar" uniforme para las cards de reporte.
+  const botonEditar = (idReporte: string) => (
+    <button
+      type="button"
+      onClick={() => setReporteEnEdicion({ id: idReporte, paciente: pacienteFichaActiva })}
+      className="flex items-center justify-center gap-1 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 rounded-lg text-xs font-bold transition-colors"
+      title="Editar reporte"
+    >
+      <Pencil className="w-3.5 h-3.5" /> Editar
+    </button>
+  );
+
+  // Persiste la edición: reemplaza `datos` del paciente por `cod`, guarda en
+  // localStorage y refresca la ficha activa para que las cards se re-evalúen.
+  const guardarEdicion = (nuevoDatos: any) => {
+    if (!reporteEnEdicion) return;
+    const cod = reporteEnEdicion.paciente.cod;
+    const actualizado = historialSimulado.map((item) =>
+      item.cod === cod ? { ...item, datos: nuevoDatos } : item
+    );
+    setHistorialSimulado(actualizado);
+    localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+    setPacienteFichaActiva(actualizado.find((i) => i.cod === cod) || null);
+    setReporteEnEdicion(null);
+  };
+
   return (
     <div className="w-full text-white space-y-6 relative">
       
@@ -223,13 +253,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Hemograma Completo Oficial</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Formato Estructurado del Policlínico CNS El Alto.</p>
                           </div>
-                          <button 
-                            // Llamamos limpiamente a la función importada modularmente
-                            onClick={() => imprimirHematologiaCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-red-900/10"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('hematologia')}
+                            <button
+                              onClick={() => imprimirHematologiaCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-red-900/10"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
                       {/* 🔵 EXAMEN 2: GRUPO SANGUÍNEO (derivado de Hematología) */}
@@ -243,12 +275,15 @@ export default function FormularioTab() {
       <h5 className="font-bold text-sm text-white mt-3">Grupo Sanguíneo y Factor Rh</h5>
       <p className="text-[11px] text-gray-400 mt-1">Derivado del Hemograma. Formato Oficial CNS con correlativo.</p>
     </div>
-    <button 
-      onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
-      className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
-    >
-      <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-    </button>
+    <div className="mt-4 flex gap-2">
+      {botonEditar('grupo_sanguineo')}
+      <button
+        onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
+        className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
+      >
+        <FileDown className="w-3.5 h-3.5" /> Descargar
+      </button>
+    </div>
   </div>
 )}
 
@@ -264,12 +299,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Examen General de Orina</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Físico-Químico y Sedimento Analítico.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirEgoCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs transition-colors"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('ego')}
+                            <button
+                              onClick={() => imprimirEgoCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs transition-colors"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -285,12 +323,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Tiempo de Protrombina y Hemostasia</h5>
                             <p className="text-[11px] text-gray-400 mt-1">TP, Actividad, INR y Tiempos de Coagulación/Sangría.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirCoagulogramaCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-purple-900/10"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('coagulograma')}
+                            <button
+                              onClick={() => imprimirCoagulogramaCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-purple-900/10"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -305,12 +346,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Perfil Bioquímico Completo</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Glucosa, renal, hepático, lípidos y proteínas con rangos.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirQuimicaCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('quimica')}
+                            <button
+                              onClick={() => imprimirQuimicaCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -327,12 +371,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Electrolitos, Prot. en Orina y Microalbuminuria</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Na/K/Cl, Orina 24h e índice Albúmina/Creatinina.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirElectrolitosProtCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('electrolitos')}
+                            <button
+                              onClick={() => imprimirElectrolitosProtCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -347,12 +394,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Pruebas Inmunológicas</h5>
                             <p className="text-[11px] text-gray-400 mt-1">PCR, FR, ASTO, VIH, RPR, H. Pylori, Hepatitis B.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirSerologiaCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('serologia')}
+                            <button
+                              onClick={() => imprimirSerologiaCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -367,12 +417,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Curva de Tolerancia a la Glucosa</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Basal, 60' y 120' post-carga con criterios OMS.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirToleranciaGlucosaCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('tolerancia_glucosa')}
+                            <button
+                              onClick={() => imprimirToleranciaGlucosaCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -388,12 +441,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Hematocrito y Hemoglobina</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Estudio aislado derivado de Hematología.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirHtoHbCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('hto_hb')}
+                            <button
+                              onClick={() => imprimirHtoHbCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -408,12 +464,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Hematología + Reacción de Widal</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Hto, Hb, leucocitos, diferencial y títulos Widal.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirHtoHbLeucoWidalCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('hto_hb_widal')}
+                            <button
+                              onClick={() => imprimirHtoHbLeucoWidalCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -428,12 +487,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Análisis de Líquidos Biológicos</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Físico, químico, citológico y sedimento.</p>
                           </div>
-                          <button
-                            onClick={() => imprimirLiquidosCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('liquidos')}
+                            <button
+                              onClick={() => imprimirLiquidosCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -449,12 +511,15 @@ export default function FormularioTab() {
                             <h5 className="font-bold text-sm text-white mt-3">Espermatograma Completo</h5>
                             <p className="text-[11px] text-gray-400 mt-1">Examen macroscópico y microscópico (OMS).</p>
                           </div>
-                          <button
-                            onClick={() => imprimirEspermatoCNS(pacienteFichaActiva)}
-                            className="mt-4 w-full flex items-center justify-center gap-2 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
-                          >
-                            <FileDown className="w-3.5 h-3.5" /> Descargar PDF Oficial
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            {botonEditar('espermato')}
+                            <button
+                              onClick={() => imprimirEspermatoCNS(pacienteFichaActiva)}
+                              className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
+                            >
+                              <FileDown className="w-3.5 h-3.5" /> Descargar
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -472,6 +537,16 @@ export default function FormularioTab() {
 
           </div>
         </div>
+      )}
+
+      {/* ✏️ MODAL DE EDICIÓN DE REPORTE (enfocado al reporte seleccionado) */}
+      {reporteEnEdicion && (
+        <EditarReporteModal
+          reporte={reporteEnEdicion.paciente}
+          idReporte={reporteEnEdicion.id}
+          onGuardar={guardarEdicion}
+          onCerrar={() => setReporteEnEdicion(null)}
+        />
       )}
 
       {/* SECCIÓN PANTALLA PRINCIPAL TRADICIONAL DE ADMISIÓN */}
