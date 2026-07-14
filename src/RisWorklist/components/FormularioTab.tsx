@@ -5,7 +5,7 @@ import RegistrarConsulta from '../../pages/RegistrarConsulta';
 import EditarReporteModal from './EditarReporteModal';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
-import { imprimirHematologiaCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
+import { imprimirGrupoSanguineoCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
 import { imprimirCoagulogramaCNS } from '../reports/ReporteCoagulograma';
 import { imprimirEgoCNS } from '../reports/ReporteEgo';
 import { imprimirQuimicaCNS } from '../reports/ReporteQuimica';
