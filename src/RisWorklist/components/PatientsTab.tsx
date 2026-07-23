@@ -166,17 +166,6 @@ export default function PatientsTab({
           }}
           className="space-y-6"
         >
-          {/* Botón superior de carga para la simulación */}
-          <div className="flex justify-end">
-            <button 
-              type="button" 
-              onClick={manejarCargaPlantillaExcel}
-              className="px-3 py-1.5 bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/30 rounded-lg text-xs font-semibold hover:bg-[#00bfa5]/20 transition-all active:scale-95 flex items-center gap-1"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              ✨ Cargar Fila Excel ({indiceExcel + 1}/10)
-            </button>
-          </div>
 
           {/* CAMINO PRIMARIO: PARSER QR */}
           <div className="p-4 bg-black/40 border border-secondary-dark rounded-lg">

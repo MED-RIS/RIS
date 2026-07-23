@@ -51,16 +51,6 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
   return (
     <div className="w-full max-w-4xl mx-auto bg-[#070f0d] p-6 rounded-xl border border-[#172c26] text-white">
       
-      {/* Botón de control superior para la simulación */}
-      <div className="flex justify-end mb-4">
-        <button 
-          type="button" 
-          onClick={manejarCargaPlantilla}
-          className="px-3 py-1.5 bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/30 rounded-lg text-xs font-semibold hover:bg-[#00bfa5]/20 transition-all active:scale-95"
-        >
-          ✨ Cargar Fila Excel ({indiceExcel + 1}/10)
-        </button>
-      </div>
 
       {/* CAMINO PRIMARIO: PARSER QR (Exacto a tu captura) */}
       <div className="p-4 bg-[#0a1412] border border-[#182e29] rounded-lg mb-6">
@@ -89,19 +79,16 @@ export default function RegistrarPaciente({ onSiguiente }: RegistrarPacienteProp
             <input type="text" name="cod" value={paciente.cod} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
           </div>
           <div>
-  <label className="block text-gray-400 mb-1">CÓDIGO BENEFICIARIO:</label>
-  <input 
-    type="text" 
-    name="codigoBeneficiario" 
-    value={paciente.codigoBeneficiario} 
-    onChange={handleInputChange} 
-    placeholder="Ej. 0, 50, 51..."
-    className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white focus:outline-none focus:border-[#00bfa5]" 
-  />
-  <span className="text-[11px] text-[#00bfa5] font-semibold mt-1 block">
-    Interpretación: {obtenerCodigoBeneficiarioTexto(paciente.codigoBeneficiario)}
-  </span>
-</div>
+          <label className="block text-gray-400 mb-1">CÓDIGO BENEFICIARIO:</label>
+          <input 
+            type="text" 
+            name="codigoBeneficiario" 
+            value={paciente.codigoBeneficiario} 
+            onChange={handleInputChange} 
+            placeholder="Ej. 0, 50, 51..."
+            className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white focus:outline-none focus:border-[#00bfa5]" 
+          />
+          </div>
           <div>
             <label className="block text-gray-400 mb-1">APELLIDO PATERNO:</label>
             <input type="text" name="paterno" value={paciente.paterno} onChange={handleInputChange} className="w-full p-2 bg-[#050a09] border border-[#1c352f] rounded text-white" />
