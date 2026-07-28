@@ -1,6 +1,5 @@
-// src/RisWorklist/components/PatientsTab.tsx
 import React, { useState, useEffect } from 'react';
-import { Phone, Mail, Sparkles, ClipboardList } from 'lucide-react';
+import { Phone, Mail, Sparkles } from 'lucide-react';
 import RisModal from './RisModal';
 
 import { Patient } from '../types';
@@ -58,20 +57,19 @@ export default function PatientsTab({
     
     const p = listaPacientesPrueba[indiceExcel] as any;
     
-    // Mapeamos los campos en español de la plantilla a las variables tipadas de tu base de datos NoSQL
+    // Mapeamos los campos en español sin requerir que el usuario ponga MRN
     setNewPatient({
       ...newPatient,
-      patientId: `MRN-${p.cod}`, // Formato PACS / MRN exigido por el modelo
-      documentId: p.cod,         // Tu Cédula / Matrícula CNS
+      patientId: `CNS-${p.cod}`, // Asignación automática transparente para el backend
+      documentId: p.cod,         // Tu Cédula / Matrícula CNS principal
       firstName: p.nombres,
       lastName: `${p.paterno} ${p.materno}`.trim(),
       gender: p.genero === 'Masculino' ? 'M' : 'F',
-      dateOfBirth: "1992-08-24", // Fecha estructurada por defecto
+      dateOfBirth: "1992-08-24", 
       phone: p.telefono || "71524311",
       email: "cns.admision@gmail.com"
     });
 
-    // Cambiamos el selector dinámicamente si la plantilla viene amarrada a un servicio específico
     if (p.servicioSeleccionado) {
       setServicioSeleccionado(p.servicioSeleccionado);
     }
@@ -154,7 +152,12 @@ export default function PatientsTab({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            // Ejecutamos tus funciones nativas del dashboard que crean en MongoDB usando el método POST limpio
+
+            // Garantizamos un patientId automático si no existía, usando la cédula
+            if (!newPatient.patientId) {
+              newPatient.patientId = `CNS-${newPatient.documentId || Date.now()}`;
+            }
+
             if (isEditingPatient) {
               await handleUpdate(e);
             } else {
@@ -193,20 +196,31 @@ export default function PatientsTab({
             </div>
           </div>
 
-          {/* DATOS DE FILIACIÓN (Vinculados a tu estado native newPatient) */}
+          {/* DATOS DE FILIACIÓN (Limpio y en español) */}
           <div className="space-y-4">
             <div className="border-b border-secondary-dark pb-1">
-              <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada (Principio P1)</span>
+              <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada</span>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* 🌟 CÉDULA DE IDENTIDAD OCUPA TODA LA FILA AHORA */}
+            <div className="grid grid-cols-1 gap-4 text-xs">
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">MRN / ID INTERNO PACS *</label>
-                <input required type="text" placeholder="Ej. MRN-12345" value={newPatient.patientId || ''} onChange={(e) => setNewPatient({ ...newPatient, patientId: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">CÉDULA DE IDENTIDAD / MATRÍCULA</label>
-                <input type="text" placeholder="Número de identidad" value={newPatient.documentId || ''} onChange={(e) => setNewPatient({ ...newPatient, documentId: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+                <label className="block text-gray-400 mb-1 font-bold">CÉDULA DE IDENTIDAD / MATRÍCULA CNS *</label>
+                <input 
+                  required
+                  type="text" 
+                  placeholder="Ej. 6842105 ó MAT-20481-R" 
+                  value={newPatient.documentId || ''} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewPatient({ 
+                      ...newPatient, 
+                      documentId: val,
+                      patientId: `CNS-${val}` // Asigna el id interno automáticamente
+                    });
+                  }} 
+                  className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" 
+                />
               </div>
             </div>
 
@@ -297,7 +311,7 @@ export default function PatientsTab({
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-secondary-dark text-xs text-gray-400">
             <tr>
-              <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('patientId')}>MRN / ID <span className="ml-1 text-[10px]">{getSortIcon('patientId')}</span></th>
+              <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('documentId')}>Cédula / Matrícula <span className="ml-1 text-[10px]">{getSortIcon('documentId')}</span></th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('fullName')}>Nombre Completo <span className="ml-1 text-[10px]">{getSortIcon('fullName')}</span></th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('gender')}>Sexo <span className="ml-1 text-[10px]">{getSortIcon('gender')}</span></th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('dateOfBirth')}>Nacimiento <span className="ml-1 text-[10px]">{getSortIcon('dateOfBirth')}</span></th>
@@ -316,8 +330,7 @@ export default function PatientsTab({
               paginate(sortedPatients).map((p: any) => (
                 <tr key={p._id} className="hover:bg-primary-dark/40 transition-colors">
                   <td className="p-3">
-                    <span className="font-bold text-[#00bfa5]">{p.patientId}</span>
-                    {p.documentId && <span className="block text-xs text-gray-400">{p.documentId}</span>}
+                    <span className="font-bold text-[#00bfa5]">{p.documentId || p.patientId}</span>
                   </td>
                   <td className="p-3">
                     <button
