@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FileDown, Eye, X, Clipboard, User, Calendar, FolderOpen, Layers, Pencil } from 'lucide-react';
-import RegistrarPaciente from '../../pages/RegistrarPacientes';
-import RegistrarConsulta from '../../pages/RegistrarConsulta';
+import { FileDown, X, Clipboard, Calendar, FolderOpen, Layers, Pencil } from 'lucide-react';
+import { Patient } from '../types';
+import InformesList from './InformesList';
+import SelectorPaciente from './SelectorPaciente';
 import EditarReporteModal from './EditarReporteModal';
+import EditorLaboratorio from './EditorLaboratorio';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
@@ -18,8 +20,13 @@ import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
 import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
 
 
-export default function FormularioTab() {
-  const [paso, setPaso] = useState(1);
+interface FormularioTabProps {
+  patients?: Patient[];
+}
+
+export default function FormularioTab({ patients = [] }: FormularioTabProps) {
+  // Vista del tab: lista de informes → selector de paciente → editor.
+  const [vista, setVista] = useState<'lista' | 'selector' | 'editor'>('lista');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
   const [verReportesGlobal, setVerReportesGlobal] = useState(false);
   
@@ -29,9 +36,20 @@ export default function FormularioTab() {
   // Reporte que se está editando: { id, paciente }. null = modal cerrado.
   const [reporteEnEdicion, setReporteEnEdicion] = useState<{ id: string; paciente: any } | null>(null);
 
+  // Rol de usuario (temporal, hasta que auth traiga el rol real):
+  // 'edicion' = técnico/doctor encargado (crea y edita) · 'consulta' = especialista (solo ve y descarga).
+  const [rol, setRol] = useState<'edicion' | 'consulta'>('edicion');
+  const soloLectura = rol === 'consulta';
+
+  // Último informe del paciente elegido (para precargar el editor en un control repetido).
+  const [informePrevio, setInformePrevio] = useState<any>(null);
+
+  // Modelo apilado: cada entrada de historialSimulado es UN informe (una visita), no un
+  // paciente. Migración suave: a los registros viejos (sin `id`) se les asigna uno.
   const [historialSimulado, setHistorialSimulado] = useState<any[]>(() => {
     const datosGuardados = localStorage.getItem('ris_historial_cns');
-    return datosGuardados ? JSON.parse(datosGuardados) : [];
+    const lista: any[] = datosGuardados ? JSON.parse(datosGuardados) : [];
+    return lista.map((r, i) => (r.id ? r : { ...r, id: `inf-legacy-${i}-${r.cod ?? 'sm'}` }));
   });
 
   useEffect(() => {
@@ -57,56 +75,42 @@ export default function FormularioTab() {
     let listaActualizada: any[] = [];
 
     setHistorialSimulado(prev => {
-      const indicePaciente = prev.findIndex(item => item.cod === matriculaActual);
       const tipoLab = nuevoDocumento?.tipoLaboratorio || "Lab_Hemato";
+      // Un informe puede tener varias categorías.
+      const estudiosNuevos: string[] = Array.isArray(nuevoDocumento?.estudiosRealizados) && nuevoDocumento.estudiosRealizados.length
+        ? nuevoDocumento.estudiosRealizados
+        : [tipoLab];
 
-      // Número correlativo secuencial (1, 2, 3...) basado en el mayor ya asignado.
+      // Correlativo secuencial global entre todos los informes.
       const maxOrden = prev.reduce((max, item) => Math.max(max, Number(item.orden) || 0), 0);
+      const nuevoOrden = maxOrden + 1;
 
-      if (indicePaciente !== -1) {
+      // MODELO APILADO: cada guardado crea un informe NUEVO (una visita), no fusiona.
+      const nuevoInforme = {
+        id: `inf-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        cod: matriculaActual,
+        orden: nuevoOrden,
+        paciente: nombreCompleto,
+        edad: edadPaciente,
+        id_paciente: idPaciente,
+        codigoBeneficiario: pacienteSeleccionado?.codigoBeneficiario ?? '-',
+        codigoAsegurado: pacienteSeleccionado?.codigoAsegurado ?? matriculaActual,
+        tipoBeneficiario: nuevoDocumento?.tipoBeneficiario ?? pacienteSeleccionado?.tipoBeneficiario ?? '-',
+        servicio: "Laboratorio",
+        estado: nuevoDocumento?.estadoInforme || "COMPLETADO",
+        fecha: nuevoDocumento?.fecha || new Date().toLocaleDateString(),
+        creadoEn: new Date().toISOString(),
+        estudiosRealizados: [...estudiosNuevos],
+        datos: {
+          ...nuevoDocumento,
+          ...datosFormularioSueltos,
+          orden: nuevoOrden
+        }
+      };
 
-        const historialActualizado = [...prev];
-        const datosExistentes = historialActualizado[indicePaciente].datos || {};
-        // El mismo paciente conserva su número; no se reasigna en cada estudio.
-        const ordenPaciente = historialActualizado[indicePaciente].orden ?? (maxOrden + 1);
-
-        historialActualizado[indicePaciente] = {
-          ...historialActualizado[indicePaciente],
-          edad: edadPaciente,
-          id_paciente: idPaciente,
-          orden: ordenPaciente,
-          estudiosRealizados: Array.from(new Set([...(historialActualizado[indicePaciente].estudiosRealizados || []), tipoLab])),
-          datos: {
-            ...datosExistentes,
-            ...nuevoDocumento,
-            ...datosFormularioSueltos,
-            orden: ordenPaciente
-          }
-        };
-        listaActualizada = historialActualizado;
-        return historialActualizado;
-      } else {
-
-        const nuevoOrden = maxOrden + 1;
-        const nuevoRegistro = {
-          cod: matriculaActual,
-          orden: nuevoOrden,
-          paciente: nombreCompleto,
-          edad: edadPaciente,
-          id_paciente: idPaciente,
-          servicio: "Laboratorio",
-          estado: "Completado",
-          fecha: new Date().toLocaleDateString(),
-          estudiosRealizados: [tipoLab],
-          datos: {
-            ...nuevoDocumento,
-            ...datosFormularioSueltos,
-            orden: nuevoOrden
-          }
-        };
-        listaActualizada = [...prev, nuevoRegistro];
-        return listaActualizada;
-      }
+      // Más nuevo primero.
+      listaActualizada = [nuevoInforme, ...prev];
+      return listaActualizada;
     });
 
     setTimeout(() => {
@@ -117,9 +121,48 @@ export default function FormularioTab() {
   };
 
   const reiniciarModulo = () => {
-    setPaso(1);
+    setVista('lista');
     setPacienteSeleccionado(null);
-    setResetKey(prev => prev + 1); 
+    setResetKey(prev => prev + 1);
+  };
+
+  // Convierte un Patient del store compartido a la forma que espera el editor/guardado.
+  const calcularEdadAnios = (fechaNacimiento?: string): string => {
+    if (!fechaNacimiento) return '-';
+    const nac = new Date(fechaNacimiento);
+    if (isNaN(nac.getTime())) return '-';
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    const m = hoy.getMonth() - nac.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+    return String(edad);
+  };
+
+  const mapPacienteAInforme = (pt: Patient): any => ({
+    cod: pt.patientId || pt._id,
+    nombres: pt.firstName,
+    paterno: pt.lastName,
+    edad: calcularEdadAnios(pt.dateOfBirth),
+    id_paciente: pt._id,
+    id: pt._id,
+    codigoBeneficiario: (pt as any).codigoBeneficiario || '-',
+    codigoAsegurado: (pt as any).numeroAsegurado || pt.patientId || '-',
+  });
+
+  // Nuevo Informe: se eligió un paciente existente → abrir el editor para él.
+  const seleccionarPaciente = (pt: Patient) => {
+    const paciente = mapPacienteAInforme(pt);
+    setPacienteSeleccionado(paciente);
+    // Último informe de este paciente (por matrícula) para ofrecer precarga en un control repetido.
+    const previos = historialSimulado.filter((inf) => inf.cod === paciente.cod);
+    setInformePrevio(previos[0] || null); // el historial está "más nuevo primero"
+    setVista('editor');
+  };
+
+  // Abrir un informe de la lista → carpeta de reportes enfocada en ese paciente.
+  const abrirInforme = (informe: any) => {
+    setPacienteFichaActiva(informe);
+    setVerReportesGlobal(true);
   };
 
   // Un valor cuenta como "llenado" si no es vacío ni el default 0.
@@ -129,8 +172,8 @@ export default function FormularioTab() {
   const algunCampo = (obj: any, campos: string[]) =>
     !!obj && campos.some((c) => tieneValor(obj[c]));
 
-  // Botón "Editar" uniforme para las cards de reporte.
-  const botonEditar = (idReporte: string) => (
+  // Botón "Editar" uniforme para las cards de reporte. Oculto en modo solo-lectura.
+  const botonEditar = (idReporte: string) => soloLectura ? null : (
     <button
       type="button"
       onClick={() => setReporteEnEdicion({ id: idReporte, paciente: pacienteFichaActiva })}
@@ -141,17 +184,17 @@ export default function FormularioTab() {
     </button>
   );
 
-  // Persiste la edición: reemplaza `datos` del paciente por `cod`, guarda en
-  // localStorage y refresca la ficha activa para que las cards se re-evalúen.
+  // Persiste la edición del reporte: reemplaza `datos` del INFORME puntual (por id),
+  // guarda en localStorage y refresca la ficha activa para que las cards se re-evalúen.
   const guardarEdicion = (nuevoDatos: any) => {
     if (!reporteEnEdicion) return;
-    const cod = reporteEnEdicion.paciente.cod;
+    const idInforme = reporteEnEdicion.paciente.id;
     const actualizado = historialSimulado.map((item) =>
-      item.cod === cod ? { ...item, datos: nuevoDatos } : item
+      item.id === idInforme ? { ...item, datos: nuevoDatos } : item
     );
     setHistorialSimulado(actualizado);
     localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
-    setPacienteFichaActiva(actualizado.find((i) => i.cod === cod) || null);
+    setPacienteFichaActiva(actualizado.find((i) => i.id === idInforme) || null);
     setReporteEnEdicion(null);
   };
 
@@ -181,37 +224,45 @@ export default function FormularioTab() {
           {/* Grilla Principal Reestructurada */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
             
-            {/* 🚪 COLUMNA IZQUIERDA: SECTOR PERSONAS */}
+            {/* 🚪 COLUMNA IZQUIERDA: HISTÓRICO APILADO DEL PACIENTE (por matrícula) */}
             <div className="lg:col-span-1 bg-[#0e1715] border border-[#2a403a] rounded-xl p-4 space-y-3 flex flex-col">
               <span className="text-xs font-bold text-gray-400 uppercase block border-b border-[#1f332d] pb-2">
-                👤 Directorio de Pacientes ({historialSimulado.length})
+                🗂️ Histórico del Paciente
+                {pacienteFichaActiva && (() => {
+                  const n = historialSimulado.filter((i) => i.cod === pacienteFichaActiva.cod).length;
+                  return ` · MAT ${pacienteFichaActiva.cod} (${n})`;
+                })()}
               </span>
-              
+
               <div className="space-y-2 overflow-y-auto flex-1 max-h-[550px]">
-                {historialSimulado.length === 0 ? (
-                  <div className="text-center text-xs text-gray-500 py-12 italic">No hay pacientes registrados en esta sesión.</div>
+                {!pacienteFichaActiva ? (
+                  <div className="text-center text-xs text-gray-500 py-12 italic">Seleccioná un informe en la lista para ver su histórico.</div>
                 ) : (
-                  historialSimulado.map((p, idx) => (
-                    <div 
-                      key={idx}
-                      onClick={() => setPacienteFichaActiva(p)}
-                      className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                        pacienteFichaActiva?.cod === p.cod 
-                          ? 'bg-[#162e28] border-[#00bfa5] shadow-md' 
-                          : 'bg-[#050a09] border-[#1c352f] hover:border-[#2a403a]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#121b18] rounded-lg border border-[#2a403a] text-[#00bfa5]">
-                          <User className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm truncate">{p.paciente}</div>
-                          <div className="text-[11px] text-gray-400 mt-0.5 font-mono">MAT: {p.cod}</div>
+                  historialSimulado
+                    .filter((i) => i.cod === pacienteFichaActiva.cod)
+                    .map((inf) => (
+                      <div
+                        key={inf.id}
+                        onClick={() => setPacienteFichaActiva(inf)}
+                        className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                          pacienteFichaActiva?.id === inf.id
+                            ? 'bg-[#162e28] border-[#00bfa5] shadow-md'
+                            : 'bg-[#050a09] border-[#1c352f] hover:border-[#2a403a]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-[#121b18] rounded-lg border border-[#2a403a] text-[#00bfa5]">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm truncate">{inf.fecha}</div>
+                            <div className="text-[11px] text-gray-400 mt-0.5 font-mono">
+                              {(inf.estudiosRealizados?.length || 0)} estudio(s) · {inf.estado}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </div>
@@ -549,32 +600,56 @@ export default function FormularioTab() {
         />
       )}
 
-      {/* SECCIÓN PANTALLA PRINCIPAL TRADICIONAL DE ADMISIÓN */}
-      <div className="border-b border-[#142823] pb-4 flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-lg font-bold text-[#00bfa5]">Admisión y Formularios CNS</h2>
-        <div className="flex gap-2">
-          <button 
+      {/* Selector de rol (temporal, hasta que auth traiga el rol real del usuario). */}
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-xs text-gray-500">Modo de usuario:</span>
+        <div className="flex bg-[#050a09] border border-[#2a403a] rounded-lg p-0.5">
+          <button
             type="button"
-            onClick={() => setVerReportesGlobal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-lg active:scale-95"
+            onClick={() => setRol('edicion')}
+            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${!soloLectura ? 'bg-[#00bfa5] text-[#04140f]' : 'text-gray-400 hover:text-white'}`}
+            title="Técnico / doctor encargado: crea y edita"
           >
-            <Eye className="w-4 h-4" /> 👁️ Ver Carpeta de Reportes ({historialSimulado.length})
+            ✏️ Edición
+          </button>
+          <button
+            type="button"
+            onClick={() => setRol('consulta')}
+            className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${soloLectura ? 'bg-[#00bfa5] text-[#04140f]' : 'text-gray-400 hover:text-white'}`}
+            title="Especialista / usuario final: solo ve y descarga"
+          >
+            👁️ Consulta
           </button>
         </div>
       </div>
 
+      {/* SECCIÓN PRINCIPAL: lista de informes → selector de paciente → editor */}
       <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[400px]">
-        {paso === 1 ? (
-          <RegistrarPaciente 
-            key={resetKey}
-            onSiguiente={(datos) => { setPacienteSeleccionado(datos); setPaso(2); }} 
+
+        {vista === 'lista' && (
+          <InformesList
+            informes={historialSimulado}
+            soloLectura={soloLectura}
+            onNuevoInforme={() => setVista('selector')}
+            onAbrir={abrirInforme}
           />
-        ) : (
-          <RegistrarConsulta 
-            key={resetKey} 
-            pacienteData={pacienteSeleccionado} 
-            onVolver={reiniciarModulo} 
-            onGuardarLocal={guardarEnRisServer} 
+        )}
+
+        {vista === 'selector' && (
+          <SelectorPaciente
+            patients={patients}
+            onSeleccionar={seleccionarPaciente}
+            onCancelar={() => setVista('lista')}
+          />
+        )}
+
+        {vista === 'editor' && (
+          <EditorLaboratorio
+            key={resetKey}
+            pacienteData={pacienteSeleccionado}
+            informePrevio={informePrevio}
+            onVolver={reiniciarModulo}
+            onGuardarLocal={guardarEnRisServer}
           />
         )}
       </div>

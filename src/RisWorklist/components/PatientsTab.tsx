@@ -166,6 +166,17 @@ export default function PatientsTab({
           }}
           className="space-y-6"
         >
+          {/* Botón superior de carga para la simulación */}
+          <div className="flex justify-end">
+            <button 
+              type="button" 
+              onClick={manejarCargaPlantillaExcel}
+              className="px-3 py-1.5 bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/30 rounded-lg text-xs font-semibold hover:bg-[#00bfa5]/20 transition-all active:scale-95 flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              ✨ Cargar Fila Excel ({indiceExcel + 1}/10)
+            </button>
+          </div>
 
           {/* CAMINO PRIMARIO: PARSER QR */}
           <div className="p-4 bg-black/40 border border-secondary-dark rounded-lg">
@@ -223,6 +234,17 @@ export default function PatientsTab({
                   <option value="O">Otro</option>
                   <option value="U">Desconocido</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block text-gray-400 mb-1 font-bold">CÓDIGO BENEFICIARIO</label>
+                <input type="text" placeholder="Ej. 0 (Titular), 1 (Cónyuge)..." value={newPatient.codigoBeneficiario || ''} onChange={(e) => setNewPatient({ ...newPatient, codigoBeneficiario: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1 font-bold">Nº DE ASEGURADO</label>
+                <input type="text" placeholder="Nº de asegurado CNS" value={newPatient.numeroAsegurado || ''} onChange={(e) => setNewPatient({ ...newPatient, numeroAsegurado: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
             </div>
           </div>

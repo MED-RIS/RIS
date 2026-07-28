@@ -215,7 +215,11 @@ import {
 
 function RisWorklistPanel({ servicesManager }) {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  // Arranca leyendo localStorage: el store nunca queda vacío si ya hay pacientes locales,
+  // sin depender del timing/éxito de loadAll (que puede fallar sin backend).
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    try { return JSON.parse(localStorage.getItem('ris_pacientes') || '[]'); } catch { return []; }
+  });
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -254,7 +258,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [isCreatingCashRegister, setIsCreatingCashRegister] = useState(false);
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
-  const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '' });
+  const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
   const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
   const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '' });
@@ -310,6 +314,15 @@ function RisWorklistPanel({ servicesManager }) {
     loadAll();
   }, []);
 
+  // Capa localStorage de pacientes: permite que el store compartido funcione offline
+  // (consistente con los reportes en ris_historial_cns). API preferida, localStorage de respaldo.
+  const leerPacientesLS = (): Patient[] => {
+    try { return JSON.parse(localStorage.getItem('ris_pacientes') || '[]'); } catch { return []; }
+  };
+  const guardarPacientesLS = (lista: Patient[]) => {
+    try { localStorage.setItem('ris_pacientes', JSON.stringify(lista)); } catch { /* noop */ }
+  };
+
   const loadAll = async () => {
     try {
       setIsLoading(true);
@@ -331,7 +344,13 @@ function RisWorklistPanel({ servicesManager }) {
         fetchCompanies().catch(() => [])
       ]);
       setOrders(ord);
-      setPatients(pat);
+      // Fusiona backend + pacientes locales (solo-localStorage) para no pisar los creados offline.
+      const keyOf = (p: any) => String(p.patientId || p._id);
+      const remotosKeys = new Set(pat.map(keyOf));
+      const soloLocales = leerPacientesLS().filter((p) => !remotosKeys.has(keyOf(p)));
+      const pacientesCombinados = [...pat, ...soloLocales];
+      setPatients(pacientesCombinados);
+      guardarPacientesLS(pacientesCombinados);
       setModalities(mod);
       setEquipmentList(eq);
       setServices(ser);
@@ -364,6 +383,8 @@ function RisWorklistPanel({ servicesManager }) {
         setNewBranch(prev => ({ ...prev, fk_organization: defaultOrgId }));
       }
     } catch (error) {
+      // Sin backend: caemos a los pacientes persistidos en localStorage.
+      setPatients((prev) => (prev.length ? prev : leerPacientesLS()));
       toast.error('Error cargando datos: ' + (error as any).message);
     } finally {
       setIsLoading(false);
@@ -443,15 +464,28 @@ function RisWorklistPanel({ servicesManager }) {
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await createPatient({ ...newPatient, dateOfBirth: newPatient.dateOfBirth || undefined });
-      toast.success('Paciente creado exitosamente');
+    const datosPaciente = { ...newPatient, dateOfBirth: newPatient.dateOfBirth || undefined };
+    const resetForm = () => {
       setIsCreatingPatient(false);
-      setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '' });
+      setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
+    };
+    try {
+      await createPatient(datosPaciente);
       const data = await fetchPatients();
       setPatients(data);
+      guardarPacientesLS(data);
+      toast.success('Paciente creado exitosamente');
+      resetForm();
     } catch (err) {
-      toast.error('Error al crear paciente: ' + (err as any).message);
+      // Fallback offline: persistimos el paciente en localStorage y en el store en memoria.
+      const local: Patient = { ...(datosPaciente as any), _id: `local-${Date.now()}` };
+      setPatients((prev) => {
+        const next = [...prev, local];
+        guardarPacientesLS(next);
+        return next;
+      });
+      toast.success('Paciente guardado localmente');
+      resetForm();
     }
   };
 
@@ -555,7 +589,7 @@ function RisWorklistPanel({ servicesManager }) {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingItem(null);
-    setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '' });
+    setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
     setNewModality({ name: '', dicom_code: '', description: '' });
     setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
@@ -918,7 +952,7 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'Formulario' && (
-                <FormularioTab />
+                <FormularioTab patients={patients} />
               )}
 
               {activeTab === 'informes' && (
