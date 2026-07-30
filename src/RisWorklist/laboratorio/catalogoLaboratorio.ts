@@ -35,37 +35,46 @@ const OPC_RPR = ['No Reactivo', 'Reactivo', 'Reactivo 1 dils', 'Reactivo 2 dils'
 
 // ── HEMATOLOGÍA (+ Coagulograma) — plano en la raíz de `datos` (hematoDatos) ──
 export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
-  { key: 'globulos_blancos', label: 'Glóbulos Blancos (GB)', unidad: 'mm³', rango: '4.000 - 10.000', min: 4000, max: 10000, seccion: 'Serie Roja y Recuento' },
-  { key: 'globulos_rojos', label: 'Glóbulos Rojos (GR)', unidad: 'mm³', rango: 'Varones: 4.5 - 5.5 mill · Mujeres: 4.0 - 5.0 mill', seccion: 'Serie Roja y Recuento' },
-  { key: 'hto', label: 'Hematocrito (HTO)', unidad: '%', rango: 'Varones: 42 - 52% · Mujeres: 37 - 47%', seccion: 'Serie Roja y Recuento' },
-  { key: 'hb', label: 'Hemoglobina (HB)', unidad: 'g/dL', rango: 'Varones: 14 - 18 · Mujeres: 12 - 16', seccion: 'Serie Roja y Recuento' },
+  { key: 'hto', label: 'HTO', unidad: '%', rango: 'Varones: 42 - 52% · Mujeres: 37 - 47%', seccion: 'Serie Roja y Recuento' },
+  { key: 'hb', label: 'HB', unidad: 'g/dL', rango: 'Varones: 14 - 18 · Mujeres: 12 - 16', seccion: 'Serie Roja y Recuento' },
+  { key: 'globulos_blancos', label: 'Glóbulos Blancos', unidad: 'mm³', rango: '4.000 - 10.000', min: 4000, max: 10000, seccion: 'Serie Roja y Recuento' },
+  { key: 'seg', label: 'Seg.', unidad: '%', rango: '55 - 65%', min: 55, max: 65, seccion: 'Fórmula Diferencial' },
+  { key: 'linf', label: 'Linf.', unidad: '%', rango: '25 - 40%', min: 25, max: 40, seccion: 'Fórmula Diferencial' },
+  { key: 'mon', label: 'Mon.', unidad: '%', rango: '2 - 8%', min: 2, max: 8, seccion: 'Fórmula Diferencial' },
+  { key: 'eosi', label: 'Eosi.', unidad: '%', rango: '1 - 4%', min: 1, max: 4, seccion: 'Fórmula Diferencial' },
+  { key: 'cay', label: 'Cay.', unidad: '%', rango: '1 - 5%', min: 1, max: 5, seccion: 'Fórmula Diferencial' },
+  { key: 'mielo', label: 'Mielo', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
+  { key: 'metamie', label: 'Metamie', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
+  { key: 'baso', label: 'Baso', unidad: '%', rango: '0 - 1%', min: 0, max: 1, seccion: 'Fórmula Diferencial' },
   { key: 'plaquetas', label: 'Plaquetas', unidad: 'mm³', rango: '150.000 - 450.000', min: 150000, max: 450000, seccion: 'Serie Roja y Recuento' },
+  { key: 'grupo_sanguineo', label: 'Grupo Sanguíneo', unidad: '', rango: '—', tipo: 'texto', seccion: 'Inmunohematología' },
   { key: 'reticulocitos', label: 'Reticulocitos', unidad: '%', rango: '0.5 - 2%', min: 0.5, max: 2, seccion: 'Serie Roja y Recuento' },
-  { key: 'mielo', label: 'Mielocitos', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
-  { key: 'metamie', label: 'Metamielocitos', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
-  { key: 'cay', label: 'Cayados (CA)', unidad: '%', rango: '1 - 5%', min: 1, max: 5, seccion: 'Fórmula Diferencial' },
-  { key: 'seg', label: 'Segmentados', unidad: '%', rango: '55 - 65%', min: 55, max: 65, seccion: 'Fórmula Diferencial' },
-  { key: 'eosi', label: 'Eosinófilos', unidad: '%', rango: '1 - 4%', min: 1, max: 4, seccion: 'Fórmula Diferencial' },
-  { key: 'baso', label: 'Basófilos', unidad: '%', rango: '0 - 1%', min: 0, max: 1, seccion: 'Fórmula Diferencial' },
-  { key: 'linf', label: 'Linfocitos', unidad: '%', rango: '25 - 40%', min: 25, max: 40, seccion: 'Fórmula Diferencial' },
-  { key: 'mon', label: 'Monocitos', unidad: '%', rango: '2 - 8%', min: 2, max: 8, seccion: 'Fórmula Diferencial' },
   { key: 'ves_1_hora', label: 'VES 1ª Hora', unidad: 'mm', rango: '0 - 15', min: 0, max: 15, seccion: 'Sedimentación e Índices' },
   { key: 'ves_2_hora', label: 'VES 2ª Hora', unidad: 'mm', rango: '—', seccion: 'Sedimentación e Índices' },
   { key: 'indice_katz', label: 'Índice de Katz', unidad: '', rango: '—', seccion: 'Sedimentación e Índices' },
-  { key: 'grupo_sanguineo', label: 'Grupo Sanguíneo y Factor Rh', unidad: '', rango: '—', tipo: 'texto', seccion: 'Inmunohematología' },
+  ////////
+  ///{ key: 'globulos_rojos', label: 'Glóbulos Rojos (GR)', unidad: 'mm³', rango: 'Varones: 4.5 - 5.5 mill · Mujeres: 4.0 - 5.0 mill', seccion: 'Serie Roja y Recuento' },
+  /////////
   // Coagulación / Hemostasia (Coagulograma — mismas claves planas que lee ReporteCoagulograma)
+  { key: 't_sangria_min', label: 'Tiempo de Sangría (min)', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_sangria_seg', label: 'Tiempo de Sangría (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_coagulacion_min', label: 'T. de Coagulación (min)', unidad: 'min', rango: '5 - 10 min', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_coagulacion_seg', label: 'T.   de Coagulación (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
   { key: 'tiempo_protrombina', label: 'Tiempo de Protrombina (T.P.)', unidad: 'seg', rango: '11 - 14 seg', min: 11, max: 14, seccion: 'Coagulación / Hemostasia' },
   { key: 'actividad_protrombina', label: 'Actividad de Protrombina (A.P.)', unidad: '%', rango: '70 - 100%', min: 70, max: 100, seccion: 'Coagulación / Hemostasia' },
   { key: 'inr', label: 'INR', unidad: '', rango: '0.8 - 1.2', min: 0.8, max: 1.2, seccion: 'Coagulación / Hemostasia' },
-  { key: 't_coagulacion_min', label: 'Tiempo de Coagulación (min)', unidad: 'min', rango: '5 - 10 min', seccion: 'Coagulación / Hemostasia' },
-  { key: 't_coagulacion_seg', label: 'Tiempo de Coagulación (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
-  { key: 't_sangria_min', label: 'Tiempo de Sangría (min)', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
-  { key: 't_sangria_seg', label: 'Tiempo de Sangría (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
+  { key: 'comentario_roja', label: 'Comentario Serie Roja', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_blanca', label: 'Comentario Serie Blanca', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_plaquetas', label: 'Comentario PLAQUETAS', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'observaciones', label: 'Observaciones', tipo: 'texto', seccion: 'Comentarios' },
 ];
 
 // ── SEROLOGÍA (+ Widal) ──
 // Serología → serologiaDatos ; los antígenos Widal se desvían a widalDatos.
 export const CATALOGO_SEROLOGIA: ParametroLab[] = [
+  { key: 'pcr', label: 'PCR', unidad: 'mg/L', rango: '< 6 (No Reactivo)', seccion: 'Reactantes de Fase Aguda' },
+
+
   { key: 'hiv', label: 'Prueba Rápida VIH', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
   { key: 'rpr', label: 'RPR / VDRL (Sífilis)', rango: 'No Reactivo', opciones: OPC_RPR, seccion: 'Infecciosas' },
   { key: 'hepatitis_b', label: 'Hepatitis B (HBsAg)', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
@@ -75,7 +84,7 @@ export const CATALOGO_SEROLOGIA: ParametroLab[] = [
   { key: 'widal_a', label: 'Widal Antígeno A', rango: 'No reactivo', opciones: OPC_WIDAL, bagOverride: 'widalDatos', seccion: 'Reacción de Widal' },
   { key: 'widal_b', label: 'Widal Antígeno B', rango: 'No reactivo', opciones: OPC_WIDAL, bagOverride: 'widalDatos', seccion: 'Reacción de Widal' },
   { key: 'asto', label: 'ASTO / ASOT (Antiestreptolisina O)', unidad: 'UI/mL', rango: '< 200', min: 0, max: 200, seccion: 'Reactantes de Fase Aguda' },
-  { key: 'pcr', label: 'Proteína C Reactiva (PCR)', unidad: 'mg/L', rango: '< 6 (No Reactivo)', seccion: 'Reactantes de Fase Aguda' },
+  
   { key: 'fr', label: 'Factor Reumatoideo (FR)', unidad: 'UI/mL', rango: '< 20 (Negativo)', seccion: 'Reactantes de Fase Aguda' },
   { key: 'test_embarazo', label: 'Test de Embarazo (β-HCG)', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Otras Pruebas' },
   { key: 'psa_prueba_rapida', label: 'PSA (Prueba rápida)', rango: 'Normal / Negativo', tipo: 'texto', seccion: 'Otras Pruebas' },
@@ -239,3 +248,4 @@ export const CATEGORIAS_LAB: CategoriaLab[] = [
   { id: 'liquidos', label: 'Líquidos Biológicos', total: CATALOGO_LIQUIDOS.length, catalogo: CATALOGO_LIQUIDOS, storage: { mode: 'nested', bag: 'liquidosDatos', tipoLab: 'Lab_Liquidos' } },
   { id: 'espermato', label: 'Espermatograma', total: CATALOGO_ESPERMATO.length, catalogo: CATALOGO_ESPERMATO, storage: { mode: 'nested', bag: 'espermatoDatos', tipoLab: 'Lab_Espermato' } },
 ];
+
