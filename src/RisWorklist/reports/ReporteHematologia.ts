@@ -4,7 +4,7 @@ export const imprimirHematologiaCNS = (p: any) => {
   const d = p.datos || p || {};
   
   const v = (val: any) => {
-    if (val === undefined || val === null || val === "") return "-";
+    if (val === undefined || val === null || String(val).trim() === "") return "-";
     return String(val);
   };
 
@@ -13,11 +13,12 @@ export const imprimirHematologiaCNS = (p: any) => {
     return isNaN(num) ? 0 : num;
   };
 
+  // Cálculo exacto de la Fórmula Diferencial según el estándar de la CNS
   const { mielo, metamie, cay, seg, eosi, baso, linf, mon } = d;
   const sumaTotalFormula = n(mielo) + n(metamie) + n(cay) + n(seg) + n(eosi) + n(baso) + n(linf) + n(mon);
   const totalMostrar = sumaTotalFormula > 0 ? String(sumaTotalFormula) : (d.total ? v(d.total) : "-");
 
-  // 🌟 Correlativo secuencial blindado contra marcas de tiempo de milisegundos gigantes
+  // Correlativo secuencial blindado contra marcas de tiempo gigantes
   let numeroSecuencialLimpio = String(p.orden ?? d.orden ?? p.id ?? "1");
   if (numeroSecuencialLimpio.length > 6) {
     numeroSecuencialLimpio = "1";
@@ -34,11 +35,11 @@ export const imprimirHematologiaCNS = (p: any) => {
   const consultorio = p.consultorio ?? d.consultorio ?? p.nro_consultorio ?? d.nro_consultorio ?? "-";
   const fechaReporte = p.fecha || p.fecha_solicitud || d.fecha || d.fecha_solicitud || "-";
 
-  // 1️⃣ Estructura HTML pura del reporte institucional de Hematología
+  // 1️⃣ Estructura HTML pura del reporte oficial de Hemograma
   const htmlInforme = `
     <!-- 🏢 CABECERA ROJA INSTITUCIONAL -->
     <div class="red-header">
-      ${v(institucion).toUpperCase()}<br>HEMATOLOGÍA
+      ${v(institucion).toUpperCase()}<br>HEMOGRAMA
     </div>
 
     <table class="filiacion-table">
@@ -59,34 +60,35 @@ export const imprimirHematologiaCNS = (p: any) => {
       </tr>
     </table>
 
-    <div class="main-title">HEMATOLOGÍA</div>
+    <div class="main-title">HEMOGRAMA</div>
 
     <div class="results-grid">
       <!-- 🔴 COLUMNA 1: SERIE ROJA Y GLOBULAR -->
       <div class="col-box">
-        <div class="row-item"><span>Glóbulos Rojos:</span><span class="val-bold">${v(d.globulos_rojos ?? d.globulosRojos)}</span></div>
-        <div class="row-item"><span>Hematocrito:</span><span class="val-bold">${v(d.hto)} %</span></div>
-        <div class="row-item"><span>Hemoglobina:</span><span class="val-bold">${v(d.hb)} g/dL</span></div>
-        <div class="row-item"><span>Reticulocitos:</span><span class="val-bold">${v(d.reticulocitos)} %</span></div>
-        <div class="row-item"><span>Eritrosedimentación:</span><span class="val-bold">${v(d.ves_1_hora)} 1ra. Hr</span></div>
-        <div style="margin-top: 15px;" class="row-item"><span>Grupo Sanguíneo:</span><span class="val-bold">${v(d.grupo_sanguineo)}</span></div>
+        <div class="row-item"><span>HTO:</span><span class="val-bold">${v(d.hto)} %</span></div>
+        <div class="row-item"><span>HB:</span><span class="val-bold">${v(d.hb)} g/dL</span></div>
+        <div class="row-item"><span>V.C.M.:</span><span class="val-bold">${v(d.vcm)} fL</span></div>
+        <div class="row-item"><span>H.C.M.:</span><span class="val-bold">${v(d.hcm)} pg</span></div>
+        <div class="row-item"><span>C.H.C.M.:</span><span class="val-bold">${v(d.chcm)} g/dL</span></div>
+        <div class="row-item"><span>RETICULOCITOS:</span><span class="val-bold">${v(d.reticulocitos)} %</span></div>
+        <div style="margin-top: 10px;" class="row-item"><span>GRUPO SANGUÍNEO:</span><span class="val-bold">${v(d.grupo_sanguineo)}</span></div>
       </div>
 
-      <!-- 🔬 COLUMNA 2: FÓRMULA DIFERENCIAL -->
+      <!-- 🔬 COLUMNA 2: FÓRMULA DIFERENCIAL (Con abreviaturas oficiales del Excel) -->
       <div class="col-box">
         <table class="diff-table">
           <thead>
-            <tr><th style="font-size: 9px; color: #000;">Fórmula Diferencial</th><th style="color: #000;">%</th><th style="color: #000;">uL</th></tr>
+            <tr><th style="font-size: 9px; color: #000;">FÓRMULA DIFERENCIAL</th><th style="color: #000;">%</th><th style="color: #000;">uL</th></tr>
           </thead>
           <tbody>
-            <tr><td>Mielocitos</td><td class="val-bold">${v(d.mielo)}</td><td>-</td></tr>
-            <tr><td>Metamielocitos</td><td class="val-bold">${v(d.metamie)}</td><td>-</td></tr>
-            <tr><td>Cayados</td><td class="val-bold">${v(d.cay)}</td><td>-</td></tr>
-            <tr><td>Segmentados</td><td class="val-bold">${v(d.seg)}</td><td>-</td></tr>
-            <tr><td>Eosinófilos</td><td class="val-bold">${v(d.eosi)}</td><td>-</td></tr>
-            <tr><td>Basófilos</td><td class="val-bold">${v(d.baso)}</td><td>-</td></tr>
-            <tr><td>Linfocitos</td><td class="val-bold">${v(d.linf)}</td><td>-</td></tr>
-            <tr><td>Monocitos</td><td class="val-bold">${v(d.mon)}</td><td>-</td></tr>
+            <tr><td>MIELO</td><td class="val-bold">${v(d.mielo)}</td><td>-</td></tr>
+            <tr><td>METAMIE</td><td class="val-bold">${v(d.metamie)}</td><td>-</td></tr>
+            <tr><td>CAY.</td><td class="val-bold">${v(d.cay)}</td><td>-</td></tr>
+            <tr><td>SEG</td><td class="val-bold">${v(d.seg)}</td><td>-</td></tr>
+            <tr><td>EOSI.</td><td class="val-bold">${v(d.eosi)}</td><td>-</td></tr>
+            <tr><td>BASO.</td><td class="val-bold">${v(d.baso)}</td><td>-</td></tr>
+            <tr><td>LINF.</td><td class="val-bold">${v(d.linf)}</td><td>-</td></tr>
+            <tr><td>MON.</td><td class="val-bold">${v(d.mon)}</td><td>-</td></tr>
             <tr style="font-weight: bold; background-color: #f5f5f5;">
               <td>TOTAL</td>
               <td class="val-bold" style="color: #ff0000;">${totalMostrar}</td>
@@ -96,22 +98,22 @@ export const imprimirHematologiaCNS = (p: any) => {
         </table>
       </div>
 
-      <!-- 📊 COLUMNA 3: RECUENTO Y TIEMPOS -->
+      <!-- 📊 COLUMNA 3: RECUENTO Y SEDIMENTACIÓN -->
       <div class="col-box">
-        <div class="row-item"><span>Glóbulos Blancos:</span><span class="val-bold">${v(d.globulos_blancos)} uL</span></div>
-        <div class="row-item"><span>Plaquetas:</span><span class="val-bold">${v(d.plaquetas)} Ul</span></div>
-        <div style="margin-top: 10px;" class="row-item"><span>VES 2 HORA:</span><span class="val-bold">${v(d.ves_2_hora)}</span></div>
+        <div class="row-item"><span>GLOBULOS BLANCOS:</span><span class="val-bold">${v(d.globulos_blancos)} uL</span></div>
+        <div class="row-item"><span>PLAQUETAS:</span><span class="val-bold">${v(d.plaquetas)} uL</span></div>
+        <div style="margin-top: 15px;" class="row-item"><span>VES 1 HORA:</span><span class="val-bold">${v(d.ves_1_hora)} mm</span></div>
+        <div class="row-item"><span>VES 2HORA:</span><span class="val-bold">${v(d.ves_2_hora)} mm</span></div>
         <div class="row-item"><span>INDICE DE KATZ:</span><span class="val-bold">${v(d.indice_katz)}</span></div>
-        <div class="row-item"><span>T. de Protrombina:</span><span class="val-bold">${v(d.tiempo_protrombina ?? d.t_protrombina)}</span></div>
-        <div class="row-item"><span>Actividad:</span><span class="val-bold">${v(d.actividad_protrombina ?? d.actividad)}</span></div>
-        <div class="row-item"><span>INR:</span><span class="val-bold">${v(d.inr)}</span></div>
       </div>
     </div>
 
+    <!-- 📝 COMENTARIOS OFICIALES -->
     <div class="comentarios-seccion">
-      <div><b>Comentario Serie Roja:</b> ${v(d.comentario_roja)}</div>
-      <div><b>Comentario Serie Blanca:</b> ${v(d.comentario_blanca)}</div>
-      <div><b>Comentario Plaquetas:</b> ${v(d.comentario_plaquetas)}</div>
+      <div><b>COMENTARIO SERIE ROJA:</b> ${v(d.comentario_roja)}</div>
+      <div><b>COMENTARIO SERIE BLANCA:</b> ${v(d.comentario_blanca)}</div>
+      <div><b>COMENTARIO PLAQUETAS:</b> ${v(d.comentario_plaquetas)}</div>
+      <div><b>OBSERVACIONES:</b> ${v(d.observaciones)}</div>
     </div>
 
     <div class="footer-notes">
@@ -120,9 +122,8 @@ export const imprimirHematologiaCNS = (p: any) => {
     </div>
   `;
 
-  // 2️⃣ Bloque de CSS unificado con la barra interactiva fija superior
+  // 2️⃣ CSS del documento
   const estilosCompleto = `
-    /* Barra de herramientas superior flotante */
     .no-print-bar {
       display: flex;
       justify-content: center;
@@ -149,7 +150,6 @@ export const imprimirHematologiaCNS = (p: any) => {
     .btn-close { background: #ef4444; color: white; }
     .btn-close:hover { background: #dc2626; }
 
-    /* Contenedor del documento */
     .print-area {
       padding: 30px;
       background: #ffffff;
@@ -171,8 +171,8 @@ export const imprimirHematologiaCNS = (p: any) => {
     
     .diff-table { width: 100%; border-collapse: collapse; text-align: center; background: #fff; }
     .diff-table th, .diff-table td { border: 1px solid #000; padding: 4px; font-size: 11px; color: #000; }
-    .comentarios-seccion { margin-top: 30px; font-size: 10px; line-height: 1.6; color: #000; display: flex; flex-direction: column; gap: 4px; }
-    .footer-notes { margin-top: 40px; border-top: 1px dashed #000; padding-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: #000; }
+    .comentarios-seccion { margin-top: 25px; font-size: 10px; line-height: 1.6; color: #000; display: flex; flex-direction: column; gap: 4px; }
+    .footer-notes { margin-top: 35px; border-top: 1px dashed #000; padding-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: #000; }
 
     @media print {
       .no-print-bar { display: none !important; }
@@ -181,20 +181,22 @@ export const imprimirHematologiaCNS = (p: any) => {
     }
   `;
 
-  // 3️⃣ Lanzamiento del documento en pestaña asíncrona aislada
-  const tituloArchivo = `CNS_Hematologia_${(p.paciente || p.nombre || 'Paciente').replace(/ /g, "_")}`;
+  // 3️⃣ Lanzamiento e impresión
+  const tituloArchivo = `CNS_Hemograma_${(p.paciente || p.nombre || 'Paciente').replace(/ /g, "_")}`;
   const win = window.open('', '_blank');
 
   if (win) {
     win.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <title>${tituloArchivo}</title>
           <style>${estilosCompleto}</style>
         </head>
         <body style="margin:0; background:#f3f4f6;">
           <div class="no-print-bar">
-            <button class="btn-report btn-print" onclick="window.print()">🖨️ Imprimir Hemograma Completo</button>
+            <button class="btn-report btn-print" onclick="window.print()">🖨️ Imprimir Hemograma</button>
             <button class="btn-report btn-close" onclick="window.close()">❌ Cerrar Vista Previa</button>
           </div>
           <div class="print-area">

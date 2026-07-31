@@ -24,8 +24,10 @@ export default function PatientProfileModal({
 
   if (!patient) return null;
 
-  const patientOrders = orders.filter((o: any) => o.patient?._id === patient._id || o.patient === patient._id)
-    .sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime());
+  // 🌟 Explicitly added types (a: any, b: any) to resolve the error
+  const patientOrders = orders
+    .filter((o: any) => o.patient?._id === patient._id || o.patient === patient._id)
+    .sort((a: any, b: any) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime());
 
   const getOrderReport = (orderId: string) => {
     return reports.find((r: any) => r.order?._id === orderId || r.order === orderId);
@@ -192,12 +194,10 @@ export default function PatientProfileModal({
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            {/* Status */}
                             <span className={`px-3 py-1 rounded-full text-xs font-bold border ${o.status === 'COMPLETED' ? 'bg-green-900/30 text-green-400 border-green-500/30' : o.status === 'CANCELED' ? 'bg-red-900/30 text-red-400 border-red-500/30' : 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'}`}>
                               {o.status}
                             </span>
                             
-                            {/* Report Indicator */}
                             {report ? (
                               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${report.status === 'SIGNED' ? 'bg-primary-dark/40 text-primary-light border-primary-light/30' : 'bg-common-dark/40 text-common-main border-common-main/30'}`}>
                                 {report.status === 'SIGNED' ? '✓ Informe Firmado' : '✎ Informe Pendiente'}
@@ -244,7 +244,6 @@ export default function PatientProfileModal({
                   )}
                 </div>
 
-                {/* Per-study upload list */}
                 {patientOrders.length > 0 && (
                   <div className="bg-black/40 border border-white/10 rounded-xl p-5">
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b border-white/5 pb-2 mb-4">Archivos por Estudio</h3>

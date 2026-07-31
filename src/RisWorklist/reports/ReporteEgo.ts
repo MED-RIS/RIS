@@ -6,12 +6,12 @@ export const imprimirEgoCNS = (p: any) => {
   const e = d.egoDatos || p.egoDatos || d || {};
 
   const v = (val: any) => {
-    if (val === undefined || val === null || val === "") return "-";
+    if (val === undefined || val === null || String(val).trim() === "") return "-";
     return String(val);
   };
 
   const vFecha = (val: any) => {
-    if (val === undefined || val === null || val === "") return "-";
+    if (val === undefined || val === null || String(val).trim() === "") return "-";
     if (typeof val === "number" || /^\d{5}$/.test(String(val))) {
       const serial = Number(val);
       const base = new Date(Date.UTC(1899, 11, 30));
@@ -26,20 +26,20 @@ export const imprimirEgoCNS = (p: any) => {
     p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente"
   ).trim().toUpperCase();
 
-  const codBeneficiario = p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-";
-  const edad = p.edad ?? d.edad ?? p.datos?.edad ?? "-";
+  const codBeneficiario = p.codBeneficiario ?? p.id_paciente ?? p.pacienteData?.id_paciente ?? d.id_paciente ?? d.codBeneficiario ?? "-";
+  const edad = p.edad ?? d.edad ?? p.pacienteData?.edad ?? p.datos?.edad ?? "-";
   const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
   
-  // 🌟 Correlativo secuencial blindado contra marcas de tiempo gigantes
+  // 🌟 Correlativo secuencial blindado
   let numeroSecuencialLimpio = String(p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1");
   if (numeroSecuencialLimpio.length > 6) {
     numeroSecuencialLimpio = "1";
   }
 
   const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
-  const medico = p.medico_solicitante ?? d.medico_solicitante ?? "-";
-  const centro = p.centro_asistencial ?? d.centro_asistencial ?? "-";
-  const servicio = p.servicio ?? d.servicio ?? "";
+  const medico = p.medico_solicitante ?? d.medico_solicitante ?? p.medicoSolicitante ?? d.medicoSolicitante ?? "-";
+  const centro = p.centro_asistencial ?? d.centro_asistencial ?? p.centroAsistencial ?? d.centroAsistencial ?? "-";
+  const servicio = p.servicio ?? d.servicio ?? "LABORATORIO";
   const consultorio = p.consultorio ?? d.consultorio ?? "-";
   const fechaSolicitud = vFecha(p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud);
 
@@ -90,18 +90,19 @@ export const imprimirEgoCNS = (p: any) => {
       </tr>
     </table>
 
-    <div class="main-title">EXAMEN GENERAL DE ORINA</div>
+    <div class="main-title">EXAMEN GENERAL DE ORINA (EGO)</div>
 
     <div class="grid-3">
       <!-- COLUMNA 1: EXAMEN FÍSICO -->
       <div class="col-box">
         <div class="col-title">EXAMEN FÍSICO</div>
         <div class="row-item"><span>Volumen:</span><span>${v(e.volumen)}</span></div>
-        <div class="color-row row-item"><span>Color:</span><span>${v(e.color)}</span></div>
+        <div class="row-item"><span>Color:</span><span>${v(e.color)}</span></div>
         <div class="row-item"><span>Olor:</span><span>${v(e.olor)}</span></div>
         <div class="row-item"><span>Aspecto:</span><span>${v(e.aspecto)}</span></div>
         <div class="row-item"><span>Espuma:</span><span>${v(e.espuma)}</span></div>
-        <div class="row-item"><span>Otros:</span><span>${v(e.otros_fisico)}</span></div>
+        <div class="row-item"><span>Otros:</span><span>${v(e.otros)}</span></div>
+        <div class="row-item"><span>Sedimento:</span><span>${v(e.sedimento)}</span></div>
       </div>
 
       <!-- COLUMNA 2: EXAMEN QUÍMICO -->
@@ -118,19 +119,18 @@ export const imprimirEgoCNS = (p: any) => {
         <div class="row-item"><span>Nitritos:</span><span>${v(e.nitritos)}</span></div>
       </div>
 
-      <!-- COLUMNA 3: SEDIMENTO + CILINDROS -->
+      <!-- COLUMNA 3: SEDIMENTO MICROSCÓPICO + CILINDROS -->
       <div class="col-box">
         <div class="col-title">SEDIMENTO MICROSCÓPICO</div>
-        <div class="row-item"><span>Sedimento:</span><span>${v(e.sedimento)}</span></div>
-        <div class="row-item"><span>Cel. Epiteliales:</span><span>${v(e.cel_epiteliales)}</span></div>
+        <div class="row-item"><span>Piocitos:</span><span>${v(e.piocitos)}</span></div>
         <div class="row-item"><span>Leucocitos:</span><span>${v(e.leucocitos)}</span></div>
         <div class="row-item"><span>Eritrocitos:</span><span>${v(e.eritrocitos)}</span></div>
-        <div class="row-item"><span>Piocitos:</span><span>${v(e.piocitos)}</span></div>
+        <div class="row-item"><span>C. Epiteliales:</span><span>${v(e.cel_epiteliales)}</span></div>
         <div class="row-item"><span>Bacterias:</span><span>${v(e.bacterias)}</span></div>
         <div class="row-item"><span>Cel. Renales:</span><span>${v(e.cel_renales)}</span></div>
         <div class="row-item"><span>Fil. Mucoso:</span><span>${v(e.filamento_mucoso)}</span></div>
         <div class="row-item"><span>Cristales:</span><span>${v(e.cristales)}</span></div>
-        <div class="col-title" style="border-top: 1px solid #000;">CILINDROS</div>
+        <div class="col-title" style="border-top: 1px solid #000; border-bottom: 1px solid #000;">CILINDROS</div>
         <div class="row-item"><span>Hialinos:</span><span>${v(e.cilindros_hialinos)}</span></div>
         <div class="row-item"><span>Granulosos:</span><span>${v(e.cilindros_granuloso)}</span></div>
         <div class="row-item"><span>Hemáticos:</span><span>${v(e.cilindros_hematico)}</span></div>
@@ -139,6 +139,7 @@ export const imprimirEgoCNS = (p: any) => {
       </div>
     </div>
 
+    <!-- OBSERVACIONES -->
     <div class="obs-box">
       <div><b>Observaciones 1:</b> ${v(e.observaciones1)}</div>
       <div><b>Observaciones 2:</b> ${v(e.observaciones2)}</div>
@@ -153,7 +154,6 @@ export const imprimirEgoCNS = (p: any) => {
 
   // 2️⃣ Mapeado CSS combinado con la barra de herramientas flotante
   const estilosCompleto = `
-    /* Barra de herramientas superior flotante */
     .no-print-bar {
       display: flex;
       justify-content: center;
@@ -180,7 +180,6 @@ export const imprimirEgoCNS = (p: any) => {
     .btn-close { background: #ef4444; color: white; }
     .btn-close:hover { background: #dc2626; }
 
-    /* Contenedor del documento */
     .print-area {
       padding: 35px;
       background: #ffffff;
@@ -206,7 +205,7 @@ export const imprimirEgoCNS = (p: any) => {
 
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 6px; }
     .col-box { border: 1px solid #000; background: #fff; }
-    .col-title { background-color: #e0f2f1; font-weight: bold; text-align: center; padding: 4px; border-bottom: 1px solid #000; font-size: 10.5px; color: #000; }
+    .col-title { background-color: #e0f2f1; font-weight: bold; text-align: center; padding: 4px; font-size: 10.5px; color: #000; }
     .row-item { display: flex; justify-content: space-between; padding: 3px 8px; border-bottom: 1px dotted #999; min-height: 17px; color: #000; }
     .row-item span:last-child { font-family: monospace; font-weight: bold; text-align: right; }
 
@@ -220,14 +219,16 @@ export const imprimirEgoCNS = (p: any) => {
     }
   `;
 
-  // 3️⃣ Apertura asíncrona segura en ventana aislada para romper el congelamiento del sistema
+  // 3️⃣ Apertura asíncrona en pestaña aislada
   const tituloArchivo = `CNS_EGO_${pacienteNombre.replace(/ /g, "_")}`;
   const win = window.open('', '_blank');
 
   if (win) {
     win.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <title>${tituloArchivo}</title>
           <style>${estilosCompleto}</style>
         </head>

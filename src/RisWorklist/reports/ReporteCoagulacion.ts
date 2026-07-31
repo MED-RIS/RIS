@@ -9,13 +9,13 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     return String(val);
   };
 
-  // 👤 EXTRACCIÓN DINÁMICA DE FILIACIÓN (Mapeado con FormularioTab)
+  // 👤 EXTRACCIÓN DINÁMICA DE FILIACIÓN
   const pacienteNombre = String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase();
   const codBeneficiario = p.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? "-";
   const edad = p.edad ?? d.edad ?? "-";
   const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
   
-  // 🌟 Correlativo secuencial seguro: si es un número largo (timestamp), lo limpia a "1"
+  // 🌟 Correlativo secuencial seguro
   let numeroSecuencialLimpio = String(p.orden ?? d.orden ?? p.numero_orden ?? d.numero_orden ?? "1");
   if (numeroSecuencialLimpio.length > 6) {
     numeroSecuencialLimpio = "1";
@@ -28,23 +28,29 @@ export const imprimirCoagulogramaCNS = (p: any) => {
   const consultorio = p.consultorio ?? d.consultorio ?? "-";
   const fechaSolicitud = p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud ?? "-";
 
-  // 🩸 JALANDO DATOS DE COAGULACIÓN DESDE EL EXPEDIENTE DE HEMATOLOGÍA (Sin quemar nada)
+  // 🩸 LECTURA DE VALORES DE COAGULACIÓN
   const tiempoProtrombina = d.tiempo_protrombina ?? d.hematoDatos?.tiempo_protrombina ?? "-";
-  const actividadProtrombina = d.actividad_protrombina ?? d.hematoDatos?.actividad_protrombina ?? "-";
+  const actividadProtrombina = d.actividad_protrombina ?? d.actividad ?? d.hematoDatos?.actividad_protrombina ?? "-";
   const inr = d.inr ?? d.hematoDatos?.inr ?? "-";
   
-  // Variables de tiempo de coagulación y sangría (Minutos y Segundos)
-  const coagulacionMin = d.tiempo_coagulacion_min ?? d.hematoDatos?.tiempo_coagulacion_min ?? "-";
-  const coagulacionSeg = d.tiempo_coagulacion_seg ?? d.hematoDatos?.tiempo_coagulacion_seg ?? "-";
-  const sangriaMin = d.tiempo_sangria_min ?? d.hematoDatos?.tiempo_sangria_min ?? "-";
-  const sangriaSeg = d.tiempo_sangria_seg ?? d.hematoDatos?.tiempo_sangria_seg ?? "-";
+  // Tiempos de Sangría y Coagulación (Minutos y Segundos)
+  const sangriaMin = d.t_sangria_min ?? d.tiempo_sangria_min ?? "-";
+  const sangriaSeg = d.t_sangria_seg ?? d.tiempo_sangria_seg ?? "-";
+  const coagulacionMin = d.t_coagulacion_min ?? d.tiempo_coagulacion_min ?? "-";
+  const coagulacionSeg = d.t_coagulacion_seg ?? d.tiempo_coagulacion_seg ?? "-";
 
-  // 1️⃣ Construimos únicamente el bloque interno del reporte de la CNS
+  // Comentarios clínicos oficiales
+  const comRoja = d.comentario_roja ?? "-";
+  const comBlanca = d.comentario_blanca ?? "-";
+  const comPlaquetas = d.comentario_plaquetas ?? "-";
+  const observaciones = d.observaciones ?? "-";
+
+  // 1️⃣ Estructura HTML del informe oficial
   const htmlInforme = `
     <div class="header-container">
       <div class="blue-box">
         ${v(institucion).toUpperCase()}<br>
-        <div class="sub">QUÍMICAS</div>
+        <div class="sub">COAGULOGRAMA</div>
       </div>
       <div class="green-box">${v(numeroSecuencialLimpio)}</div>
     </div>
@@ -88,48 +94,56 @@ export const imprimirCoagulogramaCNS = (p: any) => {
       </tr>
     </table>
 
-    <div class="main-title">HEMATOLOGIA</div>
+    <div class="main-title">COAGULOGRAMA Y HEMOSTASIA</div>
 
     <table class="results-table">
       <thead>
         <tr>
-          <th style="width: 45%;">Análisis Solicitado</th>
+          <th style="width: 45%;">Análisis / Parámetro</th>
           <th style="width: 25%; text-align: center;">Resultado Obtenido</th>
           <th style="width: 30%;">Valores de Referencia</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><b>Tiempo de Protrombina</b></td>
-          <td class="val-bold">${v(tiempoProtrombina)} seg</td>
-          <td>11 - 15 segundos</td>
+          <td><b>TIEMPO DE SANGRÍA</b></td>
+          <td class="val-bold">
+            ${sangriaMin !== "-" || sangriaSeg !== "-" ? `${v(sangriaMin)} min ${v(sangriaSeg) !== "-" ? v(sangriaSeg) + " seg" : ""}` : "-"}
+          </td>
+          <td>1 - 3 minutos</td>
         </tr>
         <tr>
-          <td><b>Actividad de Protrombina</b></td>
+          <td><b>TIEMPO DE COAGULACIÓN</b></td>
+          <td class="val-bold">
+            ${coagulacionMin !== "-" || coagulacionSeg !== "-" ? `${v(coagulacionMin)} min ${v(coagulacionSeg) !== "-" ? v(coagulacionSeg) + " seg" : ""}` : "-"}
+          </td>
+          <td>5 - 10 minutos</td>
+        </tr>
+        <tr>
+          <td><b>TIEMPO DE PROTROMBINA</b></td>
+          <td class="val-bold">${v(tiempoProtrombina)} seg</td>
+          <td>11 - 14 segundos</td>
+        </tr>
+        <tr>
+          <td><b>ACTIVIDAD DE PROTROMBINA</b></td>
           <td class="val-bold">${v(actividadProtrombina)} %</td>
           <td>70 - 100 %</td>
         </tr>
         <tr>
           <td><b>INR</b></td>
           <td class="val-bold">${v(inr)}</td>
-          <td>1.0 - 1.2</td>
-        </tr>
-        <tr>
-          <td><b>Tiempo de Coagulación</b></td>
-          <td class="val-bold">
-            ${coagulacionMin !== "-" || coagulacionSeg !== "-" ? `${v(coagulacionMin)}' ${v(coagulacionSeg)}"` : "-"}
-          </td>
-          <td>5 - 10 minutos</td>
-        </tr>
-        <tr>
-          <td><b>Tiempo de Sangría</b></td>
-          <td class="val-bold">
-            ${sangriaMin !== "-" || sangriaSeg !== "-" ? `${v(sangriaMin)}' ${v(sangriaSeg)}"` : "-"}
-          </td>
-          <td>1 - 3 minutos</td>
+          <td>0.8 - 1.2</td>
         </tr>
       </tbody>
     </table>
+
+    <!-- 📝 SECCIÓN DE COMENTARIOS CLÍNICOS -->
+    <div class="comentarios-seccion">
+      <div><b>COMENTARIO SERIE ROJA:</b> ${v(comRoja)}</div>
+      <div><b>COMENTARIO SERIE BLANCA:</b> ${v(comBlanca)}</div>
+      <div><b>COMENTARIO PLAQUETAS:</b> ${v(comPlaquetas)}</div>
+      <div><b>OBSERVACIONES:</b> ${v(observaciones)}</div>
+    </div>
 
     <div class="footer-notes">
       <span><b>Elaborado por:</b> Asist. Dig. RIS-SERVER (CNS)</span>
@@ -138,9 +152,8 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     </div>
   `;
 
-  // 2️⃣ Agrupamos los estilos y la interfaz interactiva de la barra de previsualización
+  // 2️⃣ Estilos CSS para vista impresa y previsualización
   const estilosCompleto = `
-    /* Barra de herramientas superior flotante */
     .no-print-bar {
       display: flex;
       justify-content: center;
@@ -167,7 +180,6 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     .btn-close { background: #ef4444; color: white; }
     .btn-close:hover { background: #dc2626; }
 
-    /* Contenedor del documento tamaño carta */
     .print-area {
       padding: 40px;
       background: #ffffff;
@@ -179,7 +191,6 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     @page { size: letter; margin: 40px; }
     body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #000; margin: 0; padding: 0; font-size: 11px; line-height: 1.4; }
     
-    /* 🔵 CABECERA INSTITUCIONAL CNS */
     .header-container { display: table; width: 100%; border: 2px solid #000; box-sizing: border-box; margin-bottom: 5px; }
     .blue-box { display: table-cell; background-color: #00a8e8; color: #000; padding: 15px; text-align: center; font-weight: bold; font-size: 14px; vertical-align: middle; }
     .blue-box .sub { font-size: 16px; margin-top: 5px; letter-spacing: 2px; font-weight: 900; }
@@ -187,19 +198,19 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     
     .center-order { text-align: center; font-size: 22px; font-weight: bold; margin: 10px 0; font-family: monospace; }
     
-    /* 📝 TABLAS DE FILIACIÓN */
     .filiacion-table { width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 15px; table-layout: fixed; }
     .filiacion-table td { padding: 5px 2px; vertical-align: bottom; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .border-dotted { border-bottom: 1px dotted #000; font-weight: bold; font-size: 12px; font-family: monospace; text-align: center; padding-bottom: 1px; }
     .filiacion-label { font-size: 9px; color: #333; display: block; text-align: center; margin-top: 2px; border-top: 1px solid #000; width: 95%; margin-left: auto; margin-right: auto; padding-top: 1px; }
     
-    .main-title { text-align: center; font-size: 15px; font-weight: bold; margin: 30px 0 20px 0; text-decoration: underline; letter-spacing: 1.5px; }
+    .main-title { text-align: center; font-size: 15px; font-weight: bold; margin: 25px 0 15px 0; text-decoration: underline; letter-spacing: 1.5px; }
     
-    /* 📊 TABLA DE RESULTADOS DE COAGULACIÓN */
-    .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-    .results-table th, .results-table td { padding: 10px 14px; border: 1px solid #000; font-size: 12px; color: #000; }
+    .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+    .results-table th, .results-table td { padding: 8px 12px; border: 1px solid #000; font-size: 11px; color: #000; }
     .results-table th { background-color: #f2f2f2; font-weight: bold; text-align: left; text-transform: uppercase; font-size: 10px; }
-    .val-bold { font-weight: bold; font-family: monospace; font-size: 13px; text-align: center; }
+    .val-bold { font-weight: bold; font-family: monospace; font-size: 12px; text-align: center; }
+
+    .comentarios-seccion { margin-top: 25px; font-size: 10px; line-height: 1.6; color: #000; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid #000; padding-top: 10px; }
     .footer-notes { margin-top: 30px; border-top: 1px dashed #000; padding-top: 10px; display: flex; justify-content: space-between; font-size: 9px; }
 
     @media print {
@@ -209,14 +220,16 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     }
   `;
 
-  // 3️⃣ Apertura asíncrona segura en pestaña limpia (Evita colgar tu pestaña de React)
+  // 3️⃣ Apertura de ventana previsualizadora
   const tituloArchivo = `CNS_Coagulograma_${pacienteNombre.replace(/ /g, "_")}`;
   const win = window.open('', '_blank');
 
   if (win) {
     win.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <title>${tituloArchivo}</title>
           <style>${estilosCompleto}</style>
         </head>

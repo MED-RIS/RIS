@@ -1,3 +1,5 @@
+// src/RisWorklist/reports/ReporteQuimica.ts
+
 import { v, flagRango, resolverFiliacion, cabeceraHTML, renderizarEImprimir } from "./_reporteBase";
 
 export const imprimirQuimicaCNS = (p: any) => {
@@ -7,7 +9,7 @@ export const imprimirQuimicaCNS = (p: any) => {
 
   // Fila de resultado protegida contra bucles infinitos en rangos asimétricos
   const fila = (label: string, val: any, unidad: string, rangoOriginal: string) => {
-    // 🌟 PROTECCIÓN CRÍTICA: Convertimos rangos de un solo extremo en rangos numéricos seguros para evitar bucles infinitos
+    // 🌟 PROTECCIÓN CRÍTICA: Convertimos rangos de un solo extremo en rangos numéricos seguros
     let rangoSaneadoParaValidar = rangoOriginal;
     
     if (!rangoOriginal || rangoOriginal.trim() === "") {
@@ -23,7 +25,7 @@ export const imprimirQuimicaCNS = (p: any) => {
       rangoSaneadoParaValidar = `0 - ${num}`;      // Convierte "hasta 0.3" en "0 - 0.3"
     }
 
-    // Ejecuta flagRango de forma 100% segura sin colgar el navegador
+    // Ejecuta flagRango de forma segura
     const flag = flagRango(val, rangoSaneadoParaValidar);
     const color = flag === "H" ? "#c62828" : flag === "L" ? "#1565c0" : "#000";
     const marca = flag === "H" ? " ↑" : flag === "L" ? " ↓" : "";
@@ -33,16 +35,20 @@ export const imprimirQuimicaCNS = (p: any) => {
         <td class="lbl">${label}</td>
         <td class="val" style="color:${color}">${v(val)}${marca}</td>
         <td class="uni">${unidad}</td>
-        <td class="ref">${rangoOriginal}</td> <!-- Muestra el rango original de la CNS intacto -->
+        <td class="ref">${rangoOriginal}</td>
       </tr>`;
   };
 
   const cuerpo = `
     ${cabeceraHTML(f, "QUÍMICA SANGUÍNEA", "#1565c0", "#90caf9")}
     <div class="main-title">QUÍMICA SANGUÍNEA</div>
+    
     <div class="grid-2">
+      <!-- 🧪 TABLA 1: GLUCÉMICO, RENAL Y PROTEÍNAS -->
       <table class="qmc">
-        <thead><tr><th>Determinación</th><th>Result.</th><th>Unid.</th><th>Ref.</th></tr></thead>
+        <thead>
+          <tr><th>Determinación</th><th>Result.</th><th>Unid.</th><th>Ref.</th></tr>
+        </thead>
         <tbody>
           ${fila("Glicemia", q.gli, "mg/dl", "70 - 110")}
           ${fila("Hb Glicosilada", q.hba_1c, "%", "4 - 6")}
@@ -53,11 +59,15 @@ export const imprimirQuimicaCNS = (p: any) => {
           ${fila("Proteínas Totales", q.prot, "g/dl", "6.4 - 8.3")}
           ${fila("Albúmina", q.alb, "g/dl", "3.5 - 5.0")}
           ${fila("Globulinas", q.globulinas, "g/dl", "")}
-          ${fila("Rel. Alb/Glob", q.rel_alb_glo, "", "")}
+          ${fila("Rel. Alb/Glob", q.rel_alb_glo, "", "1.1 - 2.5")}
         </tbody>
       </table>
+
+      <!-- 🔬 TABLA 2: PERFIL LIPÍDICO, ENZIMAS Y BILIRRUBINAS -->
       <table class="qmc">
-        <thead><tr><th>Determinación</th><th>Result.</th><th>Unid.</th><th>Ref.</th></tr></thead>
+        <thead>
+          <tr><th>Determinación</th><th>Result.</th><th>Unid.</th><th>Ref.</th></tr>
+        </thead>
         <tbody>
           ${fila("Colesterol Total", q.col, "mg/dl", "120 - 190")}
           ${fila("Triglicéridos", q.tri, "mg/dl", "60 - 150")}
@@ -74,18 +84,21 @@ export const imprimirQuimicaCNS = (p: any) => {
         </tbody>
       </table>
     </div>
-    <div class="obs-box"><b>Observaciones:</b> ${v(q.observaciones)}</div>
+
+    ${q.observaciones || d.observaciones ? `<div class="obs-box"><b>Observaciones:</b> ${v(q.observaciones ?? d.observaciones)}</div>` : ''}
   `;
 
   const estilos = `
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
-    .qmc { width: 100%; border-collapse: collapse; }
-    .qmc th { background-color: #e3f2fd; border: 1px solid #000; padding: 4px; font-size: 10px; }
-    .qmc td { border: 1px solid #999; padding: 3px 6px; font-size: 10.5px; }
-    .qmc td.lbl { font-weight: bold; }
-    .qmc td.val { text-align: right; font-family: monospace; font-weight: bold; }
-    .qmc td.uni { color: #555; font-size: 9.5px; }
-    .qmc td.ref { color: #555; font-size: 9.5px; text-align: center; }
+    .main-title { text-align: center; font-size: 15px; font-weight: bold; margin: 15px 0 10px 0; text-decoration: underline; letter-spacing: 1.2px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; align-items: start; }
+    .qmc { width: 100%; border-collapse: collapse; background: #fff; }
+    .qmc th { background-color: #e3f2fd; border: 1px solid #000; padding: 4px; font-size: 10px; color: #000; }
+    .qmc td { border: 1px solid #999; padding: 3px 6px; font-size: 10.5px; color: #000; }
+    .qmc td.lbl { font-weight: bold; width: 42%; }
+    .qmc td.val { text-align: right; font-family: monospace; font-weight: bold; width: 22%; }
+    .qmc td.uni { color: #555; font-size: 9.5px; width: 16%; }
+    .qmc td.ref { color: #555; font-size: 9.5px; text-align: center; width: 20%; }
+    .obs-box { margin-top: 15px; font-size: 10px; color: #000; border-top: 1px dashed #000; padding-top: 6px; }
   `;
 
   renderizarEImprimir(`CNS_Quimica_${f.pacienteNombre.replace(/ /g, "_")}`, cuerpo, estilos);
