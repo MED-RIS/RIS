@@ -1,17 +1,17 @@
 import { obtenerCodigoBeneficiarioTexto } from "../../utils/helpers";
 
 export const v = (val: any) => {
-  if (val === undefined || val === null || String(val).trim() === "") return "-";
+  if (val === undefined || val === null || val === "") return "-";
   return String(val);
 };
 
 export const num = (val: any): number => {
-  if (val === undefined || val === null || String(val).trim() === "") return NaN;
+  if (val === undefined || val === null || val === "") return NaN;
   return parseFloat(String(val).replace(",", "."));
 };
 
 export const vFecha = (val: any) => {
-  if (val === undefined || val === null || String(val).trim() === "") return "-";
+  if (val === undefined || val === null || val === "") return "-";
   if (typeof val === "number" || /^\d{5}$/.test(String(val))) {
     const base = new Date(Date.UTC(1899, 11, 30));
     base.setUTCDate(base.getUTCDate() + Number(val));
@@ -42,18 +42,16 @@ export const resolverFiliacion = (p: any): Filiacion => {
     ordenLimpia = "1";
   }
 
-  const beneficiarioRaw = p.codigoBeneficiario ?? d.codigoBeneficiario ?? p.codBeneficiario ?? d.codBeneficiario ?? p.id_paciente ?? d.id_paciente ?? "-";
-
   return {
-    pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
-    codBeneficiario: typeof obtenerCodigoBeneficiarioTexto === "function" ? obtenerCodigoBeneficiarioTexto(beneficiarioRaw) : String(beneficiarioRaw),
-    edad: p.edad ?? d.edad ?? p.pacienteData?.edad ?? p.datos?.edad ?? "-",
+   pacienteNombre: String(p.paciente ?? d.paciente ?? p.nombre ?? d.nombre ?? "Paciente").trim().toUpperCase(),
+ codBeneficiario: obtenerCodigoBeneficiarioTexto(p.codigoBeneficiario ?? d.codigoBeneficiario ?? p.codBeneficiario ?? d.codBeneficiario ?? p.id_paciente ?? "-"),
+  edad: p.edad ?? d.edad ?? p.datos?.edad ?? "-",
     institucion: p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS",
     numeroOrden: ordenLimpia,
-    aseguradoReal: p.codigoAsegurado ?? p.cod ?? p.codigo_asegurado ?? d.codigoAsegurado ?? d.cod ?? d.codigo_asegurado ?? "-",
-    medico: p.medico_solicitante ?? d.medico_solicitante ?? p.medicoSolicitante ?? d.medicoSolicitante ?? p.medico ?? d.medico ?? "-",
-    centro: p.centro_asistencial ?? d.centro_asistencial ?? p.centroAsistencial ?? d.centroAsistencial ?? p.centro ?? d.centro ?? "-",
-    servicio: p.servicio ?? d.servicio ?? "LABORATORIO",
+    aseguradoReal: p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-",
+    medico: p.medico_solicitante ?? d.medico_solicitante ?? "-",
+    centro: p.centro_asistencial ?? d.centro_asistencial ?? "-",
+    servicio: p.servicio ?? d.servicio ?? "",
     consultorio: p.consultorio ?? d.consultorio ?? "-",
     fechaSolicitud: vFecha(p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud),
   };
@@ -65,7 +63,7 @@ export const cabeceraHTML = (f: Filiacion, subtitulo: string, color: string, col
       ${v(f.institucion).toUpperCase()}<br>
       <div class="sub">${subtitulo}</div>
     </div>
-    <div class="green-box" style="background-color: ${colorClaro}; color: #000;">${v(f.numeroOrden)}</div>
+    <div class="green-box" style="background-color: ${colorClaro};">${v(f.numeroOrden)}</div>
   </div>
 
   <table class="filiacion-table" style="margin-bottom: 6px; margin-top: 8px;">
@@ -175,7 +173,6 @@ export const footerHTML = () => `
 
 export const renderizarEImprimir = (titulo: string, cuerpo: string, estilosExtra = "") => {
   const html = `
-    <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">

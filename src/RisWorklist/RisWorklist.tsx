@@ -258,7 +258,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [isCreatingCashRegister, setIsCreatingCashRegister] = useState(false);
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
-  const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
+  const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
   const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
   const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '' });
@@ -462,20 +462,22 @@ function RisWorklistPanel({ servicesManager }) {
     }
   };
 
-  const handleCreatePatient = async (e: React.FormEvent) => {
+  // Devuelve el paciente creado (para poder rutearlo al servicio elegido tras el registro).
+  const handleCreatePatient = async (e: React.FormEvent): Promise<Patient | undefined> => {
     e.preventDefault();
     const datosPaciente = { ...newPatient, dateOfBirth: newPatient.dateOfBirth || undefined };
     const resetForm = () => {
       setIsCreatingPatient(false);
-      setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
+      setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
     };
     try {
-      await createPatient(datosPaciente);
+      const creado = await createPatient(datosPaciente);
       const data = await fetchPatients();
       setPatients(data);
       guardarPacientesLS(data);
       toast.success('Paciente creado exitosamente');
       resetForm();
+      return creado;
     } catch (err) {
       // Fallback offline: persistimos el paciente en localStorage y en el store en memoria.
       const local: Patient = { ...(datosPaciente as any), _id: `local-${Date.now()}` };
@@ -486,7 +488,14 @@ function RisWorklistPanel({ servicesManager }) {
       });
       toast.success('Paciente guardado localmente');
       resetForm();
+      return local;
     }
+  };
+
+  // Tras registrar un paciente con servicio "Imagenología": ir a Recepción con el paciente cargado.
+  const irARecepcionConPaciente = (paciente: Patient) => {
+    setNewOrder((prev) => ({ ...prev, patient: paciente?._id || '' }));
+    setActiveTab('citas');
   };
 
   const handleCreateOrder = async (e: any, customOrder?: any) => {
@@ -589,7 +598,7 @@ function RisWorklistPanel({ servicesManager }) {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingItem(null);
-    setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '', numeroAsegurado: '' });
+    setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
     setNewModality({ name: '', dicom_code: '', description: '' });
     setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
@@ -928,7 +937,7 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'pacientes' && (
-                <PatientsTab patients={patients} fuzzySearch={fuzzySearch} paginate={paginate} isCreatingPatient={isCreatingPatient} setIsCreatingPatient={setIsCreatingPatient} isEditing={isEditing} editingItem={editingItem} handleCreatePatient={handleCreatePatient} handleUpdate={handleUpdate} handleCancelEdit={handleCancelEdit} handleEdit={handleEdit} handleDelete={handleDelete} newPatient={newPatient} setNewPatient={setNewPatient} PaginationControls={Paginator} openPatientProfile={setSelectedPatientProfile} />
+                <PatientsTab patients={patients} fuzzySearch={fuzzySearch} paginate={paginate} isCreatingPatient={isCreatingPatient} setIsCreatingPatient={setIsCreatingPatient} isEditing={isEditing} editingItem={editingItem} handleCreatePatient={handleCreatePatient} handleUpdate={handleUpdate} handleCancelEdit={handleCancelEdit} handleEdit={handleEdit} handleDelete={handleDelete} newPatient={newPatient} setNewPatient={setNewPatient} PaginationControls={Paginator} openPatientProfile={setSelectedPatientProfile} irARecepcionConPaciente={irARecepcionConPaciente} />
               )}
 
               {activeTab === 'citas' && (

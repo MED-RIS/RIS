@@ -165,6 +165,25 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
     setVerReportesGlobal(true);
   };
 
+  // El informe guarda una FOTO del paciente al momento de crearse. Si después se
+  // completa/corrige un dato del paciente (p.ej. Código Beneficiario) en la pestaña
+  // Pacientes, el informe viejo no se entera solo — así que al imprimir, se refresca
+  // con los datos actuales del paciente en vez de quedarse con la foto vieja.
+  const conDatosPacienteActuales = (informe: any) => {
+    if (!informe) return informe;
+    const paciente = patients.find((p) =>
+      p._id === informe.id_paciente ||
+      p._id === informe.id ||
+      (informe.cod && (p.patientId === informe.cod || p.documentId === informe.cod))
+    );
+    if (!paciente) return informe;
+    return {
+      ...informe,
+      codigoBeneficiario: (paciente as any).codigoBeneficiario || informe.codigoBeneficiario || '-',
+      codigoAsegurado: (paciente as any).numeroAsegurado || informe.codigoAsegurado,
+    };
+  };
+
   // Un valor cuenta como "llenado" si no es vacío ni el default 0.
   const tieneValor = (val: any) =>
     val !== undefined && val !== null && String(val).trim() !== '' && String(val).trim() !== '0';
@@ -307,7 +326,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('hematologia')}
                             <button
-                              onClick={() => imprimirHematologiaCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirHematologiaCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-red-900/10"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -329,7 +348,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
     <div className="mt-4 flex gap-2">
       {botonEditar('grupo_sanguineo')}
       <button
-        onClick={() => imprimirGrupoSanguineoUnicoCNS(pacienteFichaActiva)}
+        onClick={() => imprimirGrupoSanguineoUnicoCNS(conDatosPacienteActuales(pacienteFichaActiva))}
         className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-blue-900/10"
       >
         <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -353,7 +372,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('ego')}
                             <button
-                              onClick={() => imprimirEgoCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirEgoCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs transition-colors"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -377,7 +396,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('coagulograma')}
                             <button
-                              onClick={() => imprimirCoagulogramaCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirCoagulogramaCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-purple-900/10"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -400,7 +419,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('quimica')}
                             <button
-                              onClick={() => imprimirQuimicaCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirQuimicaCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -425,7 +444,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('electrolitos')}
                             <button
-                              onClick={() => imprimirElectrolitosProtCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirElectrolitosProtCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -448,7 +467,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('serologia')}
                             <button
-                              onClick={() => imprimirSerologiaCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirSerologiaCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -471,7 +490,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('tolerancia_glucosa')}
                             <button
-                              onClick={() => imprimirToleranciaGlucosaCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirToleranciaGlucosaCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -495,7 +514,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('hto_hb')}
                             <button
-                              onClick={() => imprimirHtoHbCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirHtoHbCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -518,7 +537,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('hto_hb_widal')}
                             <button
-                              onClick={() => imprimirHtoHbLeucoWidalCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirHtoHbLeucoWidalCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -541,7 +560,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('liquidos')}
                             <button
-                              onClick={() => imprimirLiquidosCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirLiquidosCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar
@@ -565,7 +584,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           <div className="mt-4 flex gap-2">
                             {botonEditar('espermato')}
                             <button
-                              onClick={() => imprimirEspermatoCNS(pacienteFichaActiva)}
+                              onClick={() => imprimirEspermatoCNS(conDatosPacienteActuales(pacienteFichaActiva))}
                               className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md"
                             >
                               <FileDown className="w-3.5 h-3.5" /> Descargar

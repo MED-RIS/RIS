@@ -1,21 +1,14 @@
+// src/RisWorklist/components/PatientsTab.tsx
 import React, { useState, useEffect } from 'react';
-import { Phone, Mail, Sparkles, User, FileText, Tag, Building2, LayoutGrid, Stethoscope, CalendarDays } from 'lucide-react';
+import { Phone, Mail, Sparkles, ClipboardList, ScanLine } from 'lucide-react';
 import RisModal from './RisModal';
+import QrBoletaScanner from './QrBoletaScanner';
+import { parseBoletaQr } from '../../utils/parseBoletaQr';
 
 import { Patient } from '../types';
 
 // 📦 Importamos los 10 pacientes unificados de tu plantilla Excel locales
 import { listaPacientesPrueba } from './pacientesMock';
-
-// Helper local para cálculo dinámico de edad
-const calcularEdadLocal = (dob: string | undefined): string => {
-  if (!dob) return '-';
-  const fecha = new Date(dob);
-  if (isNaN(fecha.getTime())) return '-';
-  const diff = Date.now() - fecha.getTime();
-  const edad = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  return edad >= 0 ? `${edad} años` : '-';
-};
 
 interface PatientsTabProps {
   patients: Patient[];
@@ -25,7 +18,7 @@ interface PatientsTabProps {
   setIsCreatingPatient: React.Dispatch<React.SetStateAction<boolean>>;
   isEditing: boolean;
   editingItem: any;
-  handleCreatePatient: (e: React.FormEvent) => Promise<void>;
+  handleCreatePatient: (e: React.FormEvent) => Promise<Patient | undefined>;
   handleUpdate: (e: React.FormEvent) => Promise<void>;
   handleCancelEdit: () => void;
   handleEdit: (type: string, item: any) => void;
@@ -34,6 +27,7 @@ interface PatientsTabProps {
   setNewPatient: React.Dispatch<React.SetStateAction<any>>;
   PaginationControls: any;
   openPatientProfile?: (patient: Patient) => void;
+  irARecepcionConPaciente?: (paciente: Patient) => void;
 }
 
 export default function PatientsTab({
@@ -53,80 +47,54 @@ export default function PatientsTab({
   setNewPatient,
   PaginationControls,
   openPatientProfile,
+  irARecepcionConPaciente,
 }: PatientsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
 
-  // 📝 Variables de control para la simulación secuencial
+  // 📝 Variables de control para la simulación secuencial de tu plantilla Excel
   const [indiceExcel, setIndiceExcel] = useState(0);
   const [servicioSeleccionado, setServicioSeleccionado] = useState<'laboratorio' | 'imagenologia'>('laboratorio');
 
-  // 🌟 ESTADOS INDEPENDIENTES PARA NOMBRES Y APELLIDOS SEPARADOS
-  const [paterno, setPaterno] = useState('');
-  const [materno, setMaterno] = useState('');
-  const [nombres, setNombres] = useState('');
+  // 📷 Escaneo de la boleta física por cámara (QR)
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
+  const [qrRawText, setQrRawText] = useState('');
+  const [qrRecognized, setQrRecognized] = useState<boolean | null>(null);
 
-  // 🗑️ FUNCIÓN CONTROLADA PARA ELIMINAR PACIENTE
-  const ejecutarEliminacion = async (paciente: any) => {
-    const targetId = paciente._id || paciente.id || paciente.patientId;
-    if (!targetId) {
-      alert("⚠️ Error: No se encontró el ID único del paciente para eliminar.");
-      return;
-    }
-
-    const seguro = window.confirm(
-      `🗑️ ¿Estás seguro de que deseas eliminar al paciente "${paciente.lastName || ''}, ${paciente.firstName || ''}"?\n\nEsta acción no se puede deshacer.`
-    );
-
-    if (seguro) {
-      try {
-        await handleDelete('patient', targetId);
-      } catch (error) {
-        console.error("Error al eliminar paciente:", error);
-        alert("❌ Ocurrió un error al intentar eliminar el registro.");
+  const handleQrDecoded = (raw: string) => {
+    setIsQrScannerOpen(false);
+    const { fields, recognized } = parseBoletaQr(raw);
+    setQrRawText(raw);
+    setQrRecognized(recognized);
+    if (Object.keys(fields).length > 0) {
+      const merged = { ...newPatient, ...fields };
+      if (fields.documentId && !fields.patientId) {
+        merged.patientId = `MRN-${fields.documentId}`;
       }
+      setNewPatient(merged);
     }
   };
 
-  // Sincroniza los estados separados cuando se va a editar un paciente existente
-  useEffect(() => {
-    if (newPatient) {
-      setNombres(newPatient.firstName || '');
-      const lastNameParts = (newPatient.lastName || '').trim().split(' ');
-      if (lastNameParts.length > 1) {
-        setPaterno(lastNameParts[0] || '');
-        setMaterno(lastNameParts.slice(1).join(' ') || '');
-      } else {
-        setPaterno(lastNameParts[0] || '');
-        setMaterno('');
-      }
-    }
-  }, [newPatient.firstName, newPatient.lastName]);
-
+  // 🪄 FUNCIÓN MÁGICA: Carga la fila de Excel traduciendo los datos al molde del estado de React
   const manejarCargaPlantillaExcel = () => {
     if (!listaPacientesPrueba || listaPacientesPrueba.length === 0) return;
     
     const p = listaPacientesPrueba[indiceExcel] as any;
     
-    setPaterno(p.paterno || '');
-    setMaterno(p.materno || '');
-    setNombres(p.nombres || '');
-
+    // Mapeamos los campos en español de la plantilla a las variables tipadas de tu base de datos NoSQL
     setNewPatient({
       ...newPatient,
-      patientId: `CNS-${p.cod}`,
-      documentId: p.cod,
+      patientId: `MRN-${p.cod}`, // Formato PACS / MRN exigido por el modelo
+      documentId: p.cod,         // Tu Cédula / Matrícula CNS
       firstName: p.nombres,
       lastName: `${p.paterno} ${p.materno}`.trim(),
       gender: p.genero === 'Masculino' ? 'M' : 'F',
-      dateOfBirth: "1992-08-24", 
-      edad: p.edad || "33",
+      dateOfBirth: "1992-08-24", // Fecha estructurada por defecto
       phone: p.telefono || "71524311",
-      email: "cns.admision@gmail.com",
-      codigoBeneficiario: p.codigoBeneficiario || "50",
-      numeroAsegurado: p.cod
+      email: "cns.admision@gmail.com"
     });
 
+    // Cambiamos el selector dinámicamente si la plantilla viene amarrada a un servicio específico
     if (p.servicioSeleccionado) {
       setServicioSeleccionado(p.servicioSeleccionado);
     }
@@ -176,9 +144,6 @@ export default function PatientsTab({
   }, [isEditing, editingItem]);
 
   const openCreateModal = () => {
-    setPaterno('');
-    setMaterno('');
-    setNombres('');
     setIsModalOpen(true);
     setIsCreatingPatient(true);
   };
@@ -192,18 +157,18 @@ export default function PatientsTab({
   const isEditingPatient = isEditing && editingItem?.type === 'patient';
 
   return (
-    <div className="bg-[#0e1715] rounded-lg border border-[#2a403a] p-6 text-white">
+    <div className="bg-primary-main rounded-lg border border-secondary-dark p-6 text-white">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Pacientes</h2>
         <button
           onClick={openCreateModal}
-          className="bg-[#00bfa5] text-[#04140f] px-4 py-2 rounded text-sm hover:bg-[#00d4b8] transition-colors font-bold"
+          className="bg-primary-dark border border-secondary-dark px-4 py-2 rounded text-sm hover:bg-primary-light hover:text-black transition-colors font-bold"
         >
           + Nuevo Registro Unificado
         </button>
       </div>
 
-      {/* ── MODAL CON CAMPOS SEPARADOS DE NOMBRE Y APELLIDOS ── */}
+      {/* ── MODAL COMPLETAMENTE TRADUCIDO A TU DISEÑO CNS EL ALTO ── */}
       <RisModal
         isOpen={isModalOpen}
         onClose={closeModal}
@@ -212,26 +177,25 @@ export default function PatientsTab({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-
-            newPatient.firstName = nombres.trim();
-            newPatient.lastName = `${paterno} ${materno}`.trim();
-
-            if (!newPatient.patientId) {
-              newPatient.patientId = `CNS-${newPatient.documentId || Date.now()}`;
-            }
-
             if (isEditingPatient) {
               await handleUpdate(e);
             } else {
-              await handleCreatePatient(e);
-              alert("🎉 ¡Paciente guardado y sincronizado con éxito!");
+              const creado = await handleCreatePatient(e);
+              // Ruteo según el servicio elegido en el selector post-registro.
+              if (servicioSeleccionado === 'imagenologia' && creado && irARecepcionConPaciente) {
+                setIsModalOpen(false);
+                setIsCreatingPatient(false);
+                irARecepcionConPaciente(creado);
+                return; // salimos: ya navegamos a Recepción con el paciente cargado
+              }
+              alert("🎉 ¡Paciente guardado con éxito! Continúe el registro del examen.");
             }
             setIsModalOpen(false);
             setIsCreatingPatient(false);
           }}
           className="space-y-6"
         >
-          {/* Botón superior de simulación */}
+          {/* Botón superior de carga para la simulación */}
           <div className="flex justify-end">
             <button 
               type="button" 
@@ -244,110 +208,84 @@ export default function PatientsTab({
           </div>
 
           {/* CAMINO PRIMARIO: PARSER QR */}
-          <div className="p-4 bg-black/40 border border-[#2a403a] rounded-lg">
+          <div className="p-4 bg-black/40 border border-secondary-dark rounded-lg">
             <label className="block text-[11px] font-bold text-[#00bfa5] uppercase tracking-wider mb-2">
               📷 CAMINO PRIMARIO: PARSER QR BOLETA CNS EL ALTO
             </label>
             <div className="flex gap-2">
-              <input 
-                type="text" 
-                placeholder="Dispare la lectora QR sobre la boleta física..." 
-                className="flex-1 p-2.5 bg-black border border-[#2a403a] rounded text-xs focus:outline-none focus:border-[#00bfa5] text-white"
-              />
-              <button type="button" className="px-5 bg-[#00bfa5] text-[#04140f] text-xs font-bold rounded hover:bg-[#00d4b8] transition-colors">Procesar</button>
+              <button
+                type="button"
+                onClick={() => setIsQrScannerOpen(true)}
+                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-dark border border-secondary-dark text-white text-xs font-bold rounded hover:bg-primary-light hover:text-black transition-colors"
+              >
+                <ScanLine className="w-4 h-4" /> Escanear boleta con cámara
+              </button>
             </div>
+            {qrRawText && (
+              <div className="mt-2 text-[10px] text-gray-400 bg-black/40 border border-secondary-dark/60 rounded p-2">
+                <span className={qrRecognized ? 'text-primary-light font-bold' : 'text-yellow-400 font-bold'}>
+                  {qrRecognized ? '✓ Datos detectados y precargados abajo.' : '⚠ Formato no reconocido, revise/copie manualmente:'}
+                </span>
+                <div className="mt-1 break-all font-mono">{qrRawText}</div>
+              </div>
+            )}
           </div>
+          <QrBoletaScanner
+            isOpen={isQrScannerOpen}
+            onClose={() => setIsQrScannerOpen(false)}
+            onDecoded={handleQrDecoded}
+          />
 
-          {/* DATOS DE FILIACIÓN CON APELLIDOS Y NOMBRES SEPARADOS */}
+          {/* DATOS DE FILIACIÓN (Vinculados a tu estado native newPatient) */}
           <div className="space-y-4">
-            <div className="border-b border-[#2a403a] pb-1">
-              <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada</span>
+            <div className="border-b border-secondary-dark pb-1">
+              <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada (Principio P1)</span>
             </div>
-
-            {/* FILA 1: CÉDULA / MATRÍCULA */}
-            <div>
-              <label className="block text-gray-400 mb-1 font-bold text-xs">CÉDULA DE IDENTIDAD / MATRÍCULA CNS *</label>
-              <input 
-                required
-                type="text" 
-                placeholder="Ej. 6842105 ó MAT-20481-R" 
-                value={newPatient.documentId || ''} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setNewPatient({ 
-                    ...newPatient, 
-                    documentId: val,
-                    patientId: `CNS-${val}`
-                  });
-                }} 
-                className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white text-xs focus:border-[#00bfa5] outline-none" 
-              />
-            </div>
-
-            {/* FILA 2: APELLIDO PATERNO, APELLIDO MATERNO Y NOMBRES SEPARADOS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">APELLIDO PATERNO *</label>
-                <input 
-                  required 
-                  type="text" 
-                  placeholder="" 
-                  value={paterno} 
-                  onChange={(e) => setPaterno(e.target.value)} 
-                  className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" 
+                <label className="block text-gray-400 mb-1 font-bold">CÉDULA DE IDENTIDAD / MATRÍCULA *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. 6842105 ó MAT-20481-R"
+                  value={newPatient.documentId || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewPatient({
+                      ...newPatient,
+                      documentId: val,
+                      patientId: val ? `MRN-${val}` : '',
+                    });
+                  }}
+                  className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none"
                 />
               </div>
-
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">APELLIDO MATERNO</label>
-                <input 
-                  type="text" 
-                  placeholder="" 
-                  value={materno} 
-                  onChange={(e) => setMaterno(e.target.value)} 
-                  className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">NOMBRES *</label>
-                <input 
-                  required 
-                  type="text" 
-                  placeholder="" 
-                  value={nombres} 
-                  onChange={(e) => setNombres(e.target.value)} 
-                  className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" 
-                />
+                <label className="block text-gray-400 mb-1 font-bold">MRN / ID INTERNO PACS</label>
+                <input type="text" placeholder="Autogenerado desde la cédula" value={newPatient.patientId || ''} onChange={(e) => setNewPatient({ ...newPatient, patientId: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
             </div>
 
-            {/* FILA 3: FECHA NACIMIENTO, EDAD Y SEXO */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">FECHA DE NACIMIENTO</label>
-                <input 
-                  type="date" 
-                  value={newPatient.dateOfBirth?.split('T')[0] || ''} 
-                  onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })} 
-                  className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" 
-                />
+                <label className="block text-gray-400 mb-1 font-bold">NOMBRES COMPLETOS *</label>
+                <input required type="text" placeholder="Nombres" value={newPatient.firstName || ''} onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
-
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">EDAD (AÑOS)</label>
-                <input 
-                  type="text" 
-                  placeholder="" 
-                  value={newPatient.edad || (newPatient.dateOfBirth ? calcularEdadLocal(newPatient.dateOfBirth).replace(' años', '') : '')} 
-                  onChange={(e) => setNewPatient({ ...newPatient, edad: e.target.value })} 
-                  className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none font-mono" 
-                />
+                <label className="block text-gray-400 mb-1 font-bold">APELLIDOS COMPLETOS *</label>
+                <input required type="text" placeholder="Apellidos" value={newPatient.lastName || ''} onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block text-gray-400 mb-1 font-bold">FECHA DE NACIMIENTO *</label>
+                <input required type="date" value={newPatient.dateOfBirth?.split('T')[0] || ''} onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+              </div>
               <div>
                 <label className="block text-gray-400 mb-1 font-bold">GÉNERO / SEXO</label>
-                <select value={newPatient.gender || 'U'} onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none">
+                <select value={newPatient.gender || 'U'} onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none">
                   <option value="M">Masculino</option>
                   <option value="F">Femenino</option>
                   <option value="O">Otro</option>
@@ -356,28 +294,38 @@ export default function PatientsTab({
               </div>
             </div>
 
-            {/* FILA 4: CÓDIGO BENEFICIARIO Y Nº ASEGURADO */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block text-gray-400 mb-1 font-bold">TELÉFONO / CELULAR *</label>
+                <input required type="tel" placeholder="Ej. 71524311" value={newPatient.phone || ''} onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1 font-bold">CORREO ELECTRÓNICO</label>
+                <input type="email" placeholder="Opcional" value={newPatient.email || ''} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block text-gray-400 mb-1 font-bold">CÓDIGO BENEFICIARIO</label>
-                <input type="text" placeholder="Ej. 0 (Titular), 1 (Cónyuge)..." value={newPatient.codigoBeneficiario || ''} onChange={(e) => setNewPatient({ ...newPatient, codigoBeneficiario: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" />
+                <input type="text" placeholder="Ej. 0 (Titular), 1 (Cónyuge)..." value={newPatient.codigoBeneficiario || ''} onChange={(e) => setNewPatient({ ...newPatient, codigoBeneficiario: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
               <div>
                 <label className="block text-gray-400 mb-1 font-bold">Nº DE ASEGURADO</label>
-                <input type="text" placeholder="Nº de asegurado CNS" value={newPatient.numeroAsegurado || ''} onChange={(e) => setNewPatient({ ...newPatient, numeroAsegurado: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-[#2a403a] text-white focus:border-[#00bfa5] outline-none" />
+                <input type="text" placeholder="Nº de asegurado CNS" value={newPatient.numeroAsegurado || ''} onChange={(e) => setNewPatient({ ...newPatient, numeroAsegurado: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
               </div>
             </div>
           </div>
 
-          {/* 🌟 SELECTOR DE SERVICIO POST-REGISTRO (CONSERVADO INTACTO) */}
+          {/* SELECTOR DE SERVICIO POST-REGISTRO */}
           <div className="space-y-3">
-            <div className="border-b border-[#2a403a] pb-1">
+            <div className="border-b border-secondary-dark pb-1">
               <span className="text-xs text-gray-400 font-medium">🔄 Selector de Servicio Post-Registro</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div 
                 onClick={() => setServicioSeleccionado('imagenologia')}
-                className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicioSeleccionado === 'imagenologia' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-[#2a403a] bg-black'}`}
+                className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicioSeleccionado === 'imagenologia' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-secondary-dark bg-black'}`}
               >
                 <span className="block font-bold text-xs">🗓️ Imagenología</span>
                 <span className="block text-[11px] text-gray-400 mt-1">Flujo con agenda horaria fija.</span>
@@ -385,7 +333,7 @@ export default function PatientsTab({
 
               <div 
                 onClick={() => setServicioSeleccionado('laboratorio')}
-                className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicioSeleccionado === 'laboratorio' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-[#2a403a] bg-black'}`}
+                className={`p-4 rounded-lg cursor-pointer border transition-all text-left ${servicioSeleccionado === 'laboratorio' ? 'border-[#00bfa5] bg-[#00bfa5]/5' : 'border-secondary-dark bg-black'}`}
               >
                 <span className="block font-bold text-xs">🧪 Laboratorio Clínico</span>
                 <span className="block text-[11px] text-gray-400 mt-1">Sin agenda horaria. Proceso por lote.</span>
@@ -394,7 +342,7 @@ export default function PatientsTab({
           </div>
 
           {/* BOTONES ACCIONES DEL FORMULARIO */}
-          <div className="flex gap-3 pt-4 border-t border-[#2a403a] mt-2">
+          <div className="col-span-2 flex gap-3 pt-4 border-t border-secondary-dark mt-2">
             <button
               type="button"
               onClick={closeModal}
@@ -404,7 +352,7 @@ export default function PatientsTab({
             </button>
             <button
               type="submit"
-              className="flex-1 bg-[#00bfa5] text-[#04140f] py-3 rounded-lg font-bold text-xs uppercase hover:bg-[#00d4b8] transition-colors"
+              className="flex-1 bg-primary-light text-black py-3 rounded-lg font-bold text-xs uppercase hover:bg-white transition-colors"
             >
               {isEditingPatient ? 'ACTUALIZAR DATOS' : 'CONFIRMAR Y GUARDAR EN MONGO →'}
             </button>
@@ -412,44 +360,41 @@ export default function PatientsTab({
         </form>
       </RisModal>
 
-      {/* ── TABLA ESTÁNDAR RESPONSIVA CON EDAD ── */}
+      {/* ── TABLA ESTÁNDAR RESPONSIVA ── */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="bg-[#0a1310] text-xs text-gray-400">
+          <thead className="bg-secondary-dark text-xs text-gray-400">
             <tr>
-              <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('documentId')}>Cédula / Matrícula <span className="ml-1 text-[10px]">{getSortIcon('documentId')}</span></th>
+              <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('patientId')}>MRN / ID <span className="ml-1 text-[10px]">{getSortIcon('patientId')}</span></th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('fullName')}>Nombre Completo <span className="ml-1 text-[10px]">{getSortIcon('fullName')}</span></th>
-              <th className="p-3">Edad</th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('gender')}>Sexo <span className="ml-1 text-[10px]">{getSortIcon('gender')}</span></th>
               <th className="p-3 cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('dateOfBirth')}>Nacimiento <span className="ml-1 text-[10px]">{getSortIcon('dateOfBirth')}</span></th>
               <th className="p-3">Contacto</th>
               <th className="p-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1f332d] text-xs">
+          <tbody className="divide-y divide-secondary-dark text-xs">
             {sortedPatients.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-6 text-[#00bfa5]">
+                <td colSpan={6} className="text-center py-6 text-primary-light">
                   No hay pacientes que coincidan con la búsqueda.
                 </td>
               </tr>
             ) : (
               paginate(sortedPatients).map((p: any) => (
-                <tr key={p._id || p.id || p.patientId} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={p._id} className="hover:bg-primary-dark/40 transition-colors">
                   <td className="p-3">
-                    <span className="font-bold text-[#00bfa5]">{p.documentId || p.patientId}</span>
+                    <span className="font-bold text-[#00bfa5]">{p.patientId}</span>
+                    {p.documentId && <span className="block text-xs text-gray-400">{p.documentId}</span>}
                   </td>
                   <td className="p-3">
                     <button
                       onClick={() => openPatientProfile?.(p)}
-                      className="text-white hover:text-[#00bfa5] font-medium hover:underline text-left"
+                      className="text-primary-light hover:text-white font-medium hover:underline text-left"
                       title="Ver Perfil del Paciente"
                     >
                       {p.lastName}, {p.firstName}
                     </button>
-                  </td>
-                  <td className="p-3 font-mono font-bold text-gray-300">
-                    {p.edad || calcularEdadLocal(p.dateOfBirth)}
                   </td>
                   <td className="p-3">
                     {['male', 'masculino', 'm'].includes((p.gender || '').toLowerCase()) ? 'Masculino' : 'Femenino'}
@@ -467,14 +412,13 @@ export default function PatientsTab({
                   <td className="p-3 text-right">
                     <button
                       onClick={() => { handleEdit('patient', p); setIsModalOpen(true); }}
-                      className="text-[#00bfa5] hover:text-white mr-3 font-medium"
+                      className="text-primary-light hover:text-white mr-3 font-medium"
                     >
                       Editar
                     </button>
                     <button
-                      type="button"
-                      onClick={() => ejecutarEliminacion(p)}
-                      className="text-red-500 hover:text-red-400 font-medium transition-colors hover:underline"
+                      onClick={() => handleDelete('patient', p._id)}
+                      className="text-red-500 hover:text-red-400 font-medium"
                     >
                       Eliminar
                     </button>

@@ -66,10 +66,10 @@ export default function AppointmentsTab({
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    if (d.getDay() === 0) { // If today is Sunday, move to Monday
-      d.setDate(d.getDate() + 1);
+    if (d.getDay() === 0) { // If today is Sunday, default to Monday of the same week shown below
+      d.setDate(d.getDate() - 6);
     }
+    d.setHours(0, 0, 0, 0);
     return d;
   });
 

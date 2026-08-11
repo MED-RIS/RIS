@@ -4,12 +4,12 @@ export const imprimirCoagulogramaCNS = (p: any) => {
   const d = p.datos || p || {};
 
   const v = (val: any) => {
-    if (val === undefined || val === null || String(val).trim() === "") return "-";
+    if (val === undefined || val === null || val === "") return "-";
     return String(val);
   };
 
   const vFecha = (val: any) => {
-    if (val === undefined || val === null || String(val).trim() === "") return "-";
+    if (val === undefined || val === null || val === "") return "-";
     if (typeof val === "number" || /^\d{5}$/.test(String(val))) {
       const serial = Number(val);
       const base = new Date(Date.UTC(1899, 11, 30));
@@ -27,7 +27,7 @@ export const imprimirCoagulogramaCNS = (p: any) => {
   const edad = p.edad ?? d.edad ?? p.pacienteData?.edad ?? p.datos?.edad ?? "-";
   const institucion = p.institucion ?? d.institucion ?? p.policlinico ?? d.policlinico ?? "CNS";
   
-  // 🌟 Correlativo secuencial seguro contra marcas de tiempo
+  // 🌟 Correlativo secuencial seguro contra marcas de tiempo gigantes
   let numeroSecuencialLimpio = String(p.orden ?? d.orden ?? p.id_consulta ?? d.id_consulta ?? "1");
   if (numeroSecuencialLimpio.length > 6) {
     numeroSecuencialLimpio = "1";
@@ -36,36 +36,21 @@ export const imprimirCoagulogramaCNS = (p: any) => {
   const aseguradoReal = p.codigoAsegurado ?? p.cod ?? d.codigoAsegurado ?? d.cod ?? "-";
   const medico = p.medico_solicitante ?? p.medicoSolicitante ?? d.medico_solicitante ?? d.medicoSolicitante ?? "-";
   const centro = p.centro_asistencial ?? p.centroAsistencial ?? d.centro_asistencial ?? d.centroAsistencial ?? "-";
-  const servicio = p.servicio ?? d.servicio ?? "LABORATORIO";
+  const servicio = p.servicio ?? d.servicio ?? "";
   const consultorio = p.consultorio ?? d.consultorio ?? "-";
   const fechaSolicitud = vFecha(p.fecha ?? p.fecha_solicitud ?? d.fecha ?? d.fecha_solicitud);
 
-  // 🩸 LECTURA DE VALORES DE HEMOSTASIA
-  const tProtrombina = d.tiempo_protrombina ?? d.t_protrombina ?? d.hematoDatos?.tiempo_protrombina ?? d.hematoDatos?.t_protrombina;
-  const actividad = d.actividad_protrombina ?? d.actividad ?? d.hematoDatos?.actividad_protrombina ?? d.hematoDatos?.actividad;
-  const inr = d.inr ?? d.hematoDatos?.inr;
-
-  const tCoagMin = d.t_coagulacion_min ?? d.tiempo_coagulacion_min ?? d.hematoDatos?.t_coagulacion_min ?? d.hematoDatos?.tiempo_coagulacion_min;
-  const tCoagSeg = d.t_coagulacion_seg ?? d.tiempo_coagulacion_seg ?? d.hematoDatos?.t_coagulacion_seg ?? d.hematoDatos?.tiempo_coagulacion_seg;
-  const tSangMin = d.t_sangria_min ?? d.tiempo_sangria_min ?? d.hematoDatos?.t_sangria_min ?? d.hematoDatos?.tiempo_sangria_min;
-  const tSangSeg = d.t_sangria_seg ?? d.tiempo_sangria_seg ?? d.hematoDatos?.t_sangria_seg ?? d.hematoDatos?.tiempo_sangria_seg;
-
-  // Formateador de min/seg para evitar guiones dobles
-  const formatearTiempo = (minVal: any, segVal: any) => {
-    const minTxt = v(minVal);
-    const segTxt = v(segVal);
-    if (minTxt === "-" && segTxt === "-") return "-";
-    let res = "";
-    if (minTxt !== "-") res += `${minTxt} min. `;
-    if (segTxt !== "-") res += `${segTxt} seg.`;
-    return res.trim();
-  };
-
-  // Agrupación de observaciones y comentarios
-  const obsGen = d.observaciones ?? d.obs ?? "-";
-  const comRoja = d.comentario_roja;
-  const comBlanca = d.comentario_blanca;
-  const comPlaquetas = d.comentario_plaquetas;
+  const tProtrombina = d.t_protrombina ?? d.tiempo_protrombina ?? d.tiempo_de_protrombina;
+  const actividad = d.actividad ?? d.actividad_protrombina;
+  const inr = d.inr;
+  const tCoagMin = d.t_coagulacion_min ?? d.tiempo_coagulacion_min;
+  const tCoagSeg = d.t_coagulacion_seg ?? d.tiempo_coagulacion_seg;
+  const tSangMin = d.t_sangria_min ?? d.tiempo_sangria_min;
+  const tSangSeg = d.t_sangria_seg ?? d.tiempo_sangria_seg;
+  const comentarioSerieRoja = d.comentario_serie_roja;
+  const comentarioSerieBlanca = d.comentario_serie_blanca;
+  const comentarioPlaquetas = d.comentario_plaquetas;
+  const observaciones = d.observaciones;
 
   // 1️⃣ Estructura HTML pura del reporte oficial de la CNS
   const htmlInforme = `
@@ -136,21 +121,21 @@ export const imprimirCoagulogramaCNS = (p: any) => {
       </tr>
       <tr>
         <td class="label">Tiempo de Coagulación:</td>
-        <td class="val">${formatearTiempo(tCoagMin, tCoagSeg)}</td>
+        <td class="val">${v(tCoagMin)} min. ${v(tCoagSeg)} seg.</td>
         <td class="unit"></td>
       </tr>
       <tr>
         <td class="label">Tiempo de Sangría:</td>
-        <td class="val">${formatearTiempo(tSangMin, tSangSeg)}</td>
+        <td class="val">${v(tSangMin)} min. ${v(tSangSeg)} seg.</td>
         <td class="unit"></td>
       </tr>
     </table>
 
     <div class="obs-box">
-      <div><b>Observaciones:</b> ${v(obsGen)}</div>
-      ${comRoja ? `<div><b>Comentario Serie Roja:</b> ${v(comRoja)}</div>` : ''}
-      ${comBlanca ? `<div><b>Comentario Serie Blanca:</b> ${v(comBlanca)}</div>` : ''}
-      ${comPlaquetas ? `<div><b>Comentario Plaquetas:</b> ${v(comPlaquetas)}</div>` : ''}
+      ${comentarioSerieRoja ? `<div><b>Comentario Serie Roja:</b> ${v(comentarioSerieRoja)}</div>` : ''}
+      ${comentarioSerieBlanca ? `<div><b>Comentario Serie Blanca:</b> ${v(comentarioSerieBlanca)}</div>` : ''}
+      ${comentarioPlaquetas ? `<div><b>Comentario Plaquetas:</b> ${v(comentarioPlaquetas)}</div>` : ''}
+      <div><b>Observaciones:</b> ${v(observaciones)}</div>
     </div>
 
     <div class="footer-notes">
@@ -162,6 +147,7 @@ export const imprimirCoagulogramaCNS = (p: any) => {
 
   // 2️⃣ Estilos CSS unificados con la barra superior interactiva
   const estilosCompleto = `
+    /* Barra de herramientas superior flotante */
     .no-print-bar {
       display: flex;
       justify-content: center;
@@ -188,6 +174,7 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     .btn-close { background: #ef4444; color: white; }
     .btn-close:hover { background: #dc2626; }
 
+    /* Hoja de papel del reporte */
     .print-area {
       padding: 40px;
       background: #ffffff;
@@ -219,7 +206,7 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     .results-table td.val { text-align: right; font-family: monospace; font-weight: bold; font-size: 14px; }
     .results-table td.unit { width: 18%; text-align: left; color: #333; font-size: 11px; }
 
-    .obs-box { margin: 30px auto 0 auto; width: 80%; font-size: 11px; color: #000; display: flex; flex-direction: column; gap: 4px; }
+    .obs-box { margin: 35px auto 0 auto; width: 80%; font-size: 11px; color: #000; }
     .footer-notes { margin-top: 40px; display: flex; justify-content: space-between; font-size: 9px; border-top: 1px dashed #000; padding-top: 6px; }
 
     @media print {
@@ -229,16 +216,14 @@ export const imprimirCoagulogramaCNS = (p: any) => {
     }
   `;
 
-  // 3️⃣ Apertura asíncrona en ventana aislada
+  // 3️⃣ Apertura asíncrona en ventana aislada para romper congelamientos
   const tituloArchivo = `CNS_Coagulograma_${pacienteNombre.replace(/ /g, "_")}`;
   const win = window.open('', '_blank');
 
   if (win) {
     win.document.write(`
-      <!DOCTYPE html>
       <html>
         <head>
-          <meta charset="utf-8">
           <title>${tituloArchivo}</title>
           <style>${estilosCompleto}</style>
         </head>
