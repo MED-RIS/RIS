@@ -48,7 +48,7 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
       const mode = p.modeOverride || cat.storage.mode;
       const bag = p.bagOverride || cat.storage.bag;
       const raw = mode === 'flat' ? datos[p.key] : datos[bag as string]?.[p.key];
-      if (raw !== undefined && raw !== null && String(raw).trim() === '') catVals[p.key] = String(raw);
+      if (raw !== undefined && raw !== null && String(raw).trim() !== '') catVals[p.key] = String(raw);
     }
     if (Object.keys(catVals).length) out[cat.id] = catVals;
   }
@@ -65,10 +65,10 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     materno: pacienteData?.materno || '',
     nombres: pacienteData?.nombres || pacienteData?.firstName || '',
     matricula: pacienteData?.matricula || pacienteData?.cod || pacienteData?.codigoAsegurado || '',
-    beneficiario: pacienteData?.beneficiario || pacienteData?.codBeneficiario || pacienteData?.codigoBeneficiario ,
-    policlinico: pacienteData?.policlinico || pacienteData?.institucion,
-    consultorio: pacienteData?.consultorio ,
-    medicoSolicitante: pacienteData?.medicoSolicitante || pacienteData?.medico_solicitante ,
+    beneficiario: pacienteData?.beneficiario || pacienteData?.codBeneficiario || pacienteData?.codigoBeneficiario || '',
+    policlinico: pacienteData?.policlinico || pacienteData?.institucion || '',
+    consultorio: pacienteData?.consultorio || '',
+    medicoSolicitante: pacienteData?.medicoSolicitante || pacienteData?.medico_solicitante || '',
     fechaSolicitud: pacienteData?.fechaSolicitud || pacienteData?.fecha || new Date().toISOString().slice(0, 10),
     fechaReporte: new Date().toISOString().slice(0, 10),
     nroSolicitud: pacienteData?.nroSolicitud || '',
@@ -91,6 +91,18 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
   const contarLlenos = (catId: string) => Object.values(valores[catId] || {}).filter(esLleno).length;
 
   const guardar = (nuevoEstado: EstadoInforme) => {
+    if (!esLleno(general.paterno) && !esLleno(general.materno) && !esLleno(general.nombres)) {
+      alert('Ingrese al menos el nombre o apellido del paciente antes de guardar.');
+      return;
+    }
+    const hayResultados = CATEGORIAS_LAB.some((cat) =>
+      Object.values(valores[cat.id] || {}).some(esLleno)
+    );
+    if (!hayResultados) {
+      alert('Ingrese al menos un resultado de laboratorio antes de guardar.');
+      return;
+    }
+
     setEstado(nuevoEstado);
 
     // Documento empaquetado con las propiedades exactas para el servidor y PDF

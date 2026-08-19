@@ -27,6 +27,16 @@ const OPC_NEG_POS = ['Negativo', 'Positivo'];
 const OPC_WIDAL = ['No reactivo', '1:20', '1:40', '1:80', '1:160', '1:320', '1:640'];
 const OPC_RPR = ['No Reactivo', 'Reactivo', 'Reactivo 1 dils', 'Reactivo 2 dils', 'Reactivo 4 dils', 'Reactivo 8 dils'];
 
+// Comentarios compartidos entre Hemograma y Coagulograma: ambos reportes leen
+// estas mismas keys desde el bag plano 'hematoDatos' (un solo comentario por
+// paciente, no uno por pestaña). Ver ReporteHematologia.ts y ReporteCoagulograma.ts.
+const CAMPOS_COMENTARIO_HEMATO: ParametroLab[] = [
+  { key: 'comentario_roja', label: 'COMENTARIO SERIE ROJA', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_blanca', label: 'COMENTARIO SERIE BLANCA', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_plaquetas', label: 'COMENTARIO PLAQUETAS', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'observaciones', label: 'OBSERVACIONES', tipo: 'texto', seccion: 'Comentarios' },
+];
+
 // ── 1. HEMOGRAMA (Exclusivo - según Excel DATOS) ──
 export const CATALOGO_HEMOGRAMA: ParametroLab[] = [
   { key: 'hto', label: 'HTO', unidad: '%', rango: 'Varones: 42 - 52% · Mujeres: 37 - 47%', seccion: 'Serie Roja y Recuento' },
@@ -50,10 +60,7 @@ export const CATALOGO_HEMOGRAMA: ParametroLab[] = [
   { key: 'ves_1_hora', label: 'VES 1 HORA', unidad: 'mm', rango: '0 - 15', min: 0, max: 15, seccion: 'Sedimentación e Índices' },
   { key: 'ves_2_hora', label: 'VES 2HORA', unidad: 'mm', rango: '—', seccion: 'Sedimentación e Índices' },
   { key: 'indice_katz', label: 'INDICE DE KATZ', unidad: '', rango: '—', seccion: 'Sedimentación e Índices' },
-  { key: 'comentario_roja', label: 'COMENTARIO SERIE ROJA', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'comentario_blanca', label: 'COMENTARIO SERIE BLANCA', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'comentario_plaquetas', label: 'COMENTARIO PLAQUETAS', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'observaciones', label: 'OBSERVACIONES', tipo: 'texto', seccion: 'Comentarios' },
+  ...CAMPOS_COMENTARIO_HEMATO,
 ];
 
 // ── 2. COAGULOGRAMA (Extraído independientemente según Excel) ──
@@ -65,10 +72,7 @@ export const CATALOGO_COAGULOGRAMA: ParametroLab[] = [
   { key: 'tiempo_protrombina', label: 'TIEMPO DE PROTROMBINA', unidad: 'seg', rango: '11 - 14 seg', min: 11, max: 14, seccion: 'Coagulación / Hemostasia' },
   { key: 'actividad_protrombina', label: 'ACTIVIDAD', unidad: '%', rango: '70 - 100%', min: 70, max: 100, seccion: 'Coagulación / Hemostasia' },
   { key: 'inr', label: 'INR', unidad: '', rango: '0.8 - 1.2', min: 0.8, max: 1.2, seccion: 'Coagulación / Hemostasia' },
-  { key: 'comentario_roja', label: 'COMENTARIO SERIE ROJA', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'comentario_blanca', label: 'COMENTARIO SERIE BLANCA', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'comentario_plaquetas', label: 'COMENTARIO PLAQUETAS', tipo: 'texto', seccion: 'Comentarios' },
-  { key: 'observaciones', label: 'OBSERVACIONES', tipo: 'texto', seccion: 'Comentarios' },
+  ...CAMPOS_COMENTARIO_HEMATO,
 ];
 
 // ── 3. QUÍMICA SANGUÍNEA (+ Electrolitos + Orina 24 hrs según Excel) ──
