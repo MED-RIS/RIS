@@ -11,7 +11,7 @@ export default function FormElectrolitos({ quimicaDatos, setQuimicaDatos }: Elec
     const { name, value } = e.target;
     setQuimicaDatos({
       ...quimicaDatos,
-      [name]: e.target.type === 'number' ? (parseFloat(value) || 0) : value
+      [name]: value
     });
   };
 
@@ -26,15 +26,15 @@ export default function FormElectrolitos({ quimicaDatos, setQuimicaDatos }: Elec
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>SODIO (Na⁺):</label>
-            <input type="number" step="0.01" name="sodio_meql" value={datos.sodio_meql || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <input type="number" step="0.01" name="sodio" value={datos.sodio || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>POTASIO (K⁺):</label>
-            <input type="number" step="0.01" name="potasio_meql" value={datos.potasio_meql || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <input type="number" step="0.01" name="potasio" value={datos.potasio || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>CLORO (Cl⁻):</label>
-            <input type="number" step="0.01" name="cloro_meql" value={datos.cloro_meql || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <input type="number" step="0.01" name="cloro" value={datos.cloro || ''} onChange={handleChange} placeholder="mEq/L" style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
         </div>
       </fieldset>

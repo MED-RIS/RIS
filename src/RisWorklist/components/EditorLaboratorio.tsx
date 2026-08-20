@@ -63,6 +63,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
   const [valores, setValores] = useState<Record<string, Record<string, string>>>({});
   const [observaciones, setObservaciones] = useState('');
   const [general, setGeneral] = useState({
+<<<<<<< HEAD
     ordenRelacionada: '',
     nroSolicitud: '',
     medicoDerivante: '',
@@ -72,6 +73,19 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     horaToma: '',
     horaRecepcion: '',
     horaEmision: '',
+=======
+    paterno: pacienteData?.paterno || pacienteData?.lastName || '',
+    materno: pacienteData?.materno || '',
+    nombres: pacienteData?.nombres || pacienteData?.firstName || '',
+    matricula: pacienteData?.matricula || pacienteData?.cod || pacienteData?.codigoAsegurado || '',
+    beneficiario: pacienteData?.beneficiario || pacienteData?.codBeneficiario || pacienteData?.codigoBeneficiario || '',
+    policlinico: pacienteData?.policlinico || pacienteData?.institucion || '',
+    consultorio: pacienteData?.consultorio || '',
+    medicoSolicitante: pacienteData?.medicoSolicitante || pacienteData?.medico_solicitante || '',
+    fechaSolicitud: pacienteData?.fechaSolicitud || pacienteData?.fecha || new Date().toISOString().slice(0, 10),
+    fechaReporte: new Date().toISOString().slice(0, 10),
+    nroSolicitud: pacienteData?.nroSolicitud || '',
+>>>>>>> segunda_fase
   });
   const [tabActiva, setTabActiva] = useState('hematologia');
   const [filtro, setFiltro] = useState('');
@@ -90,6 +104,18 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
   const contarLlenos = (catId: string) => Object.values(valores[catId] || {}).filter(esLleno).length;
 
   const guardar = (nuevoEstado: EstadoInforme) => {
+    if (!esLleno(general.paterno) && !esLleno(general.materno) && !esLleno(general.nombres)) {
+      alert('Ingrese al menos el nombre o apellido del paciente antes de guardar.');
+      return;
+    }
+    const hayResultados = CATEGORIAS_LAB.some((cat) =>
+      Object.values(valores[cat.id] || {}).some(esLleno)
+    );
+    if (!hayResultados) {
+      alert('Ingrese al menos un resultado de laboratorio antes de guardar.');
+      return;
+    }
+
     setEstado(nuevoEstado);
 
     // Documento con la MISMA forma que RegistrarConsulta: cada bag al nivel superior,

@@ -177,7 +177,7 @@ export default function AppointmentsTab({
           </h3>
           <div className="flex flex-wrap gap-3 text-[10px] sm:text-xs font-bold">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 border border-green-400"></span> Libre
+              <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-white/70"></span> Libre
             </div>
             {/* Dynamic Modal Colors Legend */}
             {(() => {
@@ -224,7 +224,7 @@ export default function AppointmentsTab({
                   ? isMulti
                     ? `bg-black/60 border-2 border-dashed border-primary-light/80 hover:border-white hover:bg-black/80 shadow-[0_0_10px_rgba(255,255,255,0.05)]`
                     : `bg-black/40 ${modStyles?.border} hover:bg-white/5`
-                  : 'bg-green-800/20 border-green-700/50 hover:bg-green-700/40 text-green-400'
+                  : 'bg-white/[0.06] border-2 border-dashed border-white/40 hover:border-white hover:bg-white/10'
                   }`}
               >
                 {/* Multi-appointment Badge indicator */}
@@ -235,7 +235,7 @@ export default function AppointmentsTab({
                 )}
 
                 {/* Time Badge */}
-                <span className={`font-sans tracking-wide text-xs sm:text-sm mb-1 ${status.isOccupied ? isMulti ? 'text-primary-light font-extrabold' : `${modStyles?.plainText} font-bold` : 'text-green-300 font-medium'}`}>
+                <span className={`font-sans tracking-wide text-xs sm:text-sm mb-1 ${status.isOccupied ? isMulti ? 'text-primary-light font-extrabold' : `${modStyles?.plainText} font-bold` : 'text-gray-200 font-semibold'}`}>
                   {time}
                 </span>
 
@@ -254,7 +254,7 @@ export default function AppointmentsTab({
                     )}
                   </div>
                 ) : (
-                  <span className="text-[8px] sm:text-[10px] mt-0.5 font-bold text-white/30 uppercase tracking-widest group-hover:text-green-300 transition-colors">Libre</span>
+                  <span className="text-[8px] sm:text-[10px] mt-0.5 font-bold text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">Libre</span>
                 )}
 
                 {/* Interactive Premium Hover Tooltip (Recuadro flotante) */}
