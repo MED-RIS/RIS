@@ -46,7 +46,7 @@ export default function FormEgo({ egoDatos, setEgoDatos }: EgoProps) {
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>OTROS (Físico):</label>
-            <input type="text" name="otros_fisico" value={datos.otros_fisico || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <input type="text" name="otros" value={datos.otros || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
         </div>
       </fieldset>

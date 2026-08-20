@@ -11,7 +11,7 @@ export default function FormOrina24Hrs({ egoDatos, setEgoDatos }: Orina24HrsProp
     const { name, value } = e.target;
     setEgoDatos({
       ...egoDatos,
-      [name]: e.target.type === 'number' ? (parseFloat(value) || 0) : value
+      [name]: value
     });
   };
 

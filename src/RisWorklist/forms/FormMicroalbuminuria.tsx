@@ -11,7 +11,7 @@ export default function FormMicroalbuminuria({ microDatos, setMicroDatos }: Micr
     const { name, value } = e.target;
     setMicroDatos({
       ...microDatos,
-      [name]: e.target.type === 'number' ? (parseFloat(value) || 0) : value
+      [name]: value
     });
   };
 

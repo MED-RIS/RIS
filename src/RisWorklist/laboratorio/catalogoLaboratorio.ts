@@ -33,6 +33,7 @@ const OPC_NEG_POS = ['Negativo', 'Positivo'];
 const OPC_WIDAL = ['No reactivo', '1:20', '1:40', '1:80', '1:160', '1:320', '1:640'];
 const OPC_RPR = ['No Reactivo', 'Reactivo', 'Reactivo 1 dils', 'Reactivo 2 dils', 'Reactivo 4 dils', 'Reactivo 8 dils'];
 
+<<<<<<< HEAD
 // ── HEMATOLOGÍA (+ Coagulograma) — plano en la raíz de `datos` (hematoDatos) ──
 export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 'globulos_blancos', label: 'Glóbulos Blancos (GB)', unidad: 'mm³', rango: '4.000 - 10.000', min: 4000, max: 10000, seccion: 'Serie Roja y Recuento' },
@@ -61,6 +62,54 @@ export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 't_coagulacion_seg', label: 'Tiempo de Coagulación (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
   { key: 't_sangria_min', label: 'Tiempo de Sangría (min)', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
   { key: 't_sangria_seg', label: 'Tiempo de Sangría (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
+=======
+// Comentarios compartidos entre Hemograma y Coagulograma: ambos reportes leen
+// estas mismas keys desde el bag plano 'hematoDatos' (un solo comentario por
+// paciente, no uno por pestaña). Ver ReporteHematologia.ts y ReporteCoagulograma.ts.
+const CAMPOS_COMENTARIO_HEMATO: ParametroLab[] = [
+  { key: 'comentario_roja', label: 'COMENTARIO SERIE ROJA', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_blanca', label: 'COMENTARIO SERIE BLANCA', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_plaquetas', label: 'COMENTARIO PLAQUETAS', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'observaciones', label: 'OBSERVACIONES', tipo: 'texto', seccion: 'Comentarios' },
+];
+
+// ── 1. HEMOGRAMA (Exclusivo - según Excel DATOS) ──
+export const CATALOGO_HEMOGRAMA: ParametroLab[] = [
+  { key: 'hto', label: 'HTO', unidad: '%', rango: 'Varones: 42 - 52% · Mujeres: 37 - 47%', seccion: 'Serie Roja y Recuento' },
+  { key: 'hb', label: 'HB', unidad: 'g/dL', rango: 'Varones: 14 - 18 · Mujeres: 12 - 16', seccion: 'Serie Roja y Recuento' },
+  { key: 'vcm', label: 'V.C.M.', unidad: 'fL', rango: '80 - 98', seccion: 'Serie Roja y Recuento' },
+  { key: 'hcm', label: 'H.C.M.', unidad: 'pg', rango: '27 - 32', seccion: 'Serie Roja y Recuento' },
+  { key: 'chcm', label: 'C.H.C.M.', unidad: 'g/dL', rango: '32 - 36', seccion: 'Serie Roja y Recuento' },
+  { key: 'globulos_blancos', label: 'GLOBULOS BLANCOS', unidad: 'uL', rango: '4.000 - 10.000', min: 4000, max: 10000, seccion: 'Serie Roja y Recuento' },
+  { key: 'seg', label: 'SEG', unidad: '%', rango: '55 - 65%', min: 55, max: 65, seccion: 'Fórmula Diferencial' },
+  { key: 'linf', label: 'LINF.', unidad: '%', rango: '25 - 40%', min: 25, max: 40, seccion: 'Fórmula Diferencial' },
+  { key: 'mon', label: 'MON.', unidad: '%', rango: '2 - 8%', min: 2, max: 8, seccion: 'Fórmula Diferencial' },
+  { key: 'eosi', label: 'EOSI.', unidad: '%', rango: '1 - 4%', min: 1, max: 4, seccion: 'Fórmula Diferencial' },
+  { key: 'cay', label: 'CAY.', unidad: '%', rango: '1 - 5%', min: 1, max: 5, seccion: 'Fórmula Diferencial' },
+  { key: 'mielo', label: 'MIELO', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
+  { key: 'metamie', label: 'METAMIE', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
+  { key: 'baso', label: 'BASO.', unidad: '%', rango: '0 - 1%', min: 0, max: 1, seccion: 'Fórmula Diferencial' },
+  { key: 'total_diferencial', label: 'TOTAL', unidad: '%', rango: '100%', seccion: 'Fórmula Diferencial' },
+  { key: 'plaquetas', label: 'PLAQUETAS', unidad: 'uL', rango: '150.000 - 450.000', min: 150000, max: 450000, seccion: 'Serie Roja y Recuento' },
+  { key: 'grupo_sanguineo', label: 'GRUPO SANGUINEO', unidad: '', rango: '—', tipo: 'texto', seccion: 'Inmunohematología' },
+  { key: 'reticulocitos', label: 'RETICULOCITOS', unidad: '%', rango: '0.5 - 2%', min: 0.5, max: 2, seccion: 'Serie Roja y Recuento' },
+  { key: 'ves_1_hora', label: 'VES 1 HORA', unidad: 'mm', rango: '0 - 15', min: 0, max: 15, seccion: 'Sedimentación e Índices' },
+  { key: 'ves_2_hora', label: 'VES 2HORA', unidad: 'mm', rango: '—', seccion: 'Sedimentación e Índices' },
+  { key: 'indice_katz', label: 'INDICE DE KATZ', unidad: '', rango: '—', seccion: 'Sedimentación e Índices' },
+  ...CAMPOS_COMENTARIO_HEMATO,
+];
+
+// ── 2. COAGULOGRAMA (Extraído independientemente según Excel) ──
+export const CATALOGO_COAGULOGRAMA: ParametroLab[] = [
+  { key: 't_sangria_min', label: 'TIEMPO DE SANGRIA MINUTOS', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_sangria_seg', label: 'TIEMPO DE SANGRIA SEGUNDOS', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_coagulacion_min', label: 'T. DE COAGULACION MINUTOS', unidad: 'min', rango: '5 - 10 min', seccion: 'Coagulación / Hemostasia' },
+  { key: 't_coagulacion_seg', label: 'T. DE COAGULACION SEGUNDOS', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
+  { key: 'tiempo_protrombina', label: 'TIEMPO DE PROTROMBINA', unidad: 'seg', rango: '11 - 14 seg', min: 11, max: 14, seccion: 'Coagulación / Hemostasia' },
+  { key: 'actividad_protrombina', label: 'ACTIVIDAD', unidad: '%', rango: '70 - 100%', min: 70, max: 100, seccion: 'Coagulación / Hemostasia' },
+  { key: 'inr', label: 'INR', unidad: '', rango: '0.8 - 1.2', min: 0.8, max: 1.2, seccion: 'Coagulación / Hemostasia' },
+  ...CAMPOS_COMENTARIO_HEMATO,
+>>>>>>> segunda_fase
 ];
 
 // ── SEROLOGÍA (+ Widal) ──

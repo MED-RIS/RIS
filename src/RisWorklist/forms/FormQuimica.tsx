@@ -11,7 +11,7 @@ export default function FormQuimica({ quimicaDatos, setQuimicaDatos }: QuimicaPr
     const { name, value } = e.target;
     setQuimicaDatos({
       ...quimicaDatos,
-      [name]: e.target.type === 'number' ? (parseFloat(value) || 0) : value
+      [name]: value
     });
   };
 

@@ -11,7 +11,7 @@ export default function FormCoagulograma({ hematoDatos, setHematoDatos }: Coagul
     const { name, value } = e.target;
     setHematoDatos({
       ...hematoDatos,
-      [name]: e.target.type === 'number' ? (parseFloat(value) || 0) : value
+      [name]: value
     });
   };
 
@@ -52,11 +52,11 @@ export default function FormCoagulograma({ hematoDatos, setHematoDatos }: Coagul
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Tiempo de Protrombina:</label>
-            <input type="number" name="t_protrombina" value={datos.t_protrombina || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
+            <input type="number" name="tiempo_protrombina" value={datos.tiempo_protrombina || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Actividad (%):</label>
-            <input type="text" name="actividad" value={datos.actividad || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} placeholder="e.g. 85%" />
+            <input type="text" name="actividad_protrombina" value={datos.actividad_protrombina || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff' }} placeholder="e.g. 85%" />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>INR:</label>
@@ -72,12 +72,12 @@ export default function FormCoagulograma({ hematoDatos, setHematoDatos }: Coagul
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Comentario Serie Roja:</label>
-            <textarea name="comentario_serie_roja" value={datos.comentario_serie_roja || ''} onChange={handleChange} placeholder="Observaciones de la serie roja..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '50px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
+            <textarea name="comentario_roja" value={datos.comentario_roja || ''} onChange={handleChange} placeholder="Observaciones de la serie roja..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '50px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#a0b2ae', marginBottom: '4px' }}>Comentario Serie Blanca:</label>
-            <textarea name="comentario_serie_blanca" value={datos.comentario_serie_blanca || ''} onChange={handleChange} placeholder="Observaciones de la serie blanca..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '50px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
+            <textarea name="comentario_blanca" value={datos.comentario_blanca || ''} onChange={handleChange} placeholder="Observaciones de la serie blanca..." style={{ width: '100%', padding: '8px', backgroundColor: '#0a0f0d', border: '1px solid #2a403a', borderRadius: '4px', color: '#fff', height: '50px', resize: 'none', fontFamily: 'sans-serif', fontSize: '12px' }} />
           </div>
 
           <div>
