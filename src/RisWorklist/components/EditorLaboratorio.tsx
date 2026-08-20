@@ -73,22 +73,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     horaToma: '',
     horaRecepcion: '',
     horaEmision: '',
-<<<<<<< HEAD
-=======
-=======
-    paterno: pacienteData?.paterno || pacienteData?.lastName || '',
-    materno: pacienteData?.materno || '',
-    nombres: pacienteData?.nombres || pacienteData?.firstName || '',
-    matricula: pacienteData?.matricula || pacienteData?.cod || pacienteData?.codigoAsegurado || '',
-    beneficiario: pacienteData?.beneficiario || pacienteData?.codBeneficiario || pacienteData?.codigoBeneficiario || '',
-    policlinico: pacienteData?.policlinico || pacienteData?.institucion || '',
-    consultorio: pacienteData?.consultorio || '',
-    medicoSolicitante: pacienteData?.medicoSolicitante || pacienteData?.medico_solicitante || '',
-    fechaSolicitud: pacienteData?.fechaSolicitud || pacienteData?.fecha || new Date().toISOString().slice(0, 10),
-    fechaReporte: new Date().toISOString().slice(0, 10),
-    nroSolicitud: pacienteData?.nroSolicitud || '',
->>>>>>> segunda_fase
->>>>>>> 23882671fd67d8f28c135c7104b43fd68505fc2f
+
   });
   const [tabActiva, setTabActiva] = useState('hematologia');
   const [filtro, setFiltro] = useState('');
