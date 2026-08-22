@@ -466,6 +466,20 @@ function RisWorklistPanel({ servicesManager }) {
   const handleCreatePatient = async (e: React.FormEvent): Promise<Patient | undefined> => {
     e.preventDefault();
     const datosPaciente = { ...newPatient, dateOfBirth: newPatient.dateOfBirth || undefined };
+
+    const normalizar = (v: any) => (v || '').toString().trim().toLowerCase();
+    const documentIdNuevo = normalizar(datosPaciente.documentId);
+    const patientIdNuevo = normalizar(datosPaciente.patientId);
+    const yaExiste = patients.some((p: any) => {
+      const coincideDocumento = documentIdNuevo && normalizar(p.documentId) === documentIdNuevo;
+      const coincideMrn = patientIdNuevo && normalizar(p.patientId) === patientIdNuevo;
+      return coincideDocumento || coincideMrn;
+    });
+    if (yaExiste) {
+      toast.error('Ya existe un paciente registrado con esa cédula/matrícula o MRN.');
+      return undefined;
+    }
+
     const resetForm = () => {
       setIsCreatingPatient(false);
       setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
@@ -647,7 +661,14 @@ function RisWorklistPanel({ servicesManager }) {
   const handleDelete = async (type: string, id: string) => {
     if (!window.confirm('¿Está seguro de eliminar este registro?')) return;
     try {
-      if (type === 'patient') await deletePatient(id);
+      if (type === 'patient') {
+        // Pacientes creados offline (fallback sin backend) no existen en la API: no intentar borrarlos ahí.
+        if (!id.startsWith('local-')) await deletePatient(id);
+        // Purgamos también la caché local para que no "reviva" al fusionar con localStorage en loadAll().
+        const patLocal = leerPacientesLS().filter((p: any) => p._id !== id);
+        guardarPacientesLS(patLocal);
+        setPatients((prev) => prev.filter((p: any) => p._id !== id));
+      }
       if (type === 'modality') await deleteModality(id);
       if (type === 'equipment') await deleteEquipment(id);
       if (type === 'organization') await deleteOrganization(id);

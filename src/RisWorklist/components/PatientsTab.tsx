@@ -7,7 +7,7 @@ import { parseBoletaQr } from '../../utils/parseBoletaQr';
 
 import { Patient } from '../types';
 
-// 📦 Importamos los 10 pacientes unificados de tu plantilla Excel locales
+// 📦 Importamos los pacientes reales de la planilla Excel "RESULTADOS 14-05-2026"
 import { listaPacientesPrueba } from './pacientesMock';
 
 interface PatientsTabProps {
@@ -51,6 +51,7 @@ export default function PatientsTab({
 }: PatientsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   // 📝 Variables de control para la simulación secuencial de tu plantilla Excel
   const [indiceExcel, setIndiceExcel] = useState(0);
@@ -144,11 +145,13 @@ export default function PatientsTab({
   }, [isEditing, editingItem]);
 
   const openCreateModal = () => {
+    setDuplicateError(null);
     setIsModalOpen(true);
     setIsCreatingPatient(true);
   };
 
   const closeModal = () => {
+    setDuplicateError(null);
     setIsModalOpen(false);
     setIsCreatingPatient(false);
     if (isEditing) handleCancelEdit();
@@ -177,24 +180,39 @@ export default function PatientsTab({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
+            setDuplicateError(null);
             if (isEditingPatient) {
               await handleUpdate(e);
             } else {
               const creado = await handleCreatePatient(e);
+              if (!creado) {
+                // no se creó (paciente duplicado): dejamos el modal abierto y avisamos en el formulario
+                setDuplicateError('Ya existe un paciente registrado con esa cédula/matrícula o MRN. Verifique los datos.');
+                return;
+              }
               // Ruteo según el servicio elegido en el selector post-registro.
-              if (servicioSeleccionado === 'imagenologia' && creado && irARecepcionConPaciente) {
+              if (servicioSeleccionado === 'imagenologia' && irARecepcionConPaciente) {
                 setIsModalOpen(false);
                 setIsCreatingPatient(false);
                 irARecepcionConPaciente(creado);
                 return; // salimos: ya navegamos a Recepción con el paciente cargado
               }
               alert("🎉 ¡Paciente guardado con éxito! Continúe el registro del examen.");
+              setIsModalOpen(false);
+              setIsCreatingPatient(false);
+              return;
             }
             setIsModalOpen(false);
             setIsCreatingPatient(false);
           }}
           className="space-y-6"
         >
+          {duplicateError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/40 rounded-lg text-xs text-red-400 font-semibold flex items-center gap-2">
+              ⚠️ {duplicateError}
+            </div>
+          )}
+
           {/* Botón superior de carga para la simulación */}
           <div className="flex justify-end">
             <button 
@@ -203,7 +221,7 @@ export default function PatientsTab({
               className="px-3 py-1.5 bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/30 rounded-lg text-xs font-semibold hover:bg-[#00bfa5]/20 transition-all active:scale-95 flex items-center gap-1"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              ✨ Cargar Fila Excel ({indiceExcel + 1}/10)
+              ✨ Cargar Fila Excel ({indiceExcel + 1}/{listaPacientesPrueba.length})
             </button>
           </div>
 
