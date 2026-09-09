@@ -572,3 +572,73 @@ export const deleteCompany = async (id: string): Promise<{ success: boolean }> =
   }
   return response.json();
 };
+
+// ── Integración con la Modality Worklist del PACS ──────────────────────────
+// Estos endpoints los expone el RIS-PACS Adapter (src/services/mwl del backend).
+
+/** Estado del adapter: conectividad con el PACS, cola de envío y métricas. */
+export const fetchMwlHealth = async (): Promise<any> => {
+  const response = await fetchWithAuth(`${api}/api/mwl/health`);
+  // Devuelve 503 con cuerpo útil cuando el PACS no responde: no es un error de la petición, es el estado que hay que mostrar en pantalla.
+  if (!response.ok && response.status !== 503) {
+    throw new Error('No se pudo consultar el estado de la integración');
+  }
+  return response.json();
+};
+
+/** Lo que el PACS tiene realmente en su worklist en este momento. */
+export const fetchPacsWorklist = async (params: { modality?: string } = {}): Promise<any> => {
+  const qs = new URLSearchParams();
+  if (params.modality) qs.set('modality', params.modality);
+  const response = await fetchWithAuth(`${api}/api/mwl/worklist?${qs}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'El PACS no respondió');
+  }
+  return response.json();
+};
+
+/** Fuerza un reintento de sincronización de una orden concreta. */
+export const retryMwlOrder = async (accessionNumber: string): Promise<any> => {
+  const response = await fetchWithAuth(
+    `${api}/api/mwl/orders/${encodeURIComponent(accessionNumber)}/retry`,
+    { method: 'POST' }
+  );
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'No se pudo reintentar');
+  }
+  return response.json();
+};
+
+/** Dispara la reconciliación entre las órdenes del RIS y la worklist del PACS. */
+export const reconcileMwl = async (): Promise<any> => {
+  const response = await fetchWithAuth(`${api}/api/mwl/reconcile`, { method: 'POST' });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'No se pudo reconciliar');
+  }
+  return response.json();
+};
+
+/** Verifica por DICOM si un equipo responde (C-ECHO). */
+export const probarConexionEquipo = async (equipmentId: string): Promise<any> => {
+  const response = await fetchWithAuth(`${api}/api/mwl/equipment/${equipmentId}/echo`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'No se pudo ejecutar la prueba');
+  }
+  return response.json();
+};
+
+/** Prueba todos los equipos activos de una vez, más el propio PACS. */
+export const probarTodosLosEquipos = async (): Promise<any> => {
+  const response = await fetchWithAuth(`${api}/api/mwl/equipment/echo-all`, { method: 'POST' });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'No se pudo ejecutar la prueba');
+  }
+  return response.json();
+};

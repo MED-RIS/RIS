@@ -111,6 +111,7 @@ import TeleradiologyTab from './components/TeleradiologyTab';
 import TeachingFileTab from './components/TeachingFileTab';
 import TelemedModal from './components/TelemedModal';
 import CompaniesTab from './components/CompaniesTab';
+import WorklistPacsTab from './components/WorklistPacsTab';
 
 // ── Module-level constants (defined once, never recreated) ──────────────────
 
@@ -123,6 +124,7 @@ const MENU_GROUPS = [
       { id: 'informes', label: 'Informes', icon: <FileText className="w-5 h-5" /> },
       { id: 'pacientes', label: 'Pacientes', icon: <Users className="w-5 h-5" /> },
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },
+      { id: 'worklistPacs', label: 'Worklist PACS', icon: <Network className="w-5 h-5" /> },
       { id: 'Formulario', label: 'Formulario', icon: <Form className="w-5 h-5" /> },
     ]
   },
@@ -257,7 +259,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '' });
   const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
-  const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '' });
+  const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '', supportsMwl: true, conformanceNotes: '' });
   const [newService, setNewService] = useState({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
   const [newBranch, setNewBranch] = useState({
     name: '',
@@ -455,13 +457,38 @@ function RisWorklistPanel({ servicesManager }) {
     }
   };
 
+  /**
+   * Genera el número de orden.
+   *
+   * El formato ACC-AAMMDD-XXXXX ocupa exactamente 16 caracteres, que es el
+   * máximo del campo Accession Number (0008,0050) en DICOM, de tipo SH. El
+   * formato anterior era `ACC-${Date.now()}`, de 17 caracteres: el PACS lo
+   * recortaba en silencio y el estudio quedaba guardado con un número distinto
+   * al del RIS, rompiendo la trazabilidad entre los dos sistemas.
+   *
+   * XXXXX son los milisegundos transcurridos del día en base 36, así que dos
+   * órdenes solo colisionan si se crean en el mismo milisegundo.
+   */
+  const generarAccessionNumber = () => {
+    const ahora = new Date();
+    const yy = String(ahora.getFullYear()).slice(-2);
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dd = String(ahora.getDate()).padStart(2, '0');
+
+    const inicioDelDia = new Date(ahora);
+    inicioDelDia.setHours(0, 0, 0, 0);
+    const msDelDia = ahora.getTime() - inicioDelDia.getTime();
+
+    return `ACC-${yy}${mm}${dd}-${msDelDia.toString(36).toUpperCase().padStart(5, '0')}`;
+  };
+
   const handleCreateOrder = async (e: any, customOrder?: any) => {
     e?.preventDefault?.();
     try {
       const orderData = customOrder || newOrder;
       const payload = {
         ...orderData,
-        accessionNumber: orderData.accessionNumber || `ACC-${Date.now()}`
+        accessionNumber: orderData.accessionNumber || generarAccessionNumber()
       };
       await createOrder(payload);
       toast.success('Estudio agendado correctamente');
@@ -557,7 +584,7 @@ function RisWorklistPanel({ servicesManager }) {
     setEditingItem(null);
     setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '' });
     setNewModality({ name: '', dicom_code: '', description: '' });
-    setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
+    setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '', supportsMwl: true, conformanceNotes: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
     setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
     setNewBranch({
@@ -628,7 +655,7 @@ function RisWorklistPanel({ servicesManager }) {
       await createEquipment(newEquipment);
       toast.success('Equipo creado');
       setIsCreatingEquipment(false);
-      setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
+      setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '', supportsMwl: true, conformanceNotes: '' });
       const data = await fetchEquipment();
       setEquipmentList(data);
     } catch (err) {
@@ -888,6 +915,10 @@ function RisWorklistPanel({ servicesManager }) {
           {/* Area Render con Glassmorphism base */}
           <div className="flex-1 overflow-auto p-4 md:p-6 custom-scrollbar relative">
             <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-4 md:p-6 min-h-full backdrop-blur-sm">
+
+              {activeTab === 'worklistPacs' && (
+                <WorklistPacsTab orders={orders} />
+              )}
 
               {activeTab === 'ordenes' && (
                 <OrdersTab isLoading={isLoading} orders={orders} reports={reports} fuzzySearch={fuzzySearch} paginate={paginate} handleStatusChange={handleStatusChange} handleEdit={handleEdit} handleDelete={handleDelete} loadAll={loadAll} PaginationControls={Paginator} openPatientProfile={setSelectedPatientProfile} />

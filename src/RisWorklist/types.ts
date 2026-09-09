@@ -20,6 +20,15 @@ export interface Equipment {
   manufacturer: string;
   model: string;
   serial_number: string;
+
+  // Identidad DICOM en la red, tomada del Conformance Statement del equipo.
+  aeTitle?: string;          // Scheduled Station AE Title (máx. 16 caracteres)
+  ipAddress?: string;
+  dicomPort?: number;
+  modality?: string;         // Código DICOM: CT, DX, CR, US, MR…
+  supportsMwl?: boolean;     // Si consulta la worklist o se carga a mano
+  conformanceNotes?: string;
+  status?: boolean;
 }
 
 export interface Service {
@@ -68,6 +77,14 @@ export interface Order {
   observations?: string;
   paidAt?: string;
   status?: string;
+
+  // Integración con la worklist de los equipos.
+  studyInstanceUid?: string;   // Identificador que une RIS, PACS y visor
+  equipment?: string | Equipment;
+  stationAet?: string;         // AE Title del equipo al que se envió
+  mwlSyncStatus?: 'PENDING' | 'SYNCED' | 'ERROR' | 'DISABLED';
+  mwlSyncedAt?: string;
+  mwlLastError?: string;
 }
 
 export interface Branch {

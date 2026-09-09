@@ -67,6 +67,53 @@ export default function OrdersTab({
     return reports.find((r: any) => r.order?._id === orderId || r.order === orderId);
   };
 
+  /** Estado de sincronización con la worklist del equipo. */
+  const MWL_ESTADOS: Record<string, { texto: string; clase: string; ayuda: string }> = {
+    SYNCED: {
+      texto: '✓ EN EQUIPO',
+      clase: 'bg-green-900/50 text-green-300 border-green-600/40',
+      ayuda: 'El paciente ya figura en la worklist del equipo.',
+    },
+    PENDING: {
+      texto: '⟳ ENVIANDO',
+      clase: 'bg-blue-900/50 text-blue-300 border-blue-600/40',
+      ayuda: 'En cola para enviarse al PACS. Se reintenta solo.',
+    },
+    ERROR: {
+      texto: '⚠ REQUIERE ATENCIÓN',
+      clase: 'bg-red-900/50 text-red-300 border-red-600/40',
+      ayuda: 'No se pudo enviar al equipo.',
+    },
+    DISABLED: {
+      texto: '— RETIRADO',
+      clase: 'bg-gray-900/50 text-gray-400 border-gray-600/40',
+      ayuda: 'La orden se canceló y se retiró de la worklist.',
+    },
+  };
+
+  const renderEstadoMwl = (order: any) => {
+    const estado = MWL_ESTADOS[order.mwlSyncStatus];
+
+    // Órdenes anteriores a la integración no tienen el campo: no se inventa un estado para ellas, se muestran vacías.
+    if (!estado) return <span className="text-gray-600 text-xs">-</span>;
+
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <span
+          className={`px-2 py-1 rounded text-[10px] font-bold border w-max ${estado.clase}`}
+          title={order.mwlLastError ? `${estado.ayuda}\n\n${order.mwlLastError}` : estado.ayuda}
+        >
+          {estado.texto}
+        </span>
+        {order.stationAet && (
+          <span className="text-[10px] text-gray-500 font-mono" title="Equipo asignado">
+            {order.stationAet}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   const onStatusClick = (order: any, newStatus: string) => {
     // If advancing to ARRIVED or beyond and it's not paid yet
     const isAdvancing = ['ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(newStatus);
@@ -159,15 +206,16 @@ export default function OrdersTab({
                 <th className="p-3 font-semibold cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('scheduledDate')}>Programado <span className="ml-1 text-[10px]">{getSortIcon('scheduledDate')}</span></th>
                 <th className="p-3 font-semibold cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('referringPhysician')}>Médico <span className="ml-1 text-[10px]">{getSortIcon('referringPhysician')}</span></th>
                 <th className="p-3 font-semibold text-center cursor-pointer select-none hover:bg-black/20" onClick={() => requestSort('status')}>Estado <span className="ml-1 text-[10px]">{getSortIcon('status')}</span></th>
+                <th className="p-3 font-semibold text-center" title="Estado de la orden en la worklist del equipo">Worklist</th>
                 <th className="p-3 font-semibold text-center">Informe</th>
                 <th className="p-3 font-semibold text-right rounded-tr-lg">Acciones</th>
               </tr>
             </thead>
           <tbody className={`divide-y divide-secondary-dark transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
             {isLoading && sortedOrders.length === 0 ? (
-              <tr><td colSpan={9} className="text-center py-6 text-primary-light">Cargando...</td></tr>
+              <tr><td colSpan={10} className="text-center py-6 text-primary-light">Cargando...</td></tr>
             ) : sortedOrders.length === 0 ? (
-              <tr><td colSpan={9} className="text-center py-6 text-primary-light">No hay órdenes que coincidan con la búsqueda.</td></tr>
+              <tr><td colSpan={10} className="text-center py-6 text-primary-light">No hay órdenes que coincidan con la búsqueda.</td></tr>
               ) : paginate(sortedOrders).map((order: any) => (
                 <tr key={order._id} className="hover:bg-primary-dark transition-colors">
                   <td className="p-3 font-medium text-primary-light">{order.accessionNumber}</td>
@@ -236,6 +284,7 @@ export default function OrdersTab({
                       </div>
                     )}
                   </td>
+                  <td className="p-3 text-center">{renderEstadoMwl(order)}</td>
                   <td className="p-3 text-center">
                     <div className="flex flex-col items-center gap-2">
                       {getOrderReport(order._id) ? (
