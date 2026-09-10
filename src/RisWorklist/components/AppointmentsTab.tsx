@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ConsultaTab from './ConsultaTab';
+import { updateOrder } from '../risService';
+import { toast } from '@ohif/ui-next';
 
 const generateTimeSlots = () => {
   const slots = [];
@@ -52,7 +54,9 @@ export default function AppointmentsTab({
   handleEdit,
   handleDelete,
   services,
-  companies
+  companies,
+  handleStatusChange,
+  loadAll
 }: any) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
@@ -133,6 +137,49 @@ export default function AppointmentsTab({
     setNewOrder({ ...newOrder, scheduledDate: localDateTime, modality: '', patient: '', referringPhysician: '', branch: '' });
     setSelectedSlot(slotStart);
     setIsModalOpen(true);
+  };
+
+  const today = new Date();
+  const receptionOrders = orders
+    .filter((order: any) => {
+      if (!order.scheduledDate) return false;
+      const date = new Date(order.scheduledDate);
+      return date.toDateString() === today.toDateString() && order.status !== 'CANCELED';
+    })
+    .sort((a: any, b: any) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+
+  const receptionStatus = (order: any) => order.receptionStatus || (order.status === 'ARRIVED' ? 'WAITING' : 'WAITING');
+  const receptionLabel: Record<string, string> = {
+    WAITING: 'Esperando',
+    CALLED: 'Llamado',
+    IN_ATTENTION: 'En atención',
+    ATTENDED: 'Atendido',
+    ABSENT: 'Ausente',
+  };
+  const receptionColor: Record<string, string> = {
+    WAITING: 'text-yellow-300 border-yellow-500/40 bg-yellow-900/20',
+    CALLED: 'text-blue-300 border-blue-500/40 bg-blue-900/20',
+    IN_ATTENTION: 'text-purple-300 border-purple-500/40 bg-purple-900/20',
+    ATTENDED: 'text-green-300 border-green-500/40 bg-green-900/20',
+    ABSENT: 'text-red-300 border-red-500/40 bg-red-900/20',
+  };
+
+  const updateReception = async (order: any, nextStatus: string) => {
+    const now = new Date().toISOString();
+    const queueNumber = order.queueNumber || `F-${String(receptionOrders.findIndex((item: any) => item._id === order._id) + 1).padStart(3, '0')}`;
+    try {
+      await updateOrder(order._id, {
+        queueNumber,
+        receptionStatus: nextStatus,
+        ...(nextStatus === 'CALLED' ? { calledAt: now } : {}),
+        ...(nextStatus === 'ATTENDED' ? { attendedAt: now } : {}),
+        ...(order.checkedInAt ? {} : { checkedInAt: now }),
+      });
+      toast.success(`Ficha ${queueNumber}: ${receptionLabel[nextStatus]}`);
+      loadAll?.();
+    } catch (error) {
+      toast.error(`No se pudo actualizar la ficha: ${(error as Error).message}`);
+    }
   };
 
   return (
@@ -299,6 +346,47 @@ export default function AppointmentsTab({
             )
           })}
         </div>
+      </div>
+
+      <div className="bg-primary-main rounded-lg border border-secondary-dark p-4 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4 border-b border-secondary-dark pb-3">
+          <div>
+            <h3 className="text-base sm:text-xl font-bold text-white uppercase tracking-wide">Cola de recepción</h3>
+            <p className="text-xs text-gray-400 mt-1">Fichas de las consultas programadas para hoy</p>
+          </div>
+          <span className="text-xs font-bold text-primary-light">{receptionOrders.length} fichas</span>
+        </div>
+        {receptionOrders.length === 0 ? (
+          <p className="text-sm text-gray-500 py-4 text-center">No hay pacientes programados para hoy.</p>
+        ) : (
+          <div className="space-y-2">
+            {receptionOrders.map((order: any, index: number) => {
+              const current = receptionStatus(order);
+              const queueNumber = order.queueNumber || `F-${String(index + 1).padStart(3, '0')}`;
+              const nextAction = current === 'WAITING' ? ['CALLED', 'Llamar'] : current === 'CALLED' ? ['IN_ATTENTION', 'Iniciar atención'] : current === 'IN_ATTENTION' ? ['ATTENDED', 'Finalizar'] : null;
+              return (
+                <div key={order._id} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-black/30 border border-secondary-dark rounded-lg p-3">
+                  <span className="text-lg font-black text-primary-light min-w-16">{queueNumber}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{order.patient?.lastName}, {order.patient?.firstName}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.scheduledDate).toLocaleTimeString('es-419', { hour: '2-digit', minute: '2-digit' })} · {order.modality} · {order.insuranceName || 'Particular'}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded border text-[10px] font-bold uppercase ${receptionColor[current] || receptionColor.WAITING}`}>{receptionLabel[current] || current}</span>
+                  {nextAction && (
+                    <button type="button" onClick={() => updateReception(order, nextAction[0])} className="px-3 py-2 rounded bg-primary-light/20 border border-primary-light/40 text-primary-light text-[10px] font-bold uppercase hover:bg-primary-light/30">
+                      {nextAction[1]}
+                    </button>
+                  )}
+                  {current === 'WAITING' && (
+                    <button type="button" onClick={() => updateReception(order, 'ABSENT')} className="px-2 py-2 rounded border border-red-500/30 text-red-300 text-[10px] font-bold uppercase hover:bg-red-900/20">
+                      Ausente
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Modal Form */}

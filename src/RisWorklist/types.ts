@@ -3,6 +3,7 @@ export interface Patient {
   firstName: string;
   lastName: string;
   patientId?: string;
+  documentId?: string;
   dateOfBirth?: string;
   gender?: string;
   phone?: string;
@@ -68,6 +69,14 @@ export interface Order {
   observations?: string;
   paidAt?: string;
   status?: string;
+  receptionStatus?: 'WAITING' | 'CALLED' | 'IN_ATTENTION' | 'ATTENDED' | 'ABSENT' | 'CANCELED';
+  queueNumber?: string;
+  checkedInAt?: string;
+  calledAt?: string;
+  attendedAt?: string;
+  studyInstanceUid?: string;
+  seriesInstanceUid?: string;
+  sopInstanceUid?: string;
 }
 
 export interface Branch {
