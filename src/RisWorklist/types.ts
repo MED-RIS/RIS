@@ -51,11 +51,18 @@ export interface Order {
   branch?: string;
   serviceLines?: ServiceLine[];
   company?: string;
+  insurerId?: string;
   hasInsurance?: boolean;
   insuranceName?: string;
   insurancePolicy?: string;
+  agreementName?: string;
   ruc?: string;
   agreementType?: string;
+  coveragePercent?: number;
+  copayAmount?: number;
+  authorizationNumber?: string;
+  insuranceAmount?: number;
+  patientAmount?: number;
   billingFormat?: string;
   requiresInvoice?: boolean;
   invoiceNumber?: string;
@@ -74,6 +81,8 @@ export interface Order {
   checkedInAt?: string;
   calledAt?: string;
   attendedAt?: string;
+  room?: string;
+  assignedTechnician?: string;
   studyInstanceUid?: string;
   seriesInstanceUid?: string;
   sopInstanceUid?: string;
@@ -115,6 +124,10 @@ export interface Company {
   hasInsurance?: boolean;
   insuranceName?: string;
   insurancePolicy?: string;
+  agreementName?: string;
+  coveragePercent?: number;
+  copayPercent?: number;
+  requiresAuthorization?: boolean;
   ruc?: string;
   agreementType?: string;
   billingFormat?: string;

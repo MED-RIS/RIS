@@ -212,6 +212,10 @@ export default function ConsultaTab({
   const [directAmount, setDirectAmount] = useState('');
   const [hasInsurance, setHasInsurance] = useState(false);
   const [insuranceName, setInsuranceName] = useState('');
+  const [insurancePolicy, setInsurancePolicy] = useState('');
+  const [agreementName, setAgreementName] = useState('');
+  const [coveragePercent, setCoveragePercent] = useState('0');
+  const [authorizationNumber, setAuthorizationNumber] = useState('');
   const [requiresInvoice, setRequiresInvoice] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [company, setCompany] = useState('');
@@ -241,6 +245,11 @@ export default function ConsultaTab({
   // Totals derived from lines
   const lineTotal = lines.reduce((sum, l) => sum + (l.effectiveAmount || 0), 0);
   const grandTotal = directAmount ? parseFloat(directAmount) : lineTotal;
+  const normalizedCoverage = hasInsurance
+    ? Math.min(100, Math.max(0, parseFloat(coveragePercent) || 0))
+    : 0;
+  const insuranceAmount = Math.min(grandTotal, grandTotal * normalizedCoverage / 100);
+  const patientAmount = Math.max(0, grandTotal - insuranceAmount);
 
   // Primary modality = first non-empty line
   const primaryModality = lines.find(l => l.modality)?.modality || '';
@@ -262,6 +271,10 @@ export default function ConsultaTab({
     setDirectAmount('');
     setHasInsurance(false);
     setInsuranceName('');
+    setInsurancePolicy('');
+    setAgreementName('');
+    setCoveragePercent('0');
+    setAuthorizationNumber('');
     setRequiresInvoice(false);
     setInvoiceNumber('');
     setCompany('');
@@ -271,7 +284,7 @@ export default function ConsultaTab({
     setPaymentMethod('CASH');
     setPaymentStatus('PENDING');
     setPaymentNotes('');
-    setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
+    setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -290,6 +303,12 @@ export default function ConsultaTab({
         company,
         hasInsurance,
         insuranceName: hasInsurance ? insuranceName : '',
+        insurancePolicy: hasInsurance ? insurancePolicy : '',
+        agreementName: hasInsurance ? agreementName : '',
+        coveragePercent: normalizedCoverage,
+        insuranceAmount,
+        patientAmount,
+        authorizationNumber: hasInsurance ? authorizationNumber : '',
         requiresInvoice,
         invoiceNumber: requiresInvoice ? invoiceNumber : '',
         directAmount: directAmount ? parseFloat(directAmount) : 0,
@@ -464,11 +483,17 @@ export default function ConsultaTab({
                         setCompany(selected.name);
                         setHasInsurance(selected.hasInsurance || false);
                         setInsuranceName(selected.insuranceName || '');
+                        setInsurancePolicy(selected.insurancePolicy || '');
+                        setAgreementName(selected.agreementName || selected.agreementType || '');
+                        setCoveragePercent(String(selected.coveragePercent ?? 0));
                       } else {
                         setCompany(e.target.value);
                         if (e.target.value === '') {
                           setHasInsurance(false);
                           setInsuranceName('');
+                          setInsurancePolicy('');
+                          setAgreementName('');
+                          setCoveragePercent('0');
                         }
                       }
                     }}
@@ -544,6 +569,24 @@ export default function ConsultaTab({
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Convenio, cobertura y autorización */}
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Convenio</label>
+                <input type="text" value={agreementName} onChange={e => setAgreementName(e.target.value)} disabled={!hasInsurance} placeholder="Convenio institucional o plan" className="w-full text-sm p-3 rounded-lg bg-black/60 border border-white/10 text-white focus:border-purple-400/70 outline-none transition-all disabled:opacity-40" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">N.º de póliza / afiliado</label>
+                <input type="text" value={insurancePolicy} onChange={e => setInsurancePolicy(e.target.value)} disabled={!hasInsurance} placeholder="Número de asegurado" className="w-full text-sm p-3 rounded-lg bg-black/60 border border-white/10 text-white focus:border-purple-400/70 outline-none transition-all disabled:opacity-40" />
+              </div>
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Cobertura (%)</label>
+                <input type="number" min="0" max="100" value={coveragePercent} onChange={e => setCoveragePercent(e.target.value)} disabled={!hasInsurance} className="w-full text-sm p-3 rounded-lg bg-black/60 border border-white/10 text-white focus:border-purple-400/70 outline-none transition-all disabled:opacity-40" />
+              </div>
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Autorización</label>
+                <input type="text" value={authorizationNumber} onChange={e => setAuthorizationNumber(e.target.value)} disabled={!hasInsurance} placeholder="N.º autorización" className="w-full text-sm p-3 rounded-lg bg-black/60 border border-white/10 text-white focus:border-purple-400/70 outline-none transition-all disabled:opacity-40" />
               </div>
 
               {/* Factura toggle */}
@@ -751,6 +794,20 @@ export default function ConsultaTab({
 
             {/* Payment Summary */}
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
+              <div className="grid grid-cols-3 gap-3 w-full text-xs">
+                <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                  <span className="block text-gray-500 uppercase tracking-wider">Total</span>
+                  <strong className="text-white text-lg">${grandTotal.toFixed(2)}</strong>
+                </div>
+                <div className="rounded-lg border border-blue-500/30 bg-blue-900/20 p-3">
+                  <span className="block text-blue-300 uppercase tracking-wider">Paga seguro ({normalizedCoverage}%)</span>
+                  <strong className="text-blue-200 text-lg">${insuranceAmount.toFixed(2)}</strong>
+                </div>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-900/20 p-3">
+                  <span className="block text-amber-300 uppercase tracking-wider">Paga paciente</span>
+                  <strong className="text-amber-200 text-lg">${patientAmount.toFixed(2)}</strong>
+                </div>
+              </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${PAYMENT_STATUS_STYLES[paymentStatus] || ''}`}>
                   {paymentStatus === 'PENDING' ? <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Pendiente</span> : paymentStatus === 'PARTIAL' ? <span className="flex items-center gap-1"><PieChart className="w-3.5 h-3.5" /> Parcial</span> : paymentStatus === 'PAID' ? <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Pagado</span> : <span className="flex items-center gap-1"><Circle className="w-3.5 h-3.5" /> Exonerado</span>}

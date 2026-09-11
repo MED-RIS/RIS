@@ -47,7 +47,6 @@ export default function CompaniesTab({
           Nueva Empresa
         </button>
       </div>
-
       {/* ── Stats Bar ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border border-primary-light/20 rounded-xl p-4">
@@ -304,6 +303,23 @@ export default function CompaniesTab({
                   )}
                 </div>
               )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Convenio / Plan</label>
+                <input type="text" placeholder="Nombre del convenio" value={newItemState.agreementName || ''} onChange={e => setNewItemState({ ...newItemState, agreementName: e.target.value })} className="w-full text-sm p-2.5 rounded-lg bg-black/60 border border-white/10 text-white focus:border-primary-light/70 outline-none transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Cobertura (%)</label>
+                <input type="number" min="0" max="100" value={newItemState.coveragePercent ?? 0} onChange={e => setNewItemState({ ...newItemState, coveragePercent: Number(e.target.value) })} disabled={!newItemState.hasInsurance} className="w-full text-sm p-2.5 rounded-lg bg-black/60 border border-white/10 text-white focus:border-primary-light/70 outline-none transition-all disabled:opacity-40" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Copago (%)</label>
+                <input type="number" min="0" max="100" value={newItemState.copayPercent ?? 0} onChange={e => setNewItemState({ ...newItemState, copayPercent: Number(e.target.value) })} disabled={!newItemState.hasInsurance} className="w-full text-sm p-2.5 rounded-lg bg-black/60 border border-white/10 text-white focus:border-primary-light/70 outline-none transition-all disabled:opacity-40" />
+              </div>
+              <label className="col-span-2 flex items-center gap-2 text-xs text-gray-300">
+                <input type="checkbox" checked={Boolean(newItemState.requiresAuthorization)} onChange={e => setNewItemState({ ...newItemState, requiresAuthorization: e.target.checked })} disabled={!newItemState.hasInsurance} />
+                Requiere autorización previa
+              </label>
 
               {/* Estado */}
               <div className="flex items-center gap-3">

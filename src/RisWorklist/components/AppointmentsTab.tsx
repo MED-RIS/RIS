@@ -58,6 +58,8 @@ export default function AppointmentsTab({
   handleStatusChange,
   loadAll
 }: any) {
+  const [clock, setClock] = useState(() => Date.now());
+  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, { room: string; assignedTechnician: string }>>({});
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -88,6 +90,11 @@ export default function AppointmentsTab({
       setIsModalOpen(true);
     }
   }, [isEditing, editingItem]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const nextWeek = () => {
     const d = new Date(currentWeekStart);
@@ -181,6 +188,36 @@ export default function AppointmentsTab({
       toast.error(`No se pudo actualizar la ficha: ${(error as Error).message}`);
     }
   };
+
+  const getAssignment = (order: any) => assignmentDrafts[order._id] || {
+    room: order.room || '',
+    assignedTechnician: order.assignedTechnician || '',
+  };
+
+  const updateAssignment = async (order: any) => {
+    const assignment = getAssignment(order);
+    try {
+      await updateOrder(order._id, assignment);
+      toast.success(`Ficha ${order.queueNumber || 'sin ficha'} actualizada`);
+      loadAll?.();
+    } catch (error) {
+      toast.error(`No se pudo guardar la asignación: ${(error as Error).message}`);
+    }
+  };
+
+  const formatWaitTime = (order: any) => {
+    if (!order.checkedInAt) return 'No llegó';
+    const elapsedMinutes = Math.max(0, Math.floor((clock - new Date(order.checkedInAt).getTime()) / 60000));
+    if (elapsedMinutes < 1) return 'Ahora';
+    const hours = Math.floor(elapsedMinutes / 60);
+    return hours > 0 ? `${hours}h ${elapsedMinutes % 60}m` : `${elapsedMinutes}m`;
+  };
+
+  const formatTime = (value?: string) => value
+    ? new Date(value).toLocaleTimeString('es-419', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+
+  const calledOrder = receptionOrders.find((order: any) => receptionStatus(order) === 'CALLED');
 
   return (
     <div className="flex flex-col gap-6">
@@ -348,6 +385,19 @@ export default function AppointmentsTab({
         </div>
       </div>
 
+      {calledOrder && (
+        <div className="rounded-xl border-2 border-cyan-400/70 bg-cyan-950/40 p-5 shadow-[0_0_25px_rgba(34,211,238,0.15)] animate-pulse">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">Paciente llamado</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-2xl font-black text-white">{calledOrder.patient?.lastName}, {calledOrder.patient?.firstName}</h3>
+              <p className="text-sm text-cyan-200">Ficha {calledOrder.queueNumber || '—'} · Dirigirse a {calledOrder.room || 'sala asignada'}</p>
+            </div>
+            <span className="text-sm font-bold text-cyan-300">{calledOrder.modality}</span>
+          </div>
+        </div>
+      )}
+
       <div className="bg-primary-main rounded-lg border border-secondary-dark p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4 border-b border-secondary-dark pb-3">
           <div>
@@ -364,14 +414,42 @@ export default function AppointmentsTab({
               const current = receptionStatus(order);
               const queueNumber = order.queueNumber || `F-${String(index + 1).padStart(3, '0')}`;
               const nextAction = current === 'WAITING' ? ['CALLED', 'Llamar'] : current === 'CALLED' ? ['IN_ATTENTION', 'Iniciar atención'] : current === 'IN_ATTENTION' ? ['ATTENDED', 'Finalizar'] : null;
+              const assignment = getAssignment(order);
               return (
-                <div key={order._id} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-black/30 border border-secondary-dark rounded-lg p-3">
+                <div key={order._id} className="grid gap-3 bg-black/30 border border-secondary-dark rounded-lg p-3 xl:grid-cols-[auto_minmax(180px,1fr)_auto_auto_auto_auto] xl:items-center">
                   <span className="text-lg font-black text-primary-light min-w-16">{queueNumber}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-white truncate">{order.patient?.lastName}, {order.patient?.firstName}</p>
-                    <p className="text-xs text-gray-400">{new Date(order.scheduledDate).toLocaleTimeString('es-419', { hour: '2-digit', minute: '2-digit' })} · {order.modality} · {order.insuranceName || 'Particular'}</p>
+                    <p className="text-xs text-gray-400">Programada {formatTime(order.scheduledDate)} · Llegó {formatTime(order.checkedInAt)} · {order.modality} · {order.insuranceName || 'Particular'}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-500">Espera</span>
+                    <span className={`font-bold ${order.checkedInAt ? 'text-amber-300' : 'text-gray-500'}`}>{formatWaitTime(order)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={assignment.room}
+                      onChange={e => setAssignmentDrafts(prev => ({ ...prev, [order._id]: { ...assignment, room: e.target.value } }))}
+                      onBlur={() => updateAssignment(order)}
+                      placeholder="Sala"
+                      aria-label={`Sala de ${queueNumber}`}
+                      className="w-20 rounded border border-secondary-dark bg-black px-2 py-1.5 text-xs text-white outline-none focus:border-primary-light"
+                    />
+                    <input
+                      value={assignment.assignedTechnician}
+                      onChange={e => setAssignmentDrafts(prev => ({ ...prev, [order._id]: { ...assignment, assignedTechnician: e.target.value } }))}
+                      onBlur={() => updateAssignment(order)}
+                      placeholder="Técnico"
+                      aria-label={`Técnico de ${queueNumber}`}
+                      className="w-28 rounded border border-secondary-dark bg-black px-2 py-1.5 text-xs text-white outline-none focus:border-primary-light"
+                    />
                   </div>
                   <span className={`px-2 py-1 rounded border text-[10px] font-bold uppercase ${receptionColor[current] || receptionColor.WAITING}`}>{receptionLabel[current] || current}</span>
+                  {!order.checkedInAt && current === 'WAITING' && (
+                    <button type="button" onClick={() => updateReception(order, 'WAITING')} className="px-2 py-2 rounded border border-cyan-500/30 text-cyan-300 text-[10px] font-bold uppercase hover:bg-cyan-900/20">
+                      Registrar llegada
+                    </button>
+                  )}
                   {nextAction && (
                     <button type="button" onClick={() => updateReception(order, nextAction[0])} className="px-3 py-2 rounded bg-primary-light/20 border border-primary-light/40 text-primary-light text-[10px] font-bold uppercase hover:bg-primary-light/30">
                       {nextAction[1]}

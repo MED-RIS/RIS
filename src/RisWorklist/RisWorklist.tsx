@@ -276,7 +276,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [newTemplate, setNewTemplate] = useState({ name: '', modality: '', contentHtml: '' });
   const [newInventory, setNewInventory] = useState({ itemName: '', unit: '', stockQuantity: 0, costPrice: 0, sellingPrice: 0 });
   const [newCashRegister, setNewCashRegister] = useState({ openingBalance: 0, actualCash: 0, notes: '', expectedCash: 0 });
-  const [newCompany, setNewCompany] = useState({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', status: true });
+  const [newCompany, setNewCompany] = useState({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', agreementName: '', coveragePercent: 0, copayPercent: 0, requiresAuthorization: false, status: true });
 
   // CRUD State
   const [editingItem, setEditingItem] = useState(null); // { type: 'modality' | 'equipment' | 'service' | 'patient' | 'order' | 'branch', data: any }
@@ -630,7 +630,7 @@ function RisWorklistPanel({ servicesManager }) {
     setNewTemplate({ name: '', modality: '', contentHtml: '' });
     setNewInventory({ itemName: '', unit: '', stockQuantity: 0, costPrice: 0, sellingPrice: 0 });
     setNewCashRegister({ openingBalance: 0, actualCash: 0, notes: '', expectedCash: 0 });
-    setNewCompany({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', status: true });
+    setNewCompany({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', agreementName: '', coveragePercent: 0, copayPercent: 0, requiresAuthorization: false, status: true });
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
