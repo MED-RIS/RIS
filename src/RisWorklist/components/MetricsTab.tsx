@@ -10,6 +10,9 @@ import {
   Banknote,
   ArrowUpRight,
   Package,
+  Clock3,
+  MonitorPlay,
+  FileClock,
 } from 'lucide-react';
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
@@ -40,6 +43,7 @@ const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 export default function MetricsTab({
   analytics,
   orders = [],
+  reports = [],
 }: any) {
   if (!analytics) {
     return (
@@ -64,6 +68,25 @@ export default function MetricsTab({
     const revenue = todays.filter((o: any) => o.paymentStatus === 'PAID').reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
     return { ordersTodayCalculated: todays.length, revenueTodayCalculated: revenue };
   }, [orders]);
+
+  const operationalStats = useMemo(() => {
+    const today = new Date().toDateString();
+    const todayOrders = orders.filter((order: any) => order.scheduledDate && new Date(order.scheduledDate).toDateString() === today && order.status !== 'CANCELED');
+    const waiting = todayOrders.filter((order: any) => ['WAITING', 'CALLED'].includes(order.receptionStatus || (order.status === 'ARRIVED' ? 'WAITING' : 'WAITING'))).length;
+    const inAttention = todayOrders.filter((order: any) => order.receptionStatus === 'IN_ATTENTION' || order.status === 'IN_PROGRESS').length;
+    const completed = todayOrders.filter((order: any) => order.status === 'COMPLETED').length;
+    const pacsAvailable = todayOrders.filter((order: any) => Boolean(order.studyInstanceUid)).length;
+    const reportsForToday = reports.filter((report: any) => {
+      const reportOrder = orders.find((order: any) => order._id === (report.order?._id || report.order));
+      return reportOrder?.scheduledDate && new Date(reportOrder.scheduledDate).toDateString() === today;
+    });
+    const signed = reportsForToday.filter((report: any) => report.status === 'SIGNED').length;
+    const pendingReports = Math.max(0, completed - signed);
+    const pendingPayment = todayOrders.filter((order: any) => !['PAID', 'WAIVED'].includes(order.paymentStatus)).length;
+    const insuranceTotal = todayOrders.reduce((sum: number, order: any) => sum + Number(order.insuranceAmount || 0), 0);
+    const patientTotal = todayOrders.reduce((sum: number, order: any) => sum + Number(order.patientAmount ?? order.totalAmount ?? 0), 0);
+    return { todayOrders, waiting, inAttention, completed, pacsAvailable, signed, pendingReports, pendingPayment, insuranceTotal, patientTotal };
+  }, [orders, reports]);
 
   // Fill 7-day array (even if backend has gaps)
   const last7days = useMemo(() => {
@@ -127,6 +150,34 @@ export default function MetricsTab({
           border="border-purple-500/20"
         />
       </div>
+
+      <section className="bg-black/30 border border-cyan-500/20 rounded-xl p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300">Control operativo de hoy</h3>
+            <p className="text-xs text-gray-500 mt-1">Seguimiento de recepción, estudios, PACS, informes y pagos</p>
+          </div>
+          <span className="text-xs text-gray-400">{operationalStats.todayOrders.length} órdenes activas</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+          <OperationalCard icon={<Clock3 className="w-4 h-4" />} label="En recepción" value={operationalStats.waiting} tone="yellow" />
+          <OperationalCard icon={<MonitorPlay className="w-4 h-4" />} label="En atención" value={operationalStats.inAttention} tone="purple" />
+          <OperationalCard icon={<CalendarCheck className="w-4 h-4" />} label="Completados" value={operationalStats.completed} tone="green" />
+          <OperationalCard icon={<MonitorPlay className="w-4 h-4" />} label="En PACS" value={operationalStats.pacsAvailable} tone="cyan" />
+          <OperationalCard icon={<FileCheck className="w-4 h-4" />} label="Firmados hoy" value={operationalStats.signed} tone="green" />
+          <OperationalCard icon={<FileClock className="w-4 h-4" />} label="Informes pendientes" value={operationalStats.pendingReports} tone="orange" />
+          <OperationalCard icon={<CreditCard className="w-4 h-4" />} label="Pagos pendientes" value={operationalStats.pendingPayment} tone="red" />
+          <OperationalCard icon={<DollarSign className="w-4 h-4" />} label="Paciente paga" value={`$${fmt(operationalStats.patientTotal)}`} tone="blue" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          <div className="rounded-lg border border-blue-500/20 bg-blue-900/10 px-3 py-2 text-xs text-blue-200">
+            Cobertura de seguros del día: <strong>${fmt(operationalStats.insuranceTotal)}</strong>
+          </div>
+          <div className={`rounded-lg border px-3 py-2 text-xs ${operationalStats.pendingReports > 0 ? 'border-amber-500/30 bg-amber-900/10 text-amber-200' : 'border-green-500/20 bg-green-900/10 text-green-200'}`}>
+            {operationalStats.pendingReports > 0 ? `Hay ${operationalStats.pendingReports} informe(s) pendiente(s) de firma.` : 'No hay informes pendientes de firma.'}
+          </div>
+        </div>
+      </section>
 
       {/* ── Charts Row ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -325,6 +376,34 @@ function KpiCard({
       <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">{label}</p>
       <p className="text-3xl font-bold text-white leading-none">{value}</p>
       {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function OperationalCard({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  tone: 'yellow' | 'purple' | 'green' | 'cyan' | 'orange' | 'red' | 'blue';
+}) {
+  const tones = {
+    yellow: 'text-yellow-300 border-yellow-500/20 bg-yellow-900/10',
+    purple: 'text-purple-300 border-purple-500/20 bg-purple-900/10',
+    green: 'text-green-300 border-green-500/20 bg-green-900/10',
+    cyan: 'text-cyan-300 border-cyan-500/20 bg-cyan-900/10',
+    orange: 'text-orange-300 border-orange-500/20 bg-orange-900/10',
+    red: 'text-red-300 border-red-500/20 bg-red-900/10',
+    blue: 'text-blue-300 border-blue-500/20 bg-blue-900/10',
+  };
+  return (
+    <div className={`rounded-lg border p-3 ${tones[tone]}`}>
+      <div className="flex items-center gap-1.5 mb-2">{icon}<span className="text-[10px] uppercase tracking-wide opacity-80">{label}</span></div>
+      <p className="text-xl font-black text-white">{value}</p>
     </div>
   );
 }

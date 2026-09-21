@@ -32,6 +32,30 @@ const PAYMENT_LABELS: Record<string, string> = {
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
+function BillingCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone: 'white' | 'blue' | 'amber' | 'green' | 'red';
+}) {
+  const toneClasses = {
+    white: 'border-white/10 text-white',
+    blue: 'border-blue-500/20 text-blue-300',
+    amber: 'border-amber-500/20 text-amber-300',
+    green: 'border-green-500/20 text-green-300',
+    red: 'border-red-500/20 text-red-300',
+  };
+  return (
+    <div className={`rounded-lg border bg-black/25 p-3 ${toneClasses[tone]}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+      <p className="mt-1 text-xl font-black">{value}</p>
+    </div>
+  );
+}
+
 export default function CashRegisterTab({
   registersList,
   fuzzySearch,
@@ -98,6 +122,30 @@ export default function CashRegisterTab({
     ? (activeShift.openingBalance || 0) + (shiftPayments.byMethod['CASH'] || 0)
     : 0;
 
+  const dailyBilling = useMemo(() => {
+    const today = new Date();
+    const todayOrders = orders.filter((order: any) =>
+      order.scheduledDate &&
+      new Date(order.scheduledDate).toDateString() === today.toDateString() &&
+      order.status !== 'CANCELED'
+    );
+    const paidOrders = todayOrders.filter((order: any) => order.paymentStatus === 'PAID');
+    const byMethod: Record<string, number> = {};
+    paidOrders.forEach((order: any) => {
+      const method = order.paymentMethod || 'OTHER';
+      byMethod[method] = (byMethod[method] || 0) + Number(order.patientAmount ?? order.totalAmount ?? 0);
+    });
+    return {
+      orders: todayOrders.length,
+      billed: todayOrders.reduce((sum: number, order: any) => sum + Number(order.totalAmount || 0), 0),
+      insurance: todayOrders.reduce((sum: number, order: any) => sum + Number(order.insuranceAmount || 0), 0),
+      patient: todayOrders.reduce((sum: number, order: any) => sum + Number(order.patientAmount ?? order.totalAmount ?? 0), 0),
+      pending: todayOrders.filter((order: any) => !['PAID', 'WAIVED'].includes(order.paymentStatus)).length,
+      paid: paidOrders.length,
+      byMethod,
+    };
+  }, [orders]);
+
   // Filter list
   const filtered = useMemo(() => {
     let list = registersList.filter(fuzzySearch);
@@ -107,6 +155,37 @@ export default function CashRegisterTab({
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      <section className="bg-primary-main rounded-xl border border-cyan-500/20 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-white">Resumen financiero del día</h2>
+            <p className="text-xs text-gray-400 mt-1">Órdenes, seguros, copagos y pagos registrados hoy</p>
+          </div>
+          <span className="text-xs font-bold text-cyan-300">{dailyBilling.orders} órdenes del día</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <BillingCard label="Facturado" value={`$${fmtMoney(dailyBilling.billed)}`} tone="white" />
+          <BillingCard label="Cubre seguro" value={`$${fmtMoney(dailyBilling.insurance)}`} tone="blue" />
+          <BillingCard label="Paciente paga" value={`$${fmtMoney(dailyBilling.patient)}`} tone="amber" />
+          <BillingCard label="Pagos recibidos" value={dailyBilling.paid} tone="green" />
+          <BillingCard label="Pagos pendientes" value={dailyBilling.pending} tone="red" />
+        </div>
+        <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Recaudación por método</p>
+          {Object.keys(dailyBilling.byMethod).length === 0 ? (
+            <p className="text-xs text-gray-500">Todavía no hay pagos registrados hoy.</p>
+          ) : (
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {Object.entries(dailyBilling.byMethod).map(([method, amount]) => (
+                <span key={method} className="flex items-center gap-1.5 text-xs text-gray-300">
+                  {PAYMENT_ICONS[method] || <DollarSign className="w-3.5 h-3.5" />}
+                  {PAYMENT_LABELS[method] || method}: <strong className="text-white">${fmtMoney(amount)}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
       {/* ── Active Shift Summary ──────────────────────────────────── */}
       {activeShift && (
         <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/10 backdrop-blur-md border border-green-500/20 rounded-xl p-5">
@@ -208,6 +287,7 @@ export default function CashRegisterTab({
               } else {
                 handleCreate(e, 'cash-register');
               }
+
               setIsModalOpen(false);
               setIsCreating(false);
             }}

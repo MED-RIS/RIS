@@ -259,7 +259,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
   const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
-  const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
+  const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
   const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '' });
   const [newService, setNewService] = useState({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
@@ -276,7 +276,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [newTemplate, setNewTemplate] = useState({ name: '', modality: '', contentHtml: '' });
   const [newInventory, setNewInventory] = useState({ itemName: '', unit: '', stockQuantity: 0, costPrice: 0, sellingPrice: 0 });
   const [newCashRegister, setNewCashRegister] = useState({ openingBalance: 0, actualCash: 0, notes: '', expectedCash: 0 });
-  const [newCompany, setNewCompany] = useState({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', status: true });
+  const [newCompany, setNewCompany] = useState({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', agreementName: '', coveragePercent: 0, copayPercent: 0, requiresAuthorization: false, status: true });
 
   // CRUD State
   const [editingItem, setEditingItem] = useState(null); // { type: 'modality' | 'equipment' | 'service' | 'patient' | 'order' | 'branch', data: any }
@@ -516,17 +516,40 @@ function RisWorklistPanel({ servicesManager }) {
     e?.preventDefault?.();
     try {
       const orderData = customOrder || newOrder;
+      if (!orderData.patient) {
+        toast.error('No se puede agendar: falta seleccionar el paciente.');
+        return false;
+      }
+      if (!orderData.modality) {
+        toast.error('No se puede agendar: falta seleccionar la modalidad.');
+        return false;
+      }
+      if (!orderData.scheduledDate) {
+        toast.error('No se puede agendar: falta la fecha y hora.');
+        return false;
+      }
+      if (orderData.coveragePercent !== undefined && (!Number.isFinite(Number(orderData.coveragePercent)) || Number(orderData.coveragePercent) < 0 || Number(orderData.coveragePercent) > 100)) {
+        toast.error('No se puede agendar: la cobertura debe estar entre 0% y 100%.');
+        return false;
+      }
+      if (orderData.hasInsurance && Number(orderData.insuranceAmount || 0) > Number(orderData.totalAmount || 0)) {
+        toast.error('No se puede agendar: el monto del seguro no puede superar el total.');
+        return false;
+      }
       const payload = {
         ...orderData,
-        accessionNumber: orderData.accessionNumber || `ACC-${Date.now()}`
+        accessionNumber: orderData.accessionNumber || `ACC-${Date.now()}`,
+        receptionStatus: orderData.receptionStatus || 'WAITING'
       };
       await createOrder(payload);
       toast.success('Estudio agendado correctamente');
-      setNewOrder({ patient: '', accessionNumber: '', modality: modalities[0]?.dicom_code || 'DX', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
+      setNewOrder({ patient: '', accessionNumber: '', modality: modalities[0]?.dicom_code || 'DX', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
       setActiveTab('ordenes');
       loadOrders();
+      return true;
     } catch (err) {
       toast.error('Error al agendar estudio: ' + (err as any).message);
+      return false;
     }
   };
 
@@ -616,7 +639,7 @@ function RisWorklistPanel({ servicesManager }) {
     setNewModality({ name: '', dicom_code: '', description: '' });
     setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
-    setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '' });
+    setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
     setNewBranch({
       name: '',
       short_name: '',
@@ -629,7 +652,7 @@ function RisWorklistPanel({ servicesManager }) {
     setNewTemplate({ name: '', modality: '', contentHtml: '' });
     setNewInventory({ itemName: '', unit: '', stockQuantity: 0, costPrice: 0, sellingPrice: 0 });
     setNewCashRegister({ openingBalance: 0, actualCash: 0, notes: '', expectedCash: 0 });
-    setNewCompany({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', status: true });
+    setNewCompany({ name: '', ruc: '', hasInsurance: false, insuranceName: '', insurancePolicy: '', agreementName: '', coveragePercent: 0, copayPercent: 0, requiresAuthorization: false, status: true });
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -962,7 +985,7 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'citas' && (
-                <AppointmentsTab companies={companies} services={services} isEditing={isEditing} editingItem={editingItem} handleUpdate={handleUpdate} handleCreateOrder={handleCreateOrder} newOrder={newOrder} setNewOrder={setNewOrder} patients={patients} modalities={modalities} medicalUsers={medicalUsers} branches={branches} user={user} handleCancelEdit={handleCancelEdit} orders={orders} handleEdit={handleEdit} handleDelete={handleDelete} />
+                <AppointmentsTab companies={companies} services={services} isEditing={isEditing} editingItem={editingItem} handleUpdate={handleUpdate} handleCreateOrder={handleCreateOrder} newOrder={newOrder} setNewOrder={setNewOrder} patients={patients} modalities={modalities} medicalUsers={medicalUsers} branches={branches} user={user} handleCancelEdit={handleCancelEdit} orders={orders} handleEdit={handleEdit} handleDelete={handleDelete} handleStatusChange={handleStatusChange} loadAll={loadAll} />
               )}
 
               {activeTab === 'consulta' && (
@@ -1032,7 +1055,7 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'metricas' && (
-                <MetricsTab analytics={analytics} orders={orders} />
+                <MetricsTab analytics={analytics} orders={orders} reports={reports} />
               )}
 
               {activeTab === 'mantenimiento' && (
