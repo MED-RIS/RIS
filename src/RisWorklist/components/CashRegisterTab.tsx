@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import RisModal from './RisModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { imprimirResumenCajaDiaria } from '../reports/ReporteCajaDiaria';
 import {
   DollarSign,
   Banknote,
@@ -13,6 +14,7 @@ import {
   Unlock,
   Filter,
   AlertTriangle,
+  Printer,
 } from 'lucide-react';
 
 const PAYMENT_ICONS: Record<string, React.ReactNode> = {
@@ -161,7 +163,16 @@ export default function CashRegisterTab({
             <h2 className="text-xl font-bold text-white">Resumen financiero del día</h2>
             <p className="text-xs text-gray-400 mt-1">Órdenes, seguros, copagos y pagos registrados hoy</p>
           </div>
-          <span className="text-xs font-bold text-cyan-300">{dailyBilling.orders} órdenes del día</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-cyan-300">{dailyBilling.orders} órdenes del día</span>
+            <button
+              type="button"
+              onClick={() => imprimirResumenCajaDiaria(dailyBilling)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-900/20 text-cyan-300 text-xs font-bold hover:bg-cyan-900/40 hover:text-white transition-colors"
+            >
+              <Printer className="w-3.5 h-3.5" /> Imprimir / Descargar PDF
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <BillingCard label="Facturado" value={`$${fmtMoney(dailyBilling.billed)}`} tone="white" />

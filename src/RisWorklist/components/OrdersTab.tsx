@@ -21,6 +21,7 @@ export default function OrdersTab({
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
+  const [quickFilter, setQuickFilter] = useState<'ALL' | 'UNPAID' | 'NO_REPORT'>('ALL');
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -67,6 +68,18 @@ export default function OrdersTab({
   const getOrderReport = (orderId: string) => {
     return reports.find((r: any) => r.order?._id === orderId || r.order === orderId);
   };
+
+  const isUnpaid = (order: any) => order.paymentStatus !== 'PAID' && order.paymentStatus !== 'WAIVED' && order.status !== 'CANCELED';
+  const hasNoReport = (order: any) => !getOrderReport(order._id) && order.status !== 'CANCELED';
+
+  const unpaidCount = React.useMemo(() => sortedOrders.filter(isUnpaid).length, [sortedOrders]);
+  const noReportCount = React.useMemo(() => sortedOrders.filter(hasNoReport).length, [sortedOrders, reports]);
+
+  const displayedOrders = React.useMemo(() => {
+    if (quickFilter === 'UNPAID') return sortedOrders.filter(isUnpaid);
+    if (quickFilter === 'NO_REPORT') return sortedOrders.filter(hasNoReport);
+    return sortedOrders;
+  }, [sortedOrders, quickFilter, reports]);
 
   const money = (value?: number) => `$${Number(value || 0).toFixed(2)}`;
 
@@ -275,6 +288,22 @@ export default function OrdersTab({
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {([
+          ['ALL', 'Todas', sortedOrders.length],
+          ['UNPAID', 'Pendiente de pago', unpaidCount],
+          ['NO_REPORT', 'Sin informe', noReportCount],
+        ] as const).map(([id, label, count]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setQuickFilter(id)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors ${quickFilter === id ? 'border-primary-light bg-primary-light/15 text-primary-light' : 'border-secondary-dark bg-black/20 text-gray-400 hover:border-gray-500 hover:text-white'}`}
+          >
+            {label} <span className="opacity-70">({count})</span>
+          </button>
+        ))}
+      </div>
       <div className="overflow-x-auto relative">
         <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-secondary-dark text-white">
@@ -292,11 +321,11 @@ export default function OrdersTab({
               </tr>
             </thead>
           <tbody className={`divide-y divide-secondary-dark transition-opacity duration-200 ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-            {isLoading && sortedOrders.length === 0 ? (
+            {isLoading && displayedOrders.length === 0 ? (
               <tr><td colSpan={10} className="text-center py-6 text-primary-light">Cargando...</td></tr>
-            ) : sortedOrders.length === 0 ? (
-              <tr><td colSpan={10} className="text-center py-6 text-primary-light">No hay órdenes que coincidan con la búsqueda.</td></tr>
-              ) : paginate(sortedOrders).map((order: any) => (
+            ) : displayedOrders.length === 0 ? (
+              <tr><td colSpan={10} className="text-center py-6 text-primary-light">No hay órdenes que coincidan con el filtro.</td></tr>
+              ) : paginate(displayedOrders).map((order: any) => (
                 <tr key={order._id} className="hover:bg-primary-dark transition-colors">
                   <td className="p-3 font-medium text-primary-light">{order.accessionNumber}</td>
                   <td className="p-3">
@@ -413,7 +442,7 @@ export default function OrdersTab({
             </tbody>
           </table>
       </div>
-      {!isLoading && <PaginationControls totalItems={sortedOrders.length} />}
+      {!isLoading && <PaginationControls totalItems={displayedOrders.length} />}
     </div>
   );
 }
