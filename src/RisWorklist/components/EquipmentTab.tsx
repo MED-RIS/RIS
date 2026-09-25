@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import RisModal from './RisModal';
+import { pingEquipment } from '../risService';
+import { toast } from '@ohif/ui-next';
+import { Wifi, Loader2 } from 'lucide-react';
 
 export default function EquipmentTab({
   equipmentList,
@@ -19,6 +22,23 @@ export default function EquipmentTab({
   PaginationControls,
 }: any) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  const testConnection = async (equipment: any) => {
+    if (!equipment.ipAddress || !equipment.aeTitle) {
+      toast.error('Para probar la conexión, primero completa la IP y el AE Title del equipo.');
+      return;
+    }
+    setTestingId(equipment._id);
+    try {
+      const result = await pingEquipment(equipment);
+      toast.success(result.message || 'Conexión exitosa con el equipo (C-ECHO).');
+    } catch (error) {
+      toast.error(`Sin respuesta del equipo: ${(error as Error).message}`);
+    } finally {
+      setTestingId(null);
+    }
+  };
 
   useEffect(() => {
     if (isEditing && editingItem?.type === 'equipment') setIsModalOpen(true);
@@ -89,6 +109,35 @@ export default function EquipmentTab({
             className="p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none transition-colors col-span-2"
           />
 
+          <div className="col-span-2 border-t border-secondary-dark pt-4 mt-2">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Conexión DICOM (para el worklist y el PACS)</p>
+          </div>
+          <input
+            placeholder="Modalidad (ej. CT, DX, US)"
+            value={newEquipment.modality || ''}
+            onChange={(e) => setNewEquipment({ ...newEquipment, modality: e.target.value.toUpperCase() })}
+            className="p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none transition-colors"
+          />
+          <input
+            placeholder="AE Title"
+            value={newEquipment.aeTitle || ''}
+            onChange={(e) => setNewEquipment({ ...newEquipment, aeTitle: e.target.value.toUpperCase() })}
+            className="p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none transition-colors"
+          />
+          <input
+            placeholder="Dirección IP"
+            value={newEquipment.ipAddress || ''}
+            onChange={(e) => setNewEquipment({ ...newEquipment, ipAddress: e.target.value })}
+            className="p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none transition-colors"
+          />
+          <input
+            type="number"
+            placeholder="Puerto DICOM"
+            value={newEquipment.dicomPort ?? 104}
+            onChange={(e) => setNewEquipment({ ...newEquipment, dicomPort: Number(e.target.value) })}
+            className="p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none transition-colors"
+          />
+
           <div className="col-span-2 flex gap-3 pt-4 border-t border-secondary-dark mt-2">
             <button
               type="button"
@@ -116,13 +165,14 @@ export default function EquipmentTab({
               <th className="p-3">Fabricante</th>
               <th className="p-3">Modelo</th>
               <th className="p-3">S/N</th>
+              <th className="p-3">Conexión DICOM</th>
               <th className="p-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-secondary-dark">
             {equipmentList.filter(fuzzySearch).length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-6 text-primary-light">
+                <td colSpan={6} className="text-center py-6 text-primary-light">
                   No hay equipos que coincidan con la búsqueda.
                 </td>
               </tr>
@@ -133,6 +183,24 @@ export default function EquipmentTab({
                   <td className="p-3">{e.manufacturer}</td>
                   <td className="p-3">{e.model}</td>
                   <td className="p-3">{e.serial_number}</td>
+                  <td className="p-3">
+                    {e.aeTitle && e.ipAddress ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-gray-300">{e.aeTitle} · {e.ipAddress}:{e.dicomPort || 104}</span>
+                        <button
+                          type="button"
+                          onClick={() => testConnection(e)}
+                          disabled={testingId === e._id}
+                          className="flex items-center gap-1.5 w-max px-2 py-1 rounded border border-cyan-500/40 bg-cyan-900/20 text-cyan-300 text-[10px] font-bold uppercase hover:bg-cyan-900/40 hover:text-white transition-colors disabled:opacity-50"
+                        >
+                          {testingId === e._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wifi className="w-3 h-3" />}
+                          Probar conexión
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-500">Sin configurar</span>
+                    )}
+                  </td>
                   <td className="p-3 text-right">
                     <button
                       onClick={() => { handleEdit('equipment', e); setIsModalOpen(true); }}

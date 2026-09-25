@@ -21,6 +21,11 @@ export interface Equipment {
   manufacturer: string;
   model: string;
   serial_number: string;
+  aeTitle?: string;
+  ipAddress?: string;
+  dicomPort?: number;
+  modality?: string;
+  status?: boolean;
 }
 
 export interface Service {

@@ -261,7 +261,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
   const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
-  const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '' });
+  const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '' });
   const [newService, setNewService] = useState({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
   const [newBranch, setNewBranch] = useState({
     name: '',
@@ -637,7 +637,7 @@ function RisWorklistPanel({ servicesManager }) {
     setEditingItem(null);
     setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
     setNewModality({ name: '', dicom_code: '', description: '' });
-    setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
+    setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
     setNewOrder({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
     setNewBranch({
@@ -715,7 +715,7 @@ function RisWorklistPanel({ servicesManager }) {
       await createEquipment(newEquipment);
       toast.success('Equipo creado');
       setIsCreatingEquipment(false);
-      setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '' });
+      setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '' });
       const data = await fetchEquipment();
       setEquipmentList(data);
     } catch (err) {

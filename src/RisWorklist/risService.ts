@@ -239,6 +239,24 @@ export const deleteEquipment = async (id: string): Promise<{ success: boolean }>
   return response.json();
 };
 
+export const pingEquipment = async (equipment: { ipAddress?: string; dicomPort?: number; aeTitle?: string }): Promise<{ message: string }> => {
+  const response = await fetchWithAuth(`${api}/api/dicom/ping`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      host: equipment.ipAddress,
+      port: equipment.dicomPort || 104,
+      calledAET: equipment.aeTitle,
+      callingAET: 'RISWORKLIST',
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'No se pudo conectar con el equipo');
+  }
+  return data;
+};
+
 // --- Gestión de Servicios (Procedimientos) ---
 export const fetchServices = async (): Promise<Service[]> => {
   const response = await fetchWithAuth(`${api}/api/ris/services`);
