@@ -14,6 +14,7 @@ La documentación está dividida en los siguientes secciones para facilitar su l
 | [🏗️ Arquitectura y Flujo de Datos](./architecture.md) | Estructura interna del proyecto, manejo de enrutamiento con `react-router-dom`, flujo de autenticación, control de expiración de sesión (24 horas) e internacionalización. | Desarrolladores Frontend, Arquitectos de Software |
 | [🧩 Mapeo de Módulos y Componentes](./components.md) | Catálogo e información detallada de cada una de las 24 pestañas del panel (`RisWorklistPanel`) y componentes modales auxiliares. | Desarrolladores Frontend, Diseñadores de UI/UX |
 | [🔌 Integración con la API](./api_integration.md) | Configuración de servicios HTTP (`risService.ts`), gestión de tokens de autorización y flujo de subida de archivos adjuntos. | Desarrolladores Fullstack, Desarrolladores Backend |
+| [🩺 Credenciales e Instalación en otro equipo (Troubleshooting)](./troubleshooting.md) | Cómo levantar el sistema completo (frontend + backend) en un equipo nuevo, cómo funcionan las credenciales, y problemas reales ya resueltos (PACS, despliegue, certificados). | Desarrolladores, Soporte, Administradores |
 
 ---
 
