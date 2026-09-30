@@ -4,6 +4,7 @@ import {
   Lock, User, Tag, CalendarDays, Stethoscope, ListChecks, Building, DoorOpen,
 } from 'lucide-react';
 import { CATEGORIAS_LAB, ParametroLab } from '../laboratorio/catalogoLaboratorio';
+import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
 
 type EstadoInforme = 'BORRADOR' | 'COMPLETADO' | 'FIRMADO';
 
@@ -193,11 +194,24 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               <p className="text-xs text-gray-500 mt-0.5">Llene los datos del paciente y resultados analíticos</p>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Estado actual</span>
-            <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${ESTADO_META[estado].cls}`}>
-              {ESTADO_META[estado].txt}
-            </span>
+          <div className="flex items-start gap-3">
+            <button
+              type="button"
+              onClick={() => imprimirSolicitudExamenCNS({
+                paciente: { ...pacienteData, medico_solicitante: general.medicoDerivante, centro_asistencial: general.centroAsistencial, consultorio: general.consultorio, orden: general.nroSolicitud, fecha: general.fechaExamen },
+                categoriaId: categoria.id,
+              })}
+              className="px-3 py-2 text-xs font-bold text-[#00bfa5] bg-[#00bfa5]/10 border border-[#00bfa5]/30 rounded-lg hover:bg-[#00bfa5]/20 transition-colors whitespace-nowrap"
+              title="Imprimir la solicitud de este examen para que el paciente la lleve al servicio"
+            >
+              🖨️ Imprimir Solicitud ({categoria.label})
+            </button>
+            <div className="text-right">
+              <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Estado actual</span>
+              <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${ESTADO_META[estado].cls}`}>
+                {ESTADO_META[estado].txt}
+              </span>
+            </div>
           </div>
         </div>
 
