@@ -14,7 +14,6 @@ interface SolicitudExamenParams {
   urgente?: boolean;
   sala?: string;
   cama?: string;
-  referencia?: string;        // código completo de la orden (accessionNumber), para trazabilidad
 }
 
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
@@ -63,11 +62,6 @@ export const imprimirSolicitudExamenCNS = (params: SolicitudExamenParams) => {
         <td style="width: 20%; text-align: right; padding-right: 8px; font-weight: bold;">Urgente:</td>
         <td style="width: 13%;" class="border-dotted">${params.urgente ? "SÍ" : "NO"}</td>
       </tr>
-      ${params.referencia ? `
-      <tr>
-        <td style="text-align: right; padding-right: 8px; font-weight: bold;">Referencia de orden:</td>
-        <td colspan="3" class="border-dotted" style="text-align: left; padding-left: 8px;">${v(params.referencia)}</td>
-      </tr>` : ""}
     </table>
     <table class="filiacion-table" style="margin-bottom: 14px;">
       <tr>

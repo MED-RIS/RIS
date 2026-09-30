@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import RisUploadDocuments from './RisUploadDocuments';
 import { updateOrder } from '../risService';
 import { toast } from '@ohif/ui-next';
-import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
 
 export default function OrdersTab({
   isLoading,
@@ -83,40 +82,6 @@ export default function OrdersTab({
   }, [sortedOrders, quickFilter, reports]);
 
   const money = (value?: number) => `$${Number(value || 0).toFixed(2)}`;
-
-  const calcularEdad = (dateOfBirth?: string) => {
-    if (!dateOfBirth) return '-';
-    const nacimiento = new Date(dateOfBirth);
-    if (isNaN(nacimiento.getTime())) return '-';
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const aunNoCumple = hoy.getMonth() < nacimiento.getMonth() || (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
-    if (aunNoCumple) edad--;
-    return String(edad);
-  };
-
-  const imprimirSolicitud = (order: any) => {
-    imprimirSolicitudExamenCNS({
-      paciente: {
-        paciente: `${order.patient?.lastName || ''} ${order.patient?.firstName || ''}`.trim() || 'Paciente',
-        codigoAsegurado: order.patient?.numeroAsegurado || order.insurancePolicy || '-',
-        codBeneficiario: order.patient?.codigoBeneficiario || '-',
-        edad: calcularEdad(order.patient?.dateOfBirth),
-        institucion: order.branch || 'RIS',
-        // El recuadro de "orden" del formulario asume códigos cortos (máx. 6 dígitos);
-        // el accessionNumber es largo, así que se muestran sus últimos dígitos.
-        orden: (order.accessionNumber || '').replace(/\D/g, '').slice(-5) || '-',
-        medico_solicitante: order.referringPhysician,
-        centro_asistencial: order.branch,
-        servicio: order.modality,
-        consultorio: '-',
-        fecha: order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString('es-419') : '-',
-      },
-      examenLibre: order.procedureDescription || order.modality,
-      especialidad: order.modality,
-      referencia: order.accessionNumber,
-    });
-  };
 
   const getPacsLabel = (order: any, report: any) => {
     if (report?.status === 'SIGNED') return 'Informe firmado';
@@ -468,7 +433,6 @@ export default function OrdersTab({
                     </div>
                   </td>
                   <td className="p-3 text-right">
-                    <button onClick={() => imprimirSolicitud(order)} className="text-emerald-300 hover:text-white mr-3" title="Imprimir la solicitud para que el paciente la lleve al servicio">🖨️ Solicitud</button>
                     <button onClick={() => setDetailOrder(order)} className="text-cyan-300 hover:text-white mr-3">Ver detalle</button>
                     <button onClick={() => handleEdit('order', order)} className="text-primary-light hover:text-white mr-3">Editar</button>
                     <button onClick={() => handleDelete('order', order._id)} className="text-red-500 hover:text-red-400">Eliminar</button>
