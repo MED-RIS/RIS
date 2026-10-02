@@ -538,7 +538,9 @@ function RisWorklistPanel({ servicesManager }) {
       }
       const payload = {
         ...orderData,
-        accessionNumber: orderData.accessionNumber || `ACC-${Date.now()}`,
+        // DICOM permite máximo 16 caracteres en el Accession Number; ACC- + timestamp
+        // decimal se pasaba a 17. En base36 queda corto de sobra y sigue siendo único.
+        accessionNumber: orderData.accessionNumber || `ACC-${Date.now().toString(36).toUpperCase()}`,
         receptionStatus: orderData.receptionStatus || 'WAITING'
       };
       await createOrder(payload);
