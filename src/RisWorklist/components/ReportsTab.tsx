@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { DicomMetadataStore } from '@ohif/core';
 import { api } from '../../Users/user';
 import { Download, Printer, FileText, Calendar, CalendarDays, CalendarCheck, BarChart2, UserCog, Check, Clock } from 'lucide-react';
+import { urlEstudio } from '../visor';
 
 // ── Types / helpers ───────────────────────────────────────────────────────────
 type ReportStatus = 'SIGNED' | 'DRAFT';
@@ -137,7 +138,9 @@ export const AsyncReportRow = ({ rep, qidoRoot, normalizePatientName, navigate }
         </div>
       </td>
       <td className="p-3">
-        <button onClick={() => navigate(`/viewer?StudyInstanceUIDs=${rep.studyInstanceUid}`)} className="text-cyan-400 hover:text-primary-light text-xs font-bold transition-colors">Ver →</button>
+        {rep.studyInstanceUid && (
+          <a href={urlEstudio(rep.studyInstanceUid)} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-primary-light text-xs font-bold transition-colors">Ver imágenes ↗</a>
+        )}
       </td>
     </tr>
   );

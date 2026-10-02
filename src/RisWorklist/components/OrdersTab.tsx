@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import RisUploadDocuments from './RisUploadDocuments';
 import { updateOrder } from '../risService';
 import { toast } from '@ohif/ui-next';
+import { urlEstudio } from '../visor';
 
 export default function OrdersTab({
   isLoading,
@@ -237,6 +238,16 @@ export default function OrdersTab({
                   </div>
                   <div><span className="text-gray-500 block text-xs">Trazabilidad</span><span className={detailOrder.studyInstanceUid ? 'text-cyan-300' : 'text-gray-400'}>{getPacsLabel(detailOrder, getOrderReport(detailOrder._id))}</span></div>
                   <div><span className="text-gray-500 block text-xs">StudyInstanceUID</span><span className="text-white break-all">{detailOrder.studyInstanceUid || 'No vinculado'}</span></div>
+                  {detailOrder.studyInstanceUid && (
+                    <a
+                      href={urlEstudio(detailOrder.studyInstanceUid)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block rounded border border-cyan-500/40 bg-cyan-900/20 px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-900/40 hover:text-white"
+                    >
+                      Ver imágenes en el visor ↗
+                    </a>
+                  )}
                   <div><span className="text-gray-500 block text-xs">Informe</span><span className="text-white">{getOrderReport(detailOrder._id)?.status || 'Sin informe'}</span></div>
                   {detailOrder.status === 'COMPLETED' && !detailOrder.studyInstanceUid && (
                     <p className="rounded border border-yellow-500/30 bg-yellow-900/20 px-3 py-2 text-xs text-yellow-300">
@@ -419,9 +430,15 @@ export default function OrdersTab({
                       </span>
                       {renderPacsPipeline(order, getOrderReport(order._id), true)}
                       {order.studyInstanceUid && (
-                        <span className="max-w-[130px] truncate text-[9px] text-gray-500" title={order.studyInstanceUid}>
-                          UID: {order.studyInstanceUid}
-                        </span>
+                        <a
+                          href={urlEstudio(order.studyInstanceUid)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`Abrir el estudio en el visor (${order.studyInstanceUid})`}
+                          className="text-[10px] font-bold text-cyan-300 hover:text-white underline underline-offset-2"
+                        >
+                          Ver imágenes ↗
+                        </a>
                       )}
                       <RisUploadDocuments
                         patientName={`${order.patient?.lastName || ''} ${order.patient?.firstName || ''}`.trim()}

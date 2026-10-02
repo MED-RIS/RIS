@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '@ohif/ui-next';
 import { GraduationCap, Eye, EyeOff, Tag, Search, BookMarked } from 'lucide-react';
 import { fetchTeachingFiles, toggleTeachingFile } from '../risService';
+import { urlEstudio } from '../visor';
 
 export default function TeachingFileTab({ reports, navigate, appConfig }: any) {
   const [teachingFiles, setTeachingFiles] = useState<any[]>([]);
@@ -164,13 +165,15 @@ export default function TeachingFileTab({ reports, navigate, appConfig }: any) {
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-shrink-0">
-                      {navigate && (
-                        <button
-                          onClick={() => navigate(`/viewer?StudyInstanceUIDs=${r.studyInstanceUid}`)}
+                      {r.studyInstanceUid && (
+                        <a
+                          href={urlEstudio(r.studyInstanceUid)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all"
                         >
-                          Ver
-                        </button>
+                          Ver imágenes ↗
+                        </a>
                       )}
                       <button
                         onClick={() => { setEditingId(isEditing ? null : r._id); setEditKeywords((r.teachingKeywords || []).join(', ')); setEditNotes(r.teachingNotes || ''); }}
