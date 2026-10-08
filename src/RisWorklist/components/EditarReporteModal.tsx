@@ -13,6 +13,15 @@ import FormGlucosa from '../forms/FormGlucosa';
 import FormWidal from '../forms/FormWidal';
 import FormLiquidos from '../forms/FormLiquidos';
 import FormEspermato from '../forms/FormEspermato';
+import FormCatalogo from '../forms/FormCatalogo';
+import {
+  HEMATOLOGIA_SUS, SEROLOGIA_SUS, QUIMICA_SUS,
+  CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA,
+} from '../laboratorio/catalogoLaboratorio';
+
+const COAGULACION_SUS = HEMATOLOGIA_SUS.filter((p) => p.seccion === 'Coagulación / Hemostasia');
+// Urología: Microalbuminuria vive en otra bolsa (microDatos) y se edita en "electrolitos".
+const UROLOGIA_PROPIOS = CATALOGO_UROLOGIA.filter((p) => !p.bagOverride);
 
 // Un reporte se edita a través de uno o más de los formularios presentacionales
 // existentes. Cada formulario trabaja sobre una "bolsa" de datos con dos posibles
@@ -39,6 +48,7 @@ export const REPORTES_EDITABLES: Record<string, ReporteEditable> = {
     titulo: 'Hematología — Hemograma Completo',
     forms: [
       { key: 'hematoDatos', mode: 'flat', render: (v, set) => <FormularioHemograma hematoDatos={v} setHematoDatos={set} /> },
+      { key: 'hematoDatos', mode: 'flat', render: (v, set) => <FormCatalogo titulo="Exámenes complementarios" parametros={HEMATOLOGIA_SUS} datos={v} setDatos={set} /> },
     ],
   },
   grupo_sanguineo: {
@@ -57,6 +67,7 @@ export const REPORTES_EDITABLES: Record<string, ReporteEditable> = {
     titulo: 'Coagulograma / Tiempo de Protrombina',
     forms: [
       { key: 'hematoDatos', mode: 'flat', render: (v, set) => <FormularioCoagulograma hematoDatos={v} setHematoDatos={set} /> },
+      { key: 'hematoDatos', mode: 'flat', render: (v, set) => <FormCatalogo titulo="Exámenes complementarios" parametros={COAGULACION_SUS} datos={v} setDatos={set} /> },
     ],
   },
   hto_hb_widal: {
@@ -76,6 +87,7 @@ export const REPORTES_EDITABLES: Record<string, ReporteEditable> = {
     titulo: 'Química Sanguínea',
     forms: [
       { key: 'quimicaDatos', mode: 'nested', render: (v, set) => <FormQuimica quimicaDatos={v} setQuimicaDatos={set} /> },
+      { key: 'quimicaDatos', mode: 'nested', render: (v, set) => <FormCatalogo titulo="Exámenes complementarios" parametros={QUIMICA_SUS} datos={v} setDatos={set} /> },
     ],
   },
   electrolitos: {
@@ -90,6 +102,7 @@ export const REPORTES_EDITABLES: Record<string, ReporteEditable> = {
     titulo: 'Serología — Pruebas Inmunológicas',
     forms: [
       { key: 'serologiaDatos', mode: 'nested', render: (v, set) => <FormSerologia serologiaDatos={v} setSerologiaDatos={set} /> },
+      { key: 'serologiaDatos', mode: 'nested', render: (v, set) => <FormCatalogo titulo="Exámenes complementarios" parametros={SEROLOGIA_SUS} datos={v} setDatos={set} /> },
     ],
   },
   tolerancia_glucosa: {
@@ -108,6 +121,24 @@ export const REPORTES_EDITABLES: Record<string, ReporteEditable> = {
     titulo: 'Espermatograma',
     forms: [
       { key: 'espermatoDatos', mode: 'nested', render: (v, set) => <FormEspermato espermatoDatos={v} setEspermatoDatos={set} /> },
+    ],
+  },
+  urologia: {
+    titulo: 'Urología y Coproparasitología',
+    forms: [
+      { key: 'urologiaDatos', mode: 'nested', render: (v, set) => <FormCatalogo parametros={UROLOGIA_PROPIOS} datos={v} setDatos={set} /> },
+    ],
+  },
+  bacteriologia: {
+    titulo: 'Bacteriología',
+    forms: [
+      { key: 'bacteriologiaDatos', mode: 'nested', render: (v, set) => <FormCatalogo parametros={CATALOGO_BACTERIOLOGIA} datos={v} setDatos={set} /> },
+    ],
+  },
+  patologia: {
+    titulo: 'Citología / Patología',
+    forms: [
+      { key: 'patologiaDatos', mode: 'nested', render: (v, set) => <FormCatalogo parametros={CATALOGO_PATOLOGIA} datos={v} setDatos={set} /> },
     ],
   },
 };
@@ -180,8 +211,8 @@ export default function EditarReporteModal({ reporte, idReporte, onGuardar, onCe
         </div>
 
         <div className="overflow-y-auto p-4 space-y-4 flex-1">
-          {config.forms.map((entry) => (
-            <div key={entry.key}>{entry.render(bags[entry.key], (v) => setBag(entry.key, v))}</div>
+          {config.forms.map((entry, i) => (
+            <div key={`${entry.key}-${i}`}>{entry.render(bags[entry.key], (v) => setBag(entry.key, v))}</div>
           ))}
         </div>
 

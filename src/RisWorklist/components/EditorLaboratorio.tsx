@@ -320,9 +320,6 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               </h3>
               <p className="text-xs text-gray-500 mt-1">
                 Ingrese los resultados de los análisis. Los campos vacíos no se incluirán en el informe impreso.
-                {categoria.sinPDF && (
-                  <span className="text-amber-400/80"> · Esta categoría aún no genera PDF (datos capturados).</span>
-                )}
               </p>
             </div>
             <div className="relative">

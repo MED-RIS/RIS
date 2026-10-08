@@ -1,4 +1,8 @@
 // src/RisWorklist/reports/ReporteCoagulograma.ts
+import { HEMATOLOGIA_SUS } from "../laboratorio/catalogoLaboratorio";
+import { examenesComplementariosHTML } from "./ReporteCatalogo";
+
+const COAGULACION_SUS = HEMATOLOGIA_SUS.filter((p) => p.seccion === "Coagulación / Hemostasia");
 
 export const imprimirCoagulogramaCNS = (p: any) => {
   const d = p.datos || p || {};
@@ -130,6 +134,8 @@ export const imprimirCoagulogramaCNS = (p: any) => {
         <td class="unit"></td>
       </tr>
     </table>
+
+    <div style="width: 80%; margin: 0 auto;">${examenesComplementariosHTML(COAGULACION_SUS, d)}</div>
 
     <div class="obs-box">
       ${comentarioSerieRoja ? `<div><b>Comentario Serie Roja:</b> ${v(comentarioSerieRoja)}</div>` : ''}

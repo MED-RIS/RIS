@@ -32,6 +32,49 @@ const OPC_REACTIVO = ['No Reactivo', 'Reactivo'];
 const OPC_NEG_POS = ['Negativo', 'Positivo'];
 const OPC_WIDAL = ['No reactivo', '1:20', '1:40', '1:80', '1:160', '1:320', '1:640'];
 const OPC_RPR = ['No Reactivo', 'Reactivo', 'Reactivo 1 dils', 'Reactivo 2 dils', 'Reactivo 4 dils', 'Reactivo 8 dils'];
+const OPC_PCR_COVID = ['No detectable', 'Detectable'];
+const OPC_CULTIVO = ['Sin desarrollo bacteriano', 'Con desarrollo bacteriano (ver observación)', 'Contaminado - repetir muestra'];
+// Escala OMS de baciloscopía (BAAR en 100 campos).
+const OPC_BACILOSCOPIA = ['Negativo (0 BAAR)', 'Paucibacilar (1 - 9 BAAR)', '+ (10 - 99 BAAR)', '++ (1 - 10 BAAR/campo)', '+++ (> 10 BAAR/campo)'];
+
+// Exámenes de la "Solicitud de exámenes de laboratorio" del SUS (formulario D-8)
+// que no existían en los formularios originales. Se exportan aparte porque los
+// formularios viejos del modal de edición no los tienen: el modal los edita con
+// FormCatalogo y los PDF existentes los imprimen como "Exámenes complementarios".
+export const HEMATOLOGIA_SUS: ParametroLab[] = [
+  { key: 'coombs_directo', label: 'Prueba de Coombs Directa', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Inmunohematología' },
+  { key: 'coombs_indirecto', label: 'Prueba de Coombs Indirecta', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Inmunohematología' },
+  { key: 'ttpa', label: 'Tiempo Parcial de Tromboplastina (TTPA)', unidad: 'seg', rango: '25 - 35 seg', min: 25, max: 35, seccion: 'Coagulación / Hemostasia' },
+  { key: 'fibrinogeno', label: 'Fibrinógeno', unidad: 'mg/dL', rango: '200 - 400', min: 200, max: 400, seccion: 'Coagulación / Hemostasia' },
+  { key: 'frotis_sangre_periferica', label: 'Frotis de Sangre Periférica', rango: 'Morfología normal', tipo: 'texto', seccion: 'Morfología' },
+  { key: 'test_cristalizacion', label: 'Test de Cristalización', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Otras Pruebas' },
+];
+
+export const SEROLOGIA_SUS: ParametroLab[] = [
+  { key: 'sifilis_prueba_rapida', label: 'Prueba Rápida para Sífilis', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
+  { key: 'chagas_prueba_rapida', label: 'Prueba Rápida para Chagas', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
+  { key: 'h_pylori_heces', label: 'H. Pylori Antígeno Fecal', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Infecciosas' },
+  { key: 'covid_igg', label: 'COVID-19 Prueba Rápida IgG', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'COVID-19' },
+  { key: 'covid_igm', label: 'COVID-19 Prueba Rápida IgM', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'COVID-19' },
+  { key: 'covid_rt_pcr', label: 'COVID-19 RT-PCR', rango: 'No detectable', opciones: OPC_PCR_COVID, seccion: 'COVID-19' },
+  { key: 'covid_antigeno_nasal', label: 'COVID-19 Antígeno Nasal', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'COVID-19' },
+];
+
+// Gasometría: pCO2 y pO2 no llevan min/max porque en El Alto (~4.000 m) son más
+// bajos que los valores de nivel del mar; el rango lo define el laboratorio.
+export const QUIMICA_SUS: ParametroLab[] = [
+  { key: 'ldh', label: 'LDH (Deshidrogenasa Láctica)', unidad: 'U/L', rango: '135 - 225', min: 135, max: 225, seccion: 'Hepático' },
+  { key: 'calcio', label: 'Calcio Total', unidad: 'mg/dL', rango: '8.5 - 10.5', min: 8.5, max: 10.5, seccion: 'Electrolitos' },
+  { key: 'ferritina', label: 'Ferritina', unidad: 'ng/mL', rango: 'Varones: 30 - 400 · Mujeres: 15 - 150', seccion: 'Perfil Férrico' },
+  { key: 'transferrina', label: 'Transferrina', unidad: 'mg/dL', rango: '200 - 360', min: 200, max: 360, seccion: 'Perfil Férrico' },
+  { key: 'gaso_tipo', label: 'Gasometría - Tipo de Muestra', rango: '—', opciones: ['Arterial', 'Venosa'], seccion: 'Gasometría' },
+  { key: 'gaso_ph', label: 'Gasometría - pH', rango: '7.35 - 7.45', min: 7.35, max: 7.45, seccion: 'Gasometría' },
+  { key: 'gaso_pco2', label: 'Gasometría - pCO₂', unidad: 'mmHg', rango: 'Según altitud', seccion: 'Gasometría' },
+  { key: 'gaso_po2', label: 'Gasometría - pO₂', unidad: 'mmHg', rango: 'Según altitud', seccion: 'Gasometría' },
+  { key: 'gaso_hco3', label: 'Gasometría - HCO₃⁻', unidad: 'mEq/L', rango: 'Según altitud', seccion: 'Gasometría' },
+  { key: 'gaso_eb', label: 'Gasometría - Exceso de Base', unidad: 'mEq/L', rango: '—', seccion: 'Gasometría' },
+  { key: 'gaso_sat_o2', label: 'Gasometría - Saturación O₂', unidad: '%', rango: 'Según altitud', seccion: 'Gasometría' },
+];
 
 // ── HEMATOLOGÍA (+ Coagulograma) — plano en la raíz de `datos` (hematoDatos) ──
 export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
@@ -61,7 +104,7 @@ export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 't_coagulacion_seg', label: 'Tiempo de Coagulación (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
   { key: 't_sangria_min', label: 'Tiempo de Sangría (min)', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
   { key: 't_sangria_seg', label: 'Tiempo de Sangría (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
-
+  ...HEMATOLOGIA_SUS,
 ];
 
 // ── SEROLOGÍA (+ Widal) ──
@@ -80,6 +123,7 @@ export const CATALOGO_SEROLOGIA: ParametroLab[] = [
   { key: 'fr', label: 'Factor Reumatoideo (FR)', unidad: 'UI/mL', rango: '< 20 (Negativo)', seccion: 'Reactantes de Fase Aguda' },
   { key: 'test_embarazo', label: 'Test de Embarazo (β-HCG)', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Otras Pruebas' },
   { key: 'psa_prueba_rapida', label: 'PSA (Prueba rápida)', rango: 'Normal / Negativo', tipo: 'texto', seccion: 'Otras Pruebas' },
+  ...SEROLOGIA_SUS,
 ];
 
 // ── QUÍMICA SANGUÍNEA (+ Electrolitos) → quimicaDatos ──
@@ -110,6 +154,7 @@ export const CATALOGO_QUIMICA: ParametroLab[] = [
   { key: 'sodio_meql', label: 'Sodio (Na⁺)', unidad: 'mEq/L', rango: '135 - 145', min: 135, max: 145, seccion: 'Electrolitos' },
   { key: 'potasio_meql', label: 'Potasio (K⁺)', unidad: 'mEq/L', rango: '3.5 - 5.1', min: 3.5, max: 5.1, seccion: 'Electrolitos' },
   { key: 'cloro_meql', label: 'Cloro (Cl⁻)', unidad: 'mEq/L', rango: '98 - 107', min: 98, max: 107, seccion: 'Electrolitos' },
+  ...QUIMICA_SUS,
 ];
 
 // ── EXAMEN GENERAL DE ORINA (+ Orina 24h) → egoDatos ──
@@ -148,7 +193,7 @@ export const CATALOGO_EGO: ParametroLab[] = [
 ];
 
 // ── UROLOGÍA Y COPROPARASITOLOGÍA (+ Microalbuminuria) ──
-// Copro → urologiaDatos (aún sin PDF) ; Microalbuminuria se desvía a microDatos.
+// Copro → urologiaDatos (PDF genérico de ReporteCatalogo) ; Microalbuminuria se desvía a microDatos.
 export const CATALOGO_UROLOGIA: ParametroLab[] = [
   { key: 'copro_muestra_1', label: 'Coproparasitológico Muestra I', rango: 'No se observan quistes ni huevos de parásitos', tipo: 'texto', seccion: 'Coproparasitológico' },
   { key: 'copro_muestra_2', label: 'Coproparasitológico Muestra II', rango: 'No se observan quistes ni huevos de parásitos', tipo: 'texto', seccion: 'Coproparasitológico' },
@@ -221,22 +266,54 @@ export const CATALOGO_ESPERMATO: ParametroLab[] = [
   { key: 'aglutinacion', label: 'Aglutinación', rango: 'Ausente', tipo: 'texto', seccion: 'Morfología' },
 ];
 
+// ── BACTERIOLOGÍA → bacteriologiaDatos ──
+export const CATALOGO_BACTERIOLOGIA: ParametroLab[] = [
+  { key: 'baciloscopia', label: 'Baciloscopía de Diagnóstico (BAAR)', rango: 'Negativo', opciones: OPC_BACILOSCOPIA, seccion: 'Directos' },
+  { key: 'examen_fresco', label: 'Examen en Fresco', rango: '—', tipo: 'texto', seccion: 'Directos' },
+  { key: 'frotis_gram', label: 'Frotis - Tinción GRAM', rango: '—', tipo: 'texto', seccion: 'Directos' },
+  { key: 'cultivo_tuberculosis', label: 'Cultivo para Tuberculosis', rango: 'Sin desarrollo', opciones: ['Sin desarrollo de M. tuberculosis', 'Positivo para M. tuberculosis', 'Contaminado - repetir muestra'], seccion: 'Cultivos' },
+  { key: 'hemocultivo', label: 'Hemocultivo y Pruebas Complementarias', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'urocultivo', label: 'Urocultivo', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'coprocultivo', label: 'Coprocultivo', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'retrocultivo', label: 'Retrocultivo', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'cultivo_biopsia', label: 'Cultivo de Biopsias o Tejidos Blandos', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'cultivo_liquidos', label: 'Cultivo de Líquidos', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'cultivo_secreciones', label: 'Cultivo de Secreciones', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'cultivo_secrecion_vaginal', label: 'Cultivo de Secreción Vaginal', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'cultivo_germenes_comunes', label: 'Cultivo para Gérmenes Comunes', rango: 'Sin desarrollo', opciones: OPC_CULTIVO, seccion: 'Cultivos' },
+  { key: 'germen_aislado', label: 'Germen Aislado', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_sensible', label: 'Sensible a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_intermedio', label: 'Intermedio a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_resistente', label: 'Resistente a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+];
+
+// ── CITOLOGÍA / PATOLOGÍA → patologiaDatos (resultados descriptivos) ──
+export const CATALOGO_PATOLOGIA: ParametroLab[] = [
+  { key: 'citologia_fluido', label: 'Examen Citológico de Fluido', rango: '—', tipo: 'texto', seccion: 'Citología' },
+  { key: 'papanicolaou', label: 'Tinción de Papanicolaou (Citodiagnóstico)', rango: 'Negativo para lesión intraepitelial', tipo: 'texto', seccion: 'Citología' },
+  { key: 'histopatologico_grande', label: 'Estudio Histopatológico - Pieza Grande', rango: '—', tipo: 'texto', seccion: 'Histopatología' },
+  { key: 'histopatologico_mediana', label: 'Estudio Histopatológico - Pieza Mediana', rango: '—', tipo: 'texto', seccion: 'Histopatología' },
+  { key: 'histopatologico_pequena', label: 'Estudio Histopatológico - Pieza Pequeña', rango: '—', tipo: 'texto', seccion: 'Histopatología' },
+];
+
 export interface CategoriaLab {
   id: string;
   label: string;
   total: number;
   catalogo: ParametroLab[];
   storage: StorageLab;
-  sinPDF?: boolean; // true = todavía no genera reporte PDF
 }
 
 export const CATEGORIAS_LAB: CategoriaLab[] = [
   { id: 'hematologia', label: 'Hematología', total: CATALOGO_HEMATOLOGIA.length, catalogo: CATALOGO_HEMATOLOGIA, storage: { mode: 'flat', tipoLab: 'Lab_Hemato' } },
   { id: 'serologia', label: 'Serología', total: CATALOGO_SEROLOGIA.length, catalogo: CATALOGO_SEROLOGIA, storage: { mode: 'nested', bag: 'serologiaDatos', tipoLab: 'Lab_Serologia' } },
-  { id: 'urologia', label: 'Urología y Coproparasitología', total: CATALOGO_UROLOGIA.length, catalogo: CATALOGO_UROLOGIA, storage: { mode: 'nested', bag: 'urologiaDatos', tipoLab: 'Lab_Urologia' }, sinPDF: true },
+  { id: 'urologia', label: 'Urología y Coproparasitología', total: CATALOGO_UROLOGIA.length, catalogo: CATALOGO_UROLOGIA, storage: { mode: 'nested', bag: 'urologiaDatos', tipoLab: 'Lab_Urologia' } },
   { id: 'quimica', label: 'Química Sanguínea', total: CATALOGO_QUIMICA.length, catalogo: CATALOGO_QUIMICA, storage: { mode: 'nested', bag: 'quimicaDatos', tipoLab: 'Lab_Quimica' } },
   { id: 'ego', label: 'Examen General de Orina', total: CATALOGO_EGO.length, catalogo: CATALOGO_EGO, storage: { mode: 'nested', bag: 'egoDatos', tipoLab: 'Lab_EGO' } },
   { id: 'glucosa', label: 'Curva de Glucosa', total: CATALOGO_GLUCOSA.length, catalogo: CATALOGO_GLUCOSA, storage: { mode: 'nested', bag: 'glucosaFija', tipoLab: 'Lab_Glucosa_Curva' } },
   { id: 'liquidos', label: 'Líquidos Biológicos', total: CATALOGO_LIQUIDOS.length, catalogo: CATALOGO_LIQUIDOS, storage: { mode: 'nested', bag: 'liquidosDatos', tipoLab: 'Lab_Liquidos' } },
-  
+  { id: 'bacteriologia', label: 'Bacteriología', total: CATALOGO_BACTERIOLOGIA.length, catalogo: CATALOGO_BACTERIOLOGIA, storage: { mode: 'nested', bag: 'bacteriologiaDatos', tipoLab: 'Lab_Bacteriologia' } },
+  { id: 'patologia', label: 'Citología / Patología', total: CATALOGO_PATOLOGIA.length, catalogo: CATALOGO_PATOLOGIA, storage: { mode: 'nested', bag: 'patologiaDatos', tipoLab: 'Lab_Patologia' } },
 ];
+
+export const categoriaLab = (id: string) => CATEGORIAS_LAB.find((c) => c.id === id);

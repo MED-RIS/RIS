@@ -18,6 +18,10 @@ import { imprimirHtoHbCNS } from '../reports/ReporteHtoHb';
 import { imprimirHtoHbLeucoWidalCNS } from '../reports/ReporteHtoHbLeucoWidal';
 import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
 import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
+import { imprimirCategoriaCNS } from '../reports/ReporteCatalogo';
+import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA } from '../laboratorio/catalogoLaboratorio';
+
+const claves = (params: { key: string; bagOverride?: string }[]) => params.filter((p) => !p.bagOverride).map((p) => p.key);
 
 
 interface FormularioTabProps {
@@ -383,7 +387,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
 
                       {/* 🟣 EXAMEN 4: REPORTE DE COAGULOGRAMA / TIEMPO DE PROTROMBINA */}
                       {(pacienteFichaActiva.estudiosRealizados?.includes('Lab_Coagulo') ||
-                        algunCampo(pacienteFichaActiva.datos, ['t_protrombina', 'actividad', 't_coagulacion_min', 't_coagulacion_seg', 't_sangria_min', 't_sangria_seg'])) && (
+                        algunCampo(pacienteFichaActiva.datos, ['t_protrombina', 'tiempo_protrombina', 'actividad', 'actividad_protrombina', 'inr', 't_coagulacion_min', 't_coagulacion_seg', 't_sangria_min', 't_sangria_seg', 'ttpa', 'fibrinogeno'])) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
@@ -406,7 +410,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                       )}
 
                       {/* 🔵 EXAMEN 5: QUÍMICA SANGUÍNEA */}
-                      {algunCampo(pacienteFichaActiva.datos?.quimicaDatos, ['gli', 'crea', 'urea', 'nus', 'acido_urico', 'col', 'tri', 'got', 'gpt', 'prot', 'alb']) && (
+                      {algunCampo(pacienteFichaActiva.datos?.quimicaDatos, ['gli', 'crea', 'urea', 'nus', 'acido_urico', 'col', 'tri', 'got', 'gpt', 'prot', 'alb', ...claves(QUIMICA_SUS)]) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-sky-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
@@ -454,7 +458,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                       )}
 
                       {/* 🟪 EXAMEN 7: SEROLOGÍA */}
-                      {algunCampo(pacienteFichaActiva.datos?.serologiaDatos, ['pcr', 'fr', 'asto', 'hiv', 'test_embarazo', 'rpr', 'psa_prueba_rapida', 'h_pylori_suero', 'hepatitis_b']) && (
+                      {algunCampo(pacienteFichaActiva.datos?.serologiaDatos, ['pcr', 'fr', 'asto', 'hiv', 'test_embarazo', 'rpr', 'psa_prueba_rapida', 'h_pylori_suero', 'hepatitis_b', ...claves(SEROLOGIA_SUS)]) && (
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-fuchsia-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
@@ -592,6 +596,36 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
                           </div>
                         </div>
                       )}
+
+                      {/* EXÁMENES 13-15: categorías sin formato oficial propio → PDF genérico del catálogo */}
+                      {[
+                        { id: 'urologia', tipoLab: 'Lab_Urologia', bolsa: 'urologiaDatos', params: CATALOGO_UROLOGIA, badge: 'COPROPARASITOLOGÍA', titulo: 'Urología y Coproparasitología', desc: 'Copro simple y seriado, moco fecal, Graham, sangre oculta.', color: '#5d4037', colorClaro: '#d7ccc8', cls: 'bg-amber-800 hover:bg-amber-900', badgeCls: 'bg-amber-700/10 text-amber-300 border-amber-600/20' },
+                        { id: 'bacteriologia', tipoLab: 'Lab_Bacteriologia', bolsa: 'bacteriologiaDatos', params: CATALOGO_BACTERIOLOGIA, badge: 'BACTERIOLOGÍA', titulo: 'Bacteriología y Cultivos', desc: 'Baciloscopía, Gram, cultivos y antibiograma.', color: '#2e7d32', colorClaro: '#c8e6c9', cls: 'bg-green-700 hover:bg-green-800', badgeCls: 'bg-green-600/10 text-green-400 border-green-500/20' },
+                        { id: 'patologia', tipoLab: 'Lab_Patologia', bolsa: 'patologiaDatos', params: CATALOGO_PATOLOGIA, badge: 'CITOLOGÍA / PATOLOGÍA', titulo: 'Citología y Patología', desc: 'Papanicolaou, citología de fluidos e histopatología.', color: '#ad1457', colorClaro: '#f8bbd0', cls: 'bg-pink-700 hover:bg-pink-800', badgeCls: 'bg-pink-600/10 text-pink-400 border-pink-500/20' },
+                      ]
+                        .filter((c) => pacienteFichaActiva.estudiosRealizados?.includes(c.tipoLab) ||
+                          algunCampo(pacienteFichaActiva.datos?.[c.bolsa], claves(c.params)))
+                        .map((c) => (
+                          <div key={c.id} className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-white/20 transition-all">
+                            <div>
+                              <div className="flex justify-between items-start">
+                                <span className={`text-[10px] border px-2 py-0.5 rounded font-bold ${c.badgeCls}`}>{c.badge}</span>
+                                <Layers className="w-4 h-4 text-gray-400" />
+                              </div>
+                              <h5 className="font-bold text-sm text-white mt-3">{c.titulo}</h5>
+                              <p className="text-[11px] text-gray-400 mt-1">{c.desc}</p>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              {botonEditar(c.id)}
+                              <button
+                                onClick={() => imprimirCategoriaCNS(conDatosPacienteActuales(pacienteFichaActiva), c.id, c.color, c.colorClaro)}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 text-white font-bold rounded-lg text-xs transition-colors shadow-md ${c.cls}`}
+                              >
+                                <FileDown className="w-3.5 h-3.5" /> Descargar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
 
                     </div>
                   </div>

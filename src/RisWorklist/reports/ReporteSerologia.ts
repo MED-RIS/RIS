@@ -1,4 +1,6 @@
 import { v, flagRango, resolverFiliacion, cabeceraHTML, renderizarEImprimir } from "./_reporteBase";
+import { SEROLOGIA_SUS } from "../laboratorio/catalogoLaboratorio";
+import { examenesComplementariosHTML } from "./ReporteCatalogo";
 
 export const imprimirSerologiaCNS = (p: any) => {
   const d = p.datos || p || {};
@@ -35,6 +37,7 @@ export const imprimirSerologiaCNS = (p: any) => {
         ${fila("Hepatitis B (HBsAg)", s.hepatitis_b, "")}
       </tbody>
     </table>
+    ${examenesComplementariosHTML(SEROLOGIA_SUS, s)}
     <div class="obs-box"><b>Observaciones:</b> ${v(s.observaciones)}</div>
   `;
 

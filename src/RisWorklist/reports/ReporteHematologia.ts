@@ -1,4 +1,6 @@
 // src/RisWorklist/reports/ReporteHematologia.ts
+import { HEMATOLOGIA_SUS } from "../laboratorio/catalogoLaboratorio";
+import { examenesComplementariosHTML } from "./ReporteCatalogo";
 
 export const imprimirHematologiaCNS = (p: any) => {
   const d = p.datos || p || {};
@@ -107,6 +109,8 @@ export const imprimirHematologiaCNS = (p: any) => {
         <div class="row-item"><span>INR:</span><span class="val-bold">${v(d.inr)}</span></div>
       </div>
     </div>
+
+    ${examenesComplementariosHTML(HEMATOLOGIA_SUS, d)}
 
     <div class="comentarios-seccion">
       <div><b>Comentario Serie Roja:</b> ${v(d.comentario_roja)}</div>

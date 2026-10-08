@@ -1,4 +1,6 @@
 import { v, flagRango, resolverFiliacion, cabeceraHTML, renderizarEImprimir } from "./_reporteBase";
+import { QUIMICA_SUS } from "../laboratorio/catalogoLaboratorio";
+import { examenesComplementariosHTML } from "./ReporteCatalogo";
 
 export const imprimirQuimicaCNS = (p: any) => {
   const d = p.datos || p || {};
@@ -74,6 +76,7 @@ export const imprimirQuimicaCNS = (p: any) => {
         </tbody>
       </table>
     </div>
+    ${examenesComplementariosHTML(QUIMICA_SUS, q)}
     <div class="obs-box"><b>Observaciones:</b> ${v(q.observaciones)}</div>
   `;
 
