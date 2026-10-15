@@ -3,6 +3,37 @@ import { DicomMetadataStore } from '@ohif/core';
 import { api } from '../../Users/user';
 import { Download, Printer, FileText, Calendar, CalendarDays, CalendarCheck, BarChart2, UserCog, Check, Clock } from 'lucide-react';
 import { urlEstudio } from '../visor';
+import { getAuthHeaders } from '../../utils/token';
+
+// El backend arma el documento desde el informe guardado: PDF = vista imprimible
+// (el navegador ofrece "Guardar como PDF"), DOCX = archivo de Word.
+async function abrirDocumento(studyInstanceUid: string, formato: 'pdf' | 'docx', paciente = '') {
+  const url = `${api}/api/ris/reports/${encodeURIComponent(studyInstanceUid)}/documento?formato=${formato}`;
+  // La ventana se abre antes del fetch para que el navegador no la bloquee
+  const ventana = formato === 'pdf' ? window.open('', '_blank') : null;
+  try {
+    const res = await fetch(url, { headers: getAuthHeaders() as HeadersInit });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Error ${res.status}`);
+    }
+    if (ventana) {
+      ventana.document.write(await res.text());
+      ventana.document.close();
+      return;
+    }
+    // Content-Disposition no llega al navegador por CORS: el nombre se arma aquí
+    const nombre = `Informe ${paciente}`.trim().replace(/[\\/:*?"<>|]+/g, '-') + '.docx';
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(await res.blob());
+    enlace.download = nombre;
+    enlace.click();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 5000);
+  } catch (e: any) {
+    ventana?.close();
+    alert(`No se pudo generar el informe: ${e.message}`);
+  }
+}
 
 // ── Types / helpers ───────────────────────────────────────────────────────────
 type ReportStatus = 'SIGNED' | 'DRAFT';
@@ -133,8 +164,8 @@ export const AsyncReportRow = ({ rep, qidoRoot, normalizePatientName, navigate }
       <td className="p-3 text-gray-400 text-sm">{new Date(rep.createdAt).toLocaleDateString('es')}</td>
       <td className="p-3">
         <div className="flex gap-3">
-          <a href={`${api}/api/subida/upload/${normalizePatientName(cleanPatientName)}`} target="_blank" rel="noopener noreferrer" className="text-primary-main hover:text-primary-light text-xs font-bold transition-colors">PDF</a>
-          <a href={`${api}/api/documentos/download/${normalizePatientName(cleanPatientName)}.docx`} target="_blank" rel="noopener noreferrer" className="text-primary-light hover:text-primary-light text-xs font-bold transition-colors">DOCX</a>
+          <button onClick={() => abrirDocumento(rep.studyInstanceUid, 'pdf')} className="text-primary-main hover:text-primary-light text-xs font-bold transition-colors" title="Ver e imprimir / guardar como PDF">PDF</button>
+          <button onClick={() => abrirDocumento(rep.studyInstanceUid, 'docx', cleanPatientName === 'Sin Nombre' ? '' : cleanPatientName)} className="text-primary-light hover:text-primary-light text-xs font-bold transition-colors" title="Descargar en Word">DOCX</button>
         </div>
       </td>
       <td className="p-3">
