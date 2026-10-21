@@ -1,4 +1,5 @@
-const CACHE_NAME = 'radiant-ris-v1';
+// v2: la v1 servía siempre la copia guardada y los usuarios nunca recibían versiones nuevas
+const CACHE_NAME = 'radiant-ris-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -31,26 +32,22 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET requests and non-API calls
+  // Solo GET y nada de la API
   if (e.request.method !== 'GET' || e.request.url.includes('/api/')) {
     return;
   }
+  // Primero la red (así siempre llega la versión nueva); la copia guardada solo sin conexión
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(e.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200) {
-          return networkResponse;
+    fetch(e.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && e.request.url.startsWith(self.location.origin)) {
+          const copia = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copia));
         }
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, networkResponse.clone());
-          return networkResponse;
-        });
-      });
-    }).catch(() => {
-      return caches.match('/index.html');
-    })
+        return networkResponse;
+      })
+      .catch(() =>
+        caches.match(e.request).then((guardada) => guardada || (e.request.mode === 'navigate' ? caches.match('/index.html') : undefined))
+      )
   );
 });
