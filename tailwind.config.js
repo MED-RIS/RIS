@@ -14,10 +14,11 @@ export default {
         white: '#fff',
         initial: 'initial',
         inherit: 'inherit',
+        // Verdes más oscuros (pedido de SIGNA, 20/10/2026). light queda claro: es el color de los textos destacados.
         primary: {
           light: '#a7f3d4', 
-          main: '#066952', 
-          dark: '#064e3e', 
+          main: '#0b3d33', 
+          dark: '#072b24', 
           active: '#d1fae7', 
         },
         plom: {
@@ -34,8 +35,8 @@ export default {
         },
         secondary: {
           light: '#6de8bd', 
-          main: '#03795d', 
-          dark: '#066952', 
+          main: '#0a4a3c', 
+          dark: '#0b3d33', 
           active: '#d1fae7', 
         },
         common: {
