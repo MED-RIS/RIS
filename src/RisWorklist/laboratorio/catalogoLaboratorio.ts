@@ -58,6 +58,9 @@ export const SEROLOGIA_SUS: ParametroLab[] = [
   { key: 'covid_igm', label: 'COVID-19 Prueba Rápida IgM', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'COVID-19' },
   { key: 'covid_rt_pcr', label: 'COVID-19 RT-PCR', rango: 'No detectable', opciones: OPC_PCR_COVID, seccion: 'COVID-19' },
   { key: 'covid_antigeno_nasal', label: 'COVID-19 Antígeno Nasal', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'COVID-19' },
+  // "PBA RAP COVID-19 · Quimiolumin." de la hoja de programación del laboratorio (CNS)
+  { key: 'covid_igg_quimio', label: 'COVID-19 IgG (Quimioluminiscencia)', unidad: 'AU/mL', rango: 'Según kit', seccion: 'COVID-19' },
+  { key: 'covid_igm_quimio', label: 'COVID-19 IgM (Quimioluminiscencia)', unidad: 'AU/mL', rango: 'Según kit', seccion: 'COVID-19' },
 ];
 
 // Gasometría: pCO2 y pO2 no llevan min/max porque en El Alto (~4.000 m) son más
@@ -74,6 +77,21 @@ export const QUIMICA_SUS: ParametroLab[] = [
   { key: 'gaso_hco3', label: 'Gasometría - HCO₃⁻', unidad: 'mEq/L', rango: 'Según altitud', seccion: 'Gasometría' },
   { key: 'gaso_eb', label: 'Gasometría - Exceso de Base', unidad: 'mEq/L', rango: '—', seccion: 'Gasometría' },
   { key: 'gaso_sat_o2', label: 'Gasometría - Saturación O₂', unidad: '%', rango: 'Según altitud', seccion: 'Gasometría' },
+  // Hormonas (columna "HORMONAS" de la hoja de programación). Rangos según el kit del laboratorio.
+  { key: 'tsh', label: 'TSH', unidad: 'µUI/mL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 't3_total', label: 'T3 Total', unidad: 'ng/dL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 't4_total', label: 'T4 Total', unidad: 'µg/dL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 't4_libre', label: 'T4 Libre', unidad: 'ng/dL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 'fsh', label: 'FSH', unidad: 'mUI/mL', rango: 'Según kit y fase del ciclo', seccion: 'Hormonas' },
+  { key: 'lh', label: 'LH', unidad: 'mUI/mL', rango: 'Según kit y fase del ciclo', seccion: 'Hormonas' },
+  { key: 'prolactina', label: 'Prolactina', unidad: 'ng/mL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 'estradiol', label: 'Estradiol', unidad: 'pg/mL', rango: 'Según kit y fase del ciclo', seccion: 'Hormonas' },
+  { key: 'progesterona', label: 'Progesterona', unidad: 'ng/mL', rango: 'Según kit y fase del ciclo', seccion: 'Hormonas' },
+  { key: 'testosterona', label: 'Testosterona Total', unidad: 'ng/dL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 'bhcg_cuantitativa', label: 'β-HCG Cuantitativa', unidad: 'mUI/mL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 'cortisol', label: 'Cortisol', unidad: 'µg/dL', rango: 'Según kit y hora de toma', seccion: 'Hormonas' },
+  { key: 'insulina', label: 'Insulina', unidad: 'µUI/mL', rango: 'Según kit', seccion: 'Hormonas' },
+  { key: 'psa_total', label: 'PSA Total', unidad: 'ng/mL', rango: 'Según kit', seccion: 'Hormonas' },
 ];
 
 // ── HEMATOLOGÍA (+ Coagulograma) — plano en la raíz de `datos` (hematoDatos) ──
@@ -105,6 +123,11 @@ export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 't_sangria_min', label: 'Tiempo de Sangría (min)', unidad: 'min', rango: '1 - 3 min', seccion: 'Coagulación / Hemostasia' },
   { key: 't_sangria_seg', label: 'Tiempo de Sangría (seg)', unidad: 'seg', rango: '—', seccion: 'Coagulación / Hemostasia' },
   ...HEMATOLOGIA_SUS,
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'formula_total', label: 'Total (Fórmula Diferencial)', unidad: '%', rango: '100%', seccion: 'Fórmula Diferencial' },
+  { key: 'comentario_serie_roja', label: 'Comentario Serie Roja', rango: '—', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_serie_blanca', label: 'Comentario Serie Blanca', rango: '—', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'responsable_hemato', label: 'Responsable', rango: '—', tipo: 'texto', seccion: 'Responsable' },
 ];
 
 // ── SEROLOGÍA (+ Widal) ──
@@ -124,6 +147,11 @@ export const CATALOGO_SEROLOGIA: ParametroLab[] = [
   { key: 'test_embarazo', label: 'Test de Embarazo (β-HCG)', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Otras Pruebas' },
   { key: 'psa_prueba_rapida', label: 'PSA (Prueba rápida)', rango: 'Normal / Negativo', tipo: 'texto', seccion: 'Otras Pruebas' },
   ...SEROLOGIA_SUS,
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'vdrl', label: 'VDRL', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
+  { key: 'hepatitis_c', label: 'Hepatitis C (VHC)', rango: 'No Reactivo', opciones: OPC_REACTIVO, seccion: 'Infecciosas' },
+  { key: 'otros_serologia', label: 'Otros', rango: '—', tipo: 'texto', seccion: 'Otras Pruebas' },
+  { key: 'responsable_serologia', label: 'Responsable', rango: '—', tipo: 'texto', seccion: 'Responsable' },
 ];
 
 // ── QUÍMICA SANGUÍNEA (+ Electrolitos) → quimicaDatos ──
@@ -155,6 +183,13 @@ export const CATALOGO_QUIMICA: ParametroLab[] = [
   { key: 'potasio_meql', label: 'Potasio (K⁺)', unidad: 'mEq/L', rango: '3.5 - 5.1', min: 3.5, max: 5.1, seccion: 'Electrolitos' },
   { key: 'cloro_meql', label: 'Cloro (Cl⁻)', unidad: 'mEq/L', rango: '98 - 107', min: 98, max: 107, seccion: 'Electrolitos' },
   ...QUIMICA_SUS,
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'volumen_creatinuria', label: 'Volumen (Creatinuria)', unidad: 'mL', rango: '—', seccion: 'Orina' },
+  { key: 'creatinuria', label: 'Creatinuria en Orina', unidad: 'mg/24h', rango: '—', seccion: 'Orina' },
+  { key: 'volumen_proteinuria', label: 'Volumen (Proteinuria)', unidad: 'mL', rango: '—', seccion: 'Orina' },
+  { key: 'proteinuria', label: 'Proteinuria en Orina', unidad: 'mg/24h', rango: '—', seccion: 'Orina' },
+  { key: 'gasometria', label: 'Gasometría', rango: '—', tipo: 'texto', seccion: 'Electrolitos' },
+  { key: 'observaciones_quimica', label: 'Observaciones', rango: '—', tipo: 'texto', seccion: 'Observaciones' },
 ];
 
 // ── EXAMEN GENERAL DE ORINA (+ Orina 24h) → egoDatos ──
@@ -190,6 +225,15 @@ export const CATALOGO_EGO: ParametroLab[] = [
   { key: 'volumen_24h', label: 'Volumen Orina 24h', unidad: 'mL', rango: '600 - 2000', min: 600, max: 2000, seccion: 'Orina de 24 Horas' },
   { key: 'prot_24h', label: 'Proteínas en Orina 24h', unidad: 'mg/24h', rango: '< 150', min: 0, max: 150, seccion: 'Orina de 24 Horas' },
   { key: 'crea_orina_24h', label: 'Creatinina en Orina 24h', unidad: 'mg/24h', rango: '800 - 2000', min: 800, max: 2000, seccion: 'Orina de 24 Horas' },
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'otros_fisico', label: 'Otros (Examen Físico)', rango: '—', tipo: 'texto', seccion: 'Examen Físico' },
+  { key: 'pigmentos_biliares', label: 'Pigmentos Biliares', rango: '—', tipo: 'texto', seccion: 'Examen Químico' },
+  { key: 'c_gra', label: 'C. GRA', rango: '—', tipo: 'texto', seccion: 'Sedimento' },
+  { key: 'cilindros_pigmentados', label: 'Cilindros Pigmentados', rango: '—', tipo: 'texto', seccion: 'Sedimento' },
+  { key: 'otros_sedimento', label: 'Otros (Sedimento)', rango: '—', tipo: 'texto', seccion: 'Sedimento' },
+  { key: 'observaciones_1', label: 'Observaciones 1', rango: '—', tipo: 'texto', seccion: 'Observaciones' },
+  { key: 'observaciones_2', label: 'Observaciones 2', rango: '—', tipo: 'texto', seccion: 'Observaciones' },
+  { key: 'responsable_ego', label: 'Responsable', rango: '—', tipo: 'texto', seccion: 'Responsable' },
 ];
 
 // ── UROLOGÍA Y COPROPARASITOLOGÍA (+ Microalbuminuria) ──
@@ -204,6 +248,30 @@ export const CATALOGO_UROLOGIA: ParametroLab[] = [
   { key: 'micro_albumina', label: 'Microalbúmina', unidad: 'mg/L', rango: '< 20', min: 0, max: 20, bagOverride: 'microDatos', seccion: 'Microalbuminuria' },
   { key: 'micro_creatinina', label: 'Creatinina (orina)', unidad: 'mg/dL', rango: '—', bagOverride: 'microDatos', seccion: 'Microalbuminuria' },
   { key: 'relacion_ac', label: 'Relación Albúmina/Creatinina', unidad: 'mg/g', rango: '< 30', min: 0, max: 30, bagOverride: 'microDatos', seccion: 'Microalbuminuria' },
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'copro_simple', label: 'Coproparasitológico Simple', rango: '—', tipo: 'texto', seccion: 'Coproparasitológico' },
+  { key: 'h_pylori_heces', label: 'H. Pylori Antígeno Fecal', rango: 'Negativo', opciones: OPC_NEG_POS, bagOverride: 'serologiaDatos', seccion: 'Coproparasitológico' },
+  { key: 'rotavirus', label: 'Rotavirus', rango: 'Negativo', opciones: OPC_NEG_POS, seccion: 'Coproparasitológico' },
+  { key: 'nota_copro', label: 'Nota', rango: '—', tipo: 'texto', seccion: 'Coproparasitológico' },
+  { key: 'responsable_copro', label: 'Responsable (Coproparasitológico)', rango: '—', tipo: 'texto', seccion: 'Coproparasitológico' },
+  { key: 'cf_color', label: 'Color', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_restos', label: 'Restos Alimenticios', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_ph', label: 'pH', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_cel_epit', label: 'Células Epiteliales', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_sangre', label: 'Sangre', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_consistencia', label: 'Consistencia', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_moco', label: 'Moco', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_leuco', label: 'Leucocitos', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_eritro', label: 'Eritrocitos', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_bact', label: 'Bacterias', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_obs', label: 'Observaciones', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_copro_1', label: 'Copro 1', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_copro_2', label: 'Copro 2', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_copro_3', label: 'Copro 3', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_copro_4', label: 'Copro 4', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_copro_5', label: 'Copro 5', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_notas', label: 'Notas', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
+  { key: 'cf_responsable', label: 'Responsable (Citología Fecal)', rango: '—', tipo: 'texto', seccion: 'Citología Fecal' },
 ];
 
 // ── CURVA DE TOLERANCIA A LA GLUCOSA → glucosaFija ──
@@ -285,6 +353,23 @@ export const CATALOGO_BACTERIOLOGIA: ParametroLab[] = [
   { key: 'antibiograma_sensible', label: 'Sensible a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
   { key: 'antibiograma_intermedio', label: 'Intermedio a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
   { key: 'antibiograma_resistente', label: 'Resistente a', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  // Columnas de la planilla Excel del laboratorio que no estaban
+  { key: 'bact_titulo', label: 'Título', rango: '—', tipo: 'texto', seccion: 'Planilla' },
+  { key: 'bact_diagnostico', label: 'Diagnóstico', rango: '—', tipo: 'texto', seccion: 'Planilla' },
+  { key: 'bact_comentario', label: 'Comentario', rango: '—', tipo: 'texto', seccion: 'Planilla' },
+  { key: 'antibiograma_1', label: 'Antibiograma 1', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_2', label: 'Antibiograma 2', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_3', label: 'Antibiograma 3', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_4', label: 'Antibiograma 4', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_5', label: 'Antibiograma 5', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_6', label: 'Antibiograma 6', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_7', label: 'Antibiograma 7', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_8', label: 'Antibiograma 8', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_9', label: 'Antibiograma 9', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_10', label: 'Antibiograma 10', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_11', label: 'Antibiograma 11', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'antibiograma_12', label: 'Antibiograma 12', rango: '—', tipo: 'texto', seccion: 'Antibiograma' },
+  { key: 'bact_observaciones', label: 'Observaciones', rango: '—', tipo: 'texto', seccion: 'Planilla' },
 ];
 
 // ── CITOLOGÍA / PATOLOGÍA → patologiaDatos (resultados descriptivos) ──
@@ -317,3 +402,226 @@ export const CATEGORIAS_LAB: CategoriaLab[] = [
 ];
 
 export const categoriaLab = (id: string) => CATEGORIAS_LAB.find((c) => c.id === id);
+
+// ── Planilla Excel del laboratorio ──
+// El editor muestra cada parámetro con el nombre de su columna en la planilla (G.ROJ,
+// HEMO GLOB, BILLIR DIR…), en el mismo orden y agrupado igual. Las claves no cambian
+// (son las que leen los PDF); lo que no está en la planilla se muestra al final.
+export interface ColumnaExcel {
+  area: string; // encabezado de la planilla (HEMATOLOGIA, QUIMICAS 1…)
+  excel: string; // nombre de la columna
+  key: string;
+}
+const col = (filas: [string, string, string][]): ColumnaExcel[] => filas.map(([area, excel, key]) => ({ area, excel, key }));
+export const COLUMNAS_EXCEL: Record<string, ColumnaExcel[]> = {
+  hematologia: col([
+    ['HEMATOLOGIA', 'G.ROJ', 'globulos_rojos'],
+    ['HEMATOLOGIA', 'G.BLAN', 'globulos_blancos'],
+    ['HEMATOLOGIA', 'HEMO GLOB', 'hb'],
+    ['HEMATOLOGIA', 'HEMA TOCRI', 'hto'],
+    ['HEMATOLOGIA', 'VES', 'ves_1_hora'],
+    ['HEMATOLOGIA', 'GRUPO', 'grupo_sanguineo'],
+    ['HEMATOLOGIA', 'RETI', 'reticulocitos'],
+    ['HEMATOLOGIA', 'MIEL', 'mielo'],
+    ['HEMATOLOGIA', 'METAM', 'metamie'],
+    ['HEMATOLOGIA', 'CAYA', 'cay'],
+    ['HEMATOLOGIA', 'SEGM', 'seg'],
+    ['HEMATOLOGIA', 'EOSI', 'eosi'],
+    ['HEMATOLOGIA', 'BASO', 'baso'],
+    ['HEMATOLOGIA', 'LINFO', 'linf'],
+    ['HEMATOLOGIA', 'MONOC', 'mon'],
+    ['HEMATOLOGIA', 'TOTAL', 'formula_total'],
+    ['HEMATOLOGIA', 'PLAQT', 'plaquetas'],
+    ['HEMATOLOGIA', 'T.PROT', 'tiempo_protrombina'],
+    ['HEMATOLOGIA', 'C.PROT', 'actividad_protrombina'],
+    ['HEMATOLOGIA', 'INR', 'inr'],
+    ['HEMATOLOGIA', 'T.SANGR', 't_sangria_min'],
+    ['HEMATOLOGIA', 'T.COAG', 't_coagulacion_min'],
+    ['HEMATOLOGIA', 'COM.S.ROJA', 'comentario_serie_roja'],
+    ['HEMATOLOGIA', 'COM.S.BLANCA', 'comentario_serie_blanca'],
+    ['HEMATOLOGIA', 'RESPONSABLE', 'responsable_hemato'],
+  ]),
+  quimica: col([
+    ['QUIMICAS 1', 'GLI', 'gli'],
+    ['QUIMICAS 1', 'CRE', 'crea'],
+    ['QUIMICAS 1', 'UREA', 'urea'],
+    ['QUIMICAS 1', 'NUS', 'nus'],
+    ['QUIMICAS 1', 'COLES', 'col'],
+    ['QUIMICAS 1', 'TRIG', 'tri'],
+    ['QUIMICAS 1', 'HDL', 'hdl'],
+    ['QUIMICAS 1', 'LDL', 'ldl'],
+    ['QUIMICAS 1', 'VLDL', 'vldl'],
+    ['QUIMICAS 1', 'ACIDO URICO', 'acido_urico'],
+    ['QUIMICAS 1', 'CALCIO', 'calcio'],
+    ['QUIMICAS 2', 'PAL (FOSFATASA)', 'fal'],
+    ['QUIMICAS 2', 'TGO', 'got'],
+    ['QUIMICAS 2', 'TGP', 'gpt'],
+    ['QUIMICAS 2', 'BILLIR DIR', 'bd'],
+    ['QUIMICAS 2', 'BILLIR IND', 'bi'],
+    ['QUIMICAS 2', 'BILLIR TOT', 'bt'],
+    ['QUIMICAS 2', 'H.B.GLI', 'hba_1c'],
+    ['QUIMICAS 2', 'PROT.T.', 'prot'],
+    ['QUIMICAS 2', 'ALBUM', 'alb'],
+    ['QUIMICAS 2', 'GLOBULINA', 'globulinas'],
+    ['QUIMICAS 2', 'AMILASA', 'amilasa'],
+    ['QUIMICAS 2', 'VOLUMEN', 'volumen_creatinuria'],
+    ['QUIMICAS 2', 'CREATINURIA ORINA', 'creatinuria'],
+    ['QUIMICAS 2', 'VOLUMEN', 'volumen_proteinuria'],
+    ['QUIMICAS 2', 'PROTENURIA ORINA.', 'proteinuria'],
+    ['QUIMICAS 2', 'OBSERVACIONES', 'observaciones_quimica'],
+    ['ELECTROLITOS', 'SODIO', 'sodio_meql'],
+    ['ELECTROLITOS', 'POTASIO', 'potasio_meql'],
+    ['ELECTROLITOS', 'CLORO', 'cloro_meql'],
+    ['ELECTROLITOS', 'GASOMETRÍA', 'gasometria'],
+  ]),
+  serologia: col([
+    ['SEROLOGIA', 'PCR', 'pcr'],
+    ['SEROLOGIA', 'LATEX', 'fr'],
+    ['SEROLOGIA', 'ASTO', 'asto'],
+    ['SEROLOGIA', 'RPR', 'rpr'],
+    ['SEROLOGIA', 'WIDAL O', 'widal_o'],
+    ['SEROLOGIA', 'WIDAL H', 'widal_h'],
+    ['SEROLOGIA', 'WIDAL A', 'widal_a'],
+    ['SEROLOGIA', 'WIDAL B', 'widal_b'],
+    ['SEROLOGIA', 'T. EMBARAZO', 'test_embarazo'],
+    ['SEROLOGIA', 'VIH', 'hiv'],
+    ['SEROLOGIA', 'VDRL', 'vdrl'],
+    ['SEROLOGIA', 'HEPA B', 'hepatitis_b'],
+    ['SEROLOGIA', 'HEPA C', 'hepatitis_c'],
+    ['SEROLOGIA', 'PSA', 'psa_prueba_rapida'],
+    ['SEROLOGIA', 'OTROS', 'otros_serologia'],
+    ['SEROLOGIA', 'RESPONSABLE', 'responsable_serologia'],
+    ['COVID', 'IGG', 'covid_igg'],
+    ['COVID', 'IGM', 'covid_igm'],
+  ]),
+  ego: col([
+    ['EXAMEN GENERAL DE ORINA', 'VOLUMEN', 'volumen'],
+    ['EXAMEN GENERAL DE ORINA', 'COL', 'color'],
+    ['EXAMEN GENERAL DE ORINA', 'ASP', 'aspecto'],
+    ['EXAMEN GENERAL DE ORINA', 'OLOR', 'olor'],
+    ['EXAMEN GENERAL DE ORINA', 'PH REACCION', 'ph'],
+    ['EXAMEN GENERAL DE ORINA', 'DENS', 'densidad'],
+    ['EXAMEN GENERAL DE ORINA', 'ESPUM', 'espuma'],
+    ['EXAMEN GENERAL DE ORINA', 'OTROS', 'otros_fisico'],
+    ['EXAMEN GENERAL DE ORINA', 'PROT', 'prot'],
+    ['EXAMEN GENERAL DE ORINA', 'GLU', 'glucosa'],
+    ['EXAMEN GENERAL DE ORINA', 'CETON', 'cetonas'],
+    ['EXAMEN GENERAL DE ORINA', 'BILIRR', 'bilirrubinas'],
+    ['EXAMEN GENERAL DE ORINA', 'URUBILI', 'urobilinogeno'],
+    ['EXAMEN GENERAL DE ORINA', 'SANGRE(Hb)', 'sangre'],
+    ['EXAMEN GENERAL DE ORINA', 'NITRI', 'nitritos'],
+    ['EXAMEN GENERAL DE ORINA', 'PIG.BILIAR', 'pigmentos_biliares'],
+    ['EXAMEN GENERAL DE ORINA', 'C.EPIT', 'cel_epiteliales'],
+    ['EXAMEN GENERAL DE ORINA', 'LEUCO', 'leucocitos'],
+    ['EXAMEN GENERAL DE ORINA', 'HEMA GLOB.R', 'eritrocitos'],
+    ['EXAMEN GENERAL DE ORINA', 'BACT', 'bacterias'],
+    ['EXAMEN GENERAL DE ORINA', 'CEL.REN', 'cel_renales'],
+    ['EXAMEN GENERAL DE ORINA', 'C.GRA', 'c_gra'],
+    ['EXAMEN GENERAL DE ORINA', 'PIOCI', 'piocitos'],
+    ['EXAMEN GENERAL DE ORINA', 'CRIST', 'cristales'],
+    ['EXAMEN GENERAL DE ORINA', 'HIAL', 'cilindros_hialinos'],
+    ['EXAMEN GENERAL DE ORINA', 'GRAN', 'cilindros_granuloso'],
+    ['EXAMEN GENERAL DE ORINA', 'HEMA', 'cilindros_hematico'],
+    ['EXAMEN GENERAL DE ORINA', 'PIGM', 'cilindros_pigmentados'],
+    ['EXAMEN GENERAL DE ORINA', 'CERE', 'cilindros_cereo'],
+    ['EXAMEN GENERAL DE ORINA', 'OTR', 'otros_sedimento'],
+    ['EXAMEN GENERAL DE ORINA', 'OBSERVACIONES 1', 'observaciones_1'],
+    ['EXAMEN GENERAL DE ORINA', 'OBSERVACIONES 2', 'observaciones_2'],
+    ['EXAMEN GENERAL DE ORINA', 'RESPONSABLE', 'responsable_ego'],
+  ]),
+  urologia: col([
+    ['COPROPARASITOLOGICO', 'SIMPLE', 'copro_simple'],
+    ['COPROPARASITOLOGICO', 'SER 1', 'copro_muestra_1'],
+    ['COPROPARASITOLOGICO', 'SER 2', 'copro_muestra_2'],
+    ['COPROPARASITOLOGICO', 'SER 3', 'copro_muestra_3'],
+    ['COPROPARASITOLOGICO', 'S.OCULT', 'sangre_oculta'],
+    ['COPROPARASITOLOGICO', 'H.PILORY', 'h_pylori_heces'],
+    ['COPROPARASITOLOGICO', 'ROTAVIRUS', 'rotavirus'],
+    ['COPROPARASITOLOGICO', 'NOTA:', 'nota_copro'],
+    ['COPROPARASITOLOGICO', 'RESPONSABLE', 'responsable_copro'],
+    ['CITOLOGIA FECAL', 'COLOR', 'cf_color'],
+    ['CITOLOGIA FECAL', 'REST. ALIMENTICIOS', 'cf_restos'],
+    ['CITOLOGIA FECAL', 'PH', 'cf_ph'],
+    ['CITOLOGIA FECAL', 'CEL. EPITELIALES:', 'cf_cel_epit'],
+    ['CITOLOGIA FECAL', 'SANGRE', 'cf_sangre'],
+    ['CITOLOGIA FECAL', 'CONSISTENCIA', 'cf_consistencia'],
+    ['CITOLOGIA FECAL', 'MOCO', 'cf_moco'],
+    ['CITOLOGIA FECAL', 'LEUCO', 'cf_leuco'],
+    ['CITOLOGIA FECAL', 'ERITRO', 'cf_eritro'],
+    ['CITOLOGIA FECAL', 'BACT', 'cf_bact'],
+    ['CITOLOGIA FECAL', 'OBSERVAC.', 'cf_obs'],
+    ['CITOLOGIA FECAL', 'COPRO 1', 'cf_copro_1'],
+    ['CITOLOGIA FECAL', 'COPRO 2', 'cf_copro_2'],
+    ['CITOLOGIA FECAL', 'COPRO 3', 'cf_copro_3'],
+    ['CITOLOGIA FECAL', 'COPRO 4', 'cf_copro_4'],
+    ['CITOLOGIA FECAL', 'COPRO 5', 'cf_copro_5'],
+    ['CITOLOGIA FECAL', 'NOTAS', 'cf_notas'],
+    ['CITOLOGIA FECAL', 'RESPONSABLE', 'cf_responsable'],
+  ]),
+  bacteriologia: col([
+    ['BACTERIOLOGIA', 'TITULO', 'bact_titulo'],
+    ['BACTERIOLOGIA', 'EX.FRESCO', 'examen_fresco'],
+    ['BACTERIOLOGIA', 'GRAM', 'frotis_gram'],
+    ['BACTERIOLOGIA', 'DIAGNOSTICO', 'bact_diagnostico'],
+    ['BACTERIOLOGIA', 'COMENTARIO', 'bact_comentario'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 1', 'antibiograma_1'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 2', 'antibiograma_2'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 3', 'antibiograma_3'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 4', 'antibiograma_4'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 5', 'antibiograma_5'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 6', 'antibiograma_6'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 7', 'antibiograma_7'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 8', 'antibiograma_8'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 9', 'antibiograma_9'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 10', 'antibiograma_10'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 11', 'antibiograma_11'],
+    ['BACTERIOLOGIA', 'ANTIBIOGRAMA 12', 'antibiograma_12'],
+    ['BACTERIOLOGIA', 'OBSERVACIONES', 'bact_observaciones'],
+  ]),
+};
+
+// Exámenes de la hoja de programación del laboratorio (Preprogramación) -> qué parámetros
+// del editor corresponden a cada uno. '*' = toda la categoría; { seccion } = solo esa sección;
+// { sinSeccion } = toda la categoría menos esa sección.
+type Seleccion = string[] | '*' | { seccion: string } | { sinSeccion: string };
+export const PARAMETROS_POR_EXAMEN: Record<string, Record<string, Seleccion>> = {
+  HTO: { hematologia: ['hto'] },
+  HB: { hematologia: ['hb'] },
+  HEMOGRAMA: {
+    hematologia: ['globulos_rojos', 'globulos_blancos', 'hb', 'hto', 'mielo', 'metamie', 'cay', 'seg', 'eosi', 'baso', 'linf', 'mon', 'formula_total', 'plaquetas', 'comentario_serie_roja', 'comentario_serie_blanca', 'responsable_hemato'],
+  },
+  QMC_SANGUINEA: { quimica: { sinSeccion: 'Hormonas' } },
+  SEROLOGIA: { serologia: { sinSeccion: 'COVID-19' } },
+  EGO: { ego: '*' },
+  COPROLOGIA: { urologia: ['copro_simple', 'copro_muestra_1', 'copro_muestra_2', 'copro_muestra_3', 'rotavirus', 'nota_copro', 'responsable_copro', 'cf_color', 'cf_restos', 'cf_ph', 'cf_cel_epit', 'cf_sangre', 'cf_consistencia', 'cf_moco', 'cf_leuco', 'cf_eritro', 'cf_bact', 'cf_obs', 'cf_copro_1', 'cf_copro_2', 'cf_copro_3', 'cf_copro_4', 'cf_copro_5', 'cf_notas', 'cf_responsable'] },
+  H_PYLORI_SANGRE_OCULTA: { serologia: ['h_pylori_suero', 'h_pylori_heces'], urologia: ['sangre_oculta'] },
+  HORMONAS: { quimica: { seccion: 'Hormonas' } },
+  PBAS_TRANSFERENCIA: { hematologia: ['grupo_sanguineo', 'coombs_directo', 'coombs_indirecto'] },
+  COVID_ANTIGENO: { serologia: ['covid_antigeno_nasal'] },
+  COVID_ANTICUERPOS: { serologia: ['covid_igg', 'covid_igm'] },
+  COVID_QUIMIO: { serologia: ['covid_igg_quimio', 'covid_igm_quimio'] },
+};
+
+// Parámetros que se muestran en el editor para los exámenes programados:
+// { [categoriaId]: Set de claves }. Vacío si no hay exámenes (el editor muestra todo).
+export const parametrosDeExamenes = (examenes: string[] = []): Record<string, Set<string>> => {
+  const out: Record<string, Set<string>> = {};
+  for (const ex of examenes) {
+    const porCategoria = PARAMETROS_POR_EXAMEN[ex];
+    if (!porCategoria) continue;
+    for (const [catId, sel] of Object.entries(porCategoria)) {
+      const cat = categoriaLab(catId);
+      if (!cat) continue;
+      const claves =
+        sel === '*'
+          ? cat.catalogo.map((p) => p.key)
+          : Array.isArray(sel)
+            ? sel
+            : 'seccion' in sel
+              ? cat.catalogo.filter((p) => p.seccion === sel.seccion).map((p) => p.key)
+              : cat.catalogo.filter((p) => p.seccion !== sel.sinSeccion).map((p) => p.key);
+      out[catId] = new Set([...(out[catId] || []), ...claves]);
+    }
+  }
+  return out;
+};

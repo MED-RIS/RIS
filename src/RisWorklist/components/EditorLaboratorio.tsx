@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ArrowLeft, ClipboardList, Search, FileText, Clock, CheckCircle2,
   Lock, User, Tag, CalendarDays, Stethoscope, ListChecks, Building, DoorOpen,
 } from 'lucide-react';
-import { CATEGORIAS_LAB, ParametroLab } from '../laboratorio/catalogoLaboratorio';
+import { CATEGORIAS_LAB, ParametroLab, parametrosDeExamenes, COLUMNAS_EXCEL } from '../laboratorio/catalogoLaboratorio';
 import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
 
 type EstadoInforme = 'BORRADOR' | 'COMPLETADO' | 'FIRMADO';
@@ -13,6 +13,13 @@ interface EditorLaboratorioProps {
   informePrevio?: any;   // último informe del paciente (para precargar un control repetido)
   onVolver: () => void;
   onGuardarLocal: (documento: any) => void;
+  // Exámenes marcados en la Preprogramación (HEMOGRAMA, EGO…): si vienen, el editor
+  // muestra solo esas categorías y parámetros. Sin ellos, muestra todo como antes.
+  soloExamenes?: string[];
+  nombresExamenes?: string[];
+  // Datos de la visita cargados en el registro (columnas del Excel): CONSULTORIO, MÉDICO,
+  // FECHA SOLICIT., FECHA MUESTRA, FECHA EX. y EMERGENCIA
+  admision?: any;
 }
 
 // Calcula el flag ESTADO (H alto / L bajo / N normal) solo cuando el parámetro tiene
@@ -59,7 +66,11 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
   return out;
 };
 
-export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal }: EditorLaboratorioProps) {
+export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision }: EditorLaboratorioProps) {
+  const permitidos = useMemo(() => parametrosDeExamenes(soloExamenes || []), [soloExamenes]);
+  const filtrado = Object.keys(permitidos).length > 0;
+  const categoriasVisibles = CATEGORIAS_LAB.filter((c) => !filtrado || permitidos[c.id]);
+  const totalCategoria = (catId: string) => (filtrado ? permitidos[catId]?.size || 0 : CATEGORIAS_LAB.find((c) => c.id === catId)?.total || 0);
   // Valores por categoría: { [categoriaId]: { [paramKey]: valor } }.
   const [valores, setValores] = useState<Record<string, Record<string, string>>>({});
   const [observaciones, setObservaciones] = useState('');
@@ -67,16 +78,20 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
 
     ordenRelacionada: '',
     nroSolicitud: '',
-    medicoDerivante: '',
+    medicoDerivante: admision?.medico || '',
     centroAsistencial: '',
-    consultorio: '',
-    fechaExamen: new Date().toISOString().slice(0, 10),
+    consultorio: admision?.consultorio || '',
+    // Fecha local: con toISOString a la noche de Bolivia ya salía el día siguiente
+    fechaExamen: admision?.fechaExamen || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
+    fechaSolicitud: admision?.fechaSolicitud || '',
+    fechaMuestra: admision?.fechaMuestra || '',
+    emergencia: !!admision?.emergencia,
     horaToma: '',
     horaRecepcion: '',
     horaEmision: '',
 
   });
-  const [tabActiva, setTabActiva] = useState('hematologia');
+  const [tabActiva, setTabActiva] = useState(() => categoriasVisibles[0]?.id || 'hematologia');
   const [filtro, setFiltro] = useState('');
   const [estado, setEstado] = useState<EstadoInforme>('BORRADOR');
 
@@ -88,7 +103,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
   const setParam = (key: string, value: string) =>
     setValores((prev) => ({ ...prev, [tabActiva]: { ...(prev[tabActiva] || {}), [key]: value } }));
 
-  const setGen = (key: string, value: string) => setGeneral((prev) => ({ ...prev, [key]: value }));
+  const setGen = (key: string, value: any) => setGeneral((prev) => ({ ...prev, [key]: value }));
 
   const contarLlenos = (catId: string) => Object.values(valores[catId] || {}).filter(esLleno).length;
 
@@ -114,6 +129,9 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
       fecha: general.fechaExamen,
       codigoAsegurado: pacienteData?.cod || 'S/M',
       medico_solicitante: general.medicoDerivante,
+      fecha_solicitud: general.fechaSolicitud,
+      fecha_muestra: general.fechaMuestra,
+      emergencia: general.emergencia,
       centro_asistencial: general.centroAsistencial,
       consultorio: general.consultorio,
       nro_solicitud: general.nroSolicitud,
@@ -156,9 +174,35 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     onGuardarLocal(doc);
   };
 
-  const paramsVisibles = categoria.catalogo.filter((p) =>
-    p.label.toLowerCase().includes(filtro.trim().toLowerCase())
-  );
+  // Filas en el orden de la planilla Excel, con el nombre de su columna y el encabezado
+  // de su área (QUIMICAS 1, ELECTROLITOS…); lo que no está en la planilla va al final.
+  const q = filtro.trim().toLowerCase();
+  const pasa = (p: ParametroLab, excel = '') =>
+    (!filtrado || permitidos[tabActiva]?.has(p.key)) &&
+    (!q || p.label.toLowerCase().includes(q) || excel.toLowerCase().includes(q));
+  type Fila = { grupo: string } | { p: ParametroLab; excel?: string };
+  const filas: Fila[] = [];
+  const columnas = COLUMNAS_EXCEL[tabActiva];
+  if (columnas) {
+    let area = '';
+    for (const c of columnas) {
+      const p = categoria.catalogo.find((x) => x.key === c.key);
+      if (!p || !pasa(p, c.excel)) continue;
+      if (c.area !== area) {
+        area = c.area;
+        filas.push({ grupo: area });
+      }
+      filas.push({ p, excel: c.excel });
+    }
+    const otros = categoria.catalogo.filter((p) => !columnas.some((c) => c.key === p.key) && pasa(p));
+    if (otros.length) {
+      filas.push({ grupo: 'OTROS (no están en la planilla)' });
+      otros.forEach((p) => filas.push({ p }));
+    }
+  } else {
+    categoria.catalogo.filter((p) => pasa(p)).forEach((p) => filas.push({ p }));
+  }
+  const paramsVisibles = filas.filter((x): x is { p: ParametroLab; excel?: string } => 'p' in x).map((x) => x.p);
 
   const inputBase =
     'w-full bg-[#050a09] border border-[#2a403a] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#00bfa5] transition-colors';
@@ -259,7 +303,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               <input value={general.nroSolicitud} onChange={(e) => setGen('nroSolicitud', e.target.value)} placeholder="Ej: CQREA-10293" className={inputBase} />
             </div>
             <div>
-              <label className={labelBase}><Stethoscope className="w-3 h-3" /> Médico Derivante</label>
+              <label className={labelBase}><Stethoscope className="w-3 h-3" /> Médico</label>
               <input value={general.medicoDerivante} onChange={(e) => setGen('medicoDerivante', e.target.value)} placeholder="Dr. Juan Pérez" className={inputBase} />
             </div>
             <div>
@@ -271,8 +315,22 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               <input value={general.consultorio} onChange={(e) => setGen('consultorio', e.target.value)} placeholder="Ej: Consultorio 4" className={inputBase} />
             </div>
             <div>
-              <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha del Examen</label>
+              <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Solicit.</label>
+              <input type="date" value={general.fechaSolicitud} onChange={(e) => setGen('fechaSolicitud', e.target.value)} className={inputBase} />
+            </div>
+            <div>
+              <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Muestra</label>
+              <input type="date" value={general.fechaMuestra} onChange={(e) => setGen('fechaMuestra', e.target.value)} className={inputBase} />
+            </div>
+            <div>
+              <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Ex.</label>
               <input type="date" value={general.fechaExamen} onChange={(e) => setGen('fechaExamen', e.target.value)} className={inputBase} />
+            </div>
+            <div className="flex items-end">
+              <label className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer select-none ${general.emergencia ? 'bg-red-900/40 border-red-500/60 text-red-200' : 'bg-[#050a09] border-[#2a403a] text-gray-300'}`}>
+                <input type="checkbox" checked={general.emergencia} onChange={(e) => setGen('emergencia', e.target.checked)} className="w-4 h-4 accent-red-500" />
+                <span className="text-sm font-bold">EMERGENCIA</span>
+              </label>
             </div>
             <div>
               <label className={labelBase}><Clock className="w-3 h-3" /> Hora Toma de Muestra</label>
@@ -289,9 +347,21 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
           </div>
         </div>
 
+        {filtrado && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#00bfa5]/30 bg-[#00bfa5]/5 px-4 py-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#00bfa5]">Exámenes programados:</span>
+            {(nombresExamenes || soloExamenes || []).map((n) => (
+              <span key={n} className="rounded-lg border border-[#2a403a] bg-[#050a09] px-2.5 py-1 text-xs font-semibold text-white">
+                {n}
+              </span>
+            ))}
+            <span className="text-xs text-gray-500">· solo se muestran los campos de estos exámenes</span>
+          </div>
+        )}
+
         {/* Tabs de categorías */}
         <div className="flex flex-wrap gap-1 border-b border-[#1f332d] mb-5">
-          {CATEGORIAS_LAB.map((cat) => {
+          {categoriasVisibles.map((cat) => {
             const activa = cat.id === tabActiva;
             const llenos = contarLlenos(cat.id);
             return (
@@ -304,7 +374,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               >
                 {cat.label}
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activa ? 'bg-[#00bfa5]/15 text-[#00bfa5]' : 'bg-white/5 text-gray-500'}`}>
-                  {llenos}/{cat.total}
+                  {llenos}/{totalCategoria(cat.id)}
                 </span>
               </button>
             );
@@ -341,12 +411,23 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
                 </tr>
               </thead>
               <tbody>
-                {paramsVisibles.map((p) => {
+                {filas.map((fila) => {
+                  if ('grupo' in fila) {
+                    return (
+                      <tr key={`g-${fila.grupo}`} className="bg-[#00bfa5]/10 border-t border-[#1f332d]">
+                        <td colSpan={5} className="px-4 py-2 text-[11px] font-bold tracking-widest text-[#00bfa5]">{fila.grupo}</td>
+                      </tr>
+                    );
+                  }
+                  const { p, excel } = fila;
                   const valor = valoresCat[p.key] ?? '';
                   const flag = calcularFlag(p, valor);
                   return (
                     <tr key={p.key} className="border-t border-[#1f332d] hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-bold text-white">{p.label}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="font-bold text-white">{excel || p.label}</div>
+                        {excel && <div className="text-[11px] text-gray-500">{p.label}</div>}
+                      </td>
                       <td className="px-4 py-3">
                         {p.opciones ? (
                           <select

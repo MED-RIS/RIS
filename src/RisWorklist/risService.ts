@@ -590,3 +590,26 @@ export const deleteCompany = async (id: string): Promise<{ success: boolean }> =
   }
   return response.json();
 };
+
+// --- Preprogramación del laboratorio (por día, antes del registro formal) ---
+const pedirPreprogramacion = async (url: string, options: RequestInit = {}) => {
+  const response = await fetchWithAuth(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Error en la preprogramación');
+  return data;
+};
+
+export const fetchPreprogramacion = (desde: string, hasta: string): Promise<any[]> =>
+  pedirPreprogramacion(`${api}/api/ris/preprogramacion?desde=${desde}&hasta=${hasta}`);
+
+export const createPreprogramacion = (datos: any) =>
+  pedirPreprogramacion(`${api}/api/ris/preprogramacion`, { method: 'POST', body: JSON.stringify(datos) });
+
+export const updatePreprogramacion = (id: string, datos: any) =>
+  pedirPreprogramacion(`${api}/api/ris/preprogramacion/${id}`, { method: 'PUT', body: JSON.stringify(datos) });
+
+export const deletePreprogramacion = (id: string) =>
+  pedirPreprogramacion(`${api}/api/ris/preprogramacion/${id}`, { method: 'DELETE' });

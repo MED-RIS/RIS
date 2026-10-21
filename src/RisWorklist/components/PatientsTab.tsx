@@ -6,6 +6,7 @@ import QrBoletaScanner from './QrBoletaScanner';
 import { parseBoletaQr } from '../../utils/parseBoletaQr';
 
 import { Patient } from '../types';
+import { pacienteVacio } from '../pacienteExcel';
 
 // 📦 Importamos los pacientes reales de la planilla Excel "RESULTADOS 14-05-2026"
 import { listaPacientesPrueba } from './pacientesMock';
@@ -28,6 +29,7 @@ interface PatientsTabProps {
   PaginationControls: any;
   openPatientProfile?: (patient: Patient) => void;
   irARecepcionConPaciente?: (paciente: Patient) => void;
+  irALaboratorioConPaciente?: (paciente: Patient) => void;
 }
 
 export default function PatientsTab({
@@ -48,6 +50,7 @@ export default function PatientsTab({
   PaginationControls,
   openPatientProfile,
   irARecepcionConPaciente,
+  irALaboratorioConPaciente,
 }: PatientsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
@@ -83,16 +86,17 @@ export default function PatientsTab({
     const p = listaPacientesPrueba[indiceExcel] as any;
     
     // Mapeamos los campos en español de la plantilla a las variables tipadas de tu base de datos NoSQL
+    // Misma fila del Excel en los mismos campos: PATERNO, MATERNO, NOMBRES, EDAD, GÉNERO, AVC
     setNewPatient({
       ...newPatient,
-      patientId: `MRN-${p.cod}`, // Formato PACS / MRN exigido por el modelo
-      documentId: p.cod,         // Tu Cédula / Matrícula CNS
-      firstName: p.nombres,
-      lastName: `${p.paterno} ${p.materno}`.trim(),
+      patientId: '', // se arma con AVC + BENEF. al guardar
+      apellidoPaterno: String(p.paterno || '').toUpperCase(),
+      apellidoMaterno: String(p.materno || '').toUpperCase(),
+      firstName: String(p.nombres || '').toUpperCase(),
+      edad: p.edad ?? '',
       gender: p.genero === 'Masculino' ? 'M' : 'F',
-      dateOfBirth: "1992-08-24", // Fecha estructurada por defecto
-      phone: p.telefono || "71524311",
-      email: "cns.admision@gmail.com"
+      numeroAsegurado: String(p.cod || '').toUpperCase(),
+      phone: p.telefono || '',
     });
 
     // Cambiamos el selector dinámicamente si la plantilla viene amarrada a un servicio específico
@@ -144,8 +148,15 @@ export default function PatientsTab({
     if (isEditing && editingItem?.type === 'patient') setIsModalOpen(true);
   }, [isEditing, editingItem]);
 
+  // Desde Preprogramación ("Llegó → Registrar") se llega con el formulario ya cargado
+  useEffect(() => {
+    if (isCreatingPatient) setIsModalOpen(true);
+  }, [isCreatingPatient]);
+
   const openCreateModal = () => {
     setDuplicateError(null);
+    // Registro nuevo desde cero (no arrastrar datos de una preprogramación o de una carga anterior)
+    setNewPatient(pacienteVacio());
     setIsModalOpen(true);
     setIsCreatingPatient(true);
   };
@@ -176,6 +187,7 @@ export default function PatientsTab({
         isOpen={isModalOpen}
         onClose={closeModal}
         title={isEditingPatient ? 'Editar Paciente' : 'Formulario de Admisión Unificada (CNS El Alto)'}
+        maxWidth="max-w-5xl"
       >
         <form
           onSubmit={async (e) => {
@@ -187,7 +199,7 @@ export default function PatientsTab({
               const creado = await handleCreatePatient(e);
               if (!creado) {
                 // no se creó (paciente duplicado): dejamos el modal abierto y avisamos en el formulario
-                setDuplicateError('Ya existe un paciente registrado con esa cédula/matrícula o MRN. Verifique los datos.');
+                setDuplicateError('Ya existe un paciente con ese AVC y BENEF. Verifique los datos o búsquelo en la lista.');
                 return;
               }
               // Ruteo según el servicio elegido en el selector post-registro.
@@ -196,6 +208,12 @@ export default function PatientsTab({
                 setIsCreatingPatient(false);
                 irARecepcionConPaciente(creado);
                 return; // salimos: ya navegamos a Recepción con el paciente cargado
+              }
+              if (servicioSeleccionado === 'laboratorio' && irALaboratorioConPaciente) {
+                setIsModalOpen(false);
+                setIsCreatingPatient(false);
+                irALaboratorioConPaciente(creado);
+                return; // al editor de resultados con los exámenes programados
               }
               alert("🎉 ¡Paciente guardado con éxito! Continúe el registro del examen.");
               setIsModalOpen(false);
@@ -213,8 +231,9 @@ export default function PatientsTab({
             </div>
           )}
 
-          {/* Botón superior de carga para la simulación */}
-          <div className="flex justify-end">
+          {/* Carga desde Excel y lector QR en una sola franja */}
+          <div className="flex flex-col lg:flex-row gap-3 lg:items-stretch">
+          <div className="flex lg:order-2 lg:items-center justify-end">
             <button 
               type="button" 
               onClick={manejarCargaPlantillaExcel}
@@ -226,11 +245,12 @@ export default function PatientsTab({
           </div>
 
           {/* CAMINO PRIMARIO: PARSER QR */}
-          <div className="p-4 bg-black/40 border border-secondary-dark rounded-lg">
-            <label className="block text-[11px] font-bold text-[#00bfa5] uppercase tracking-wider mb-2">
+          <div className="flex-1 p-3 bg-black/40 border border-secondary-dark rounded-lg">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+            <label className="text-[11px] font-bold text-[#00bfa5] uppercase tracking-wider lg:flex-1">
               📷 CAMINO PRIMARIO: PARSER QR BOLETA CNS EL ALTO
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 lg:w-72">
               <button
                 type="button"
                 onClick={() => setIsQrScannerOpen(true)}
@@ -238,6 +258,7 @@ export default function PatientsTab({
               >
                 <ScanLine className="w-4 h-4" /> Escanear boleta con cámara
               </button>
+            </div>
             </div>
             {qrRawText && (
               <div className="mt-2 text-[10px] text-gray-400 bg-black/40 border border-secondary-dark/60 rounded p-2">
@@ -248,92 +269,95 @@ export default function PatientsTab({
               </div>
             )}
           </div>
+          </div>
           <QrBoletaScanner
             isOpen={isQrScannerOpen}
             onClose={() => setIsQrScannerOpen(false)}
             onDecoded={handleQrDecoded}
           />
 
-          {/* DATOS DE FILIACIÓN (Vinculados a tu estado native newPatient) */}
-          <div className="space-y-4">
-            <div className="border-b border-secondary-dark pb-1">
-              <span className="text-xs text-gray-400 font-medium">📋 Datos de Filiación Unificada (Principio P1)</span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">CÉDULA DE IDENTIDAD / MATRÍCULA *</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ej. 6842105 ó MAT-20481-R"
-                  value={newPatient.documentId || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setNewPatient({
-                      ...newPatient,
-                      documentId: val,
-                      patientId: val ? `MRN-${val}` : '',
-                    });
-                  }}
-                  className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">MRN / ID INTERNO PACS</label>
-                <input type="text" placeholder="Autogenerado desde la cédula" value={newPatient.patientId || ''} onChange={(e) => setNewPatient({ ...newPatient, patientId: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-            </div>
+          {/* DATOS DEL PACIENTE: mismas columnas y nombres que el Excel del laboratorio */}
+          {(() => {
+            const set = (k: string, v: any) => setNewPatient({ ...newPatient, [k]: v });
+            const adm = newPatient.admision || {};
+            const setAdm = (k: string, v: any) => setNewPatient({ ...newPatient, admision: { ...adm, [k]: v } });
+            const campo = 'w-full p-2.5 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none';
+            const rotulo = 'block text-gray-400 mb-1 font-bold';
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 text-xs">
+                <div className="col-span-full border-b border-secondary-dark pb-1 flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-medium">📋 Datos del paciente</span>
+                  <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none ${adm.emergencia ? 'bg-red-900/40 border-red-500/60 text-red-200' : 'bg-black border-secondary-dark text-gray-300'}`}>
+                    <input type="checkbox" checked={!!adm.emergencia} onChange={(e) => setAdm('emergencia', e.target.checked)} className="w-4 h-4 accent-red-500" />
+                    <span className="font-bold">EMERGENCIA</span>
+                  </label>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">NOMBRES COMPLETOS *</label>
-                <input required type="text" placeholder="Nombres" value={newPatient.firstName || ''} onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">APELLIDOS COMPLETOS *</label>
-                <input required type="text" placeholder="Apellidos" value={newPatient.lastName || ''} onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-            </div>
+                <div>
+                  <label className={rotulo}>PATERNO *</label>
+                  <input required type="text" value={newPatient.apellidoPaterno || ''} onChange={(e) => set('apellidoPaterno', e.target.value.toUpperCase())} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>MATERNO</label>
+                  <input type="text" value={newPatient.apellidoMaterno || ''} onChange={(e) => set('apellidoMaterno', e.target.value.toUpperCase())} className={campo} />
+                </div>
+                <div className="lg:col-span-2">
+                  <label className={rotulo}>NOMBRES *</label>
+                  <input required type="text" value={newPatient.firstName || ''} onChange={(e) => set('firstName', e.target.value.toUpperCase())} className={campo} />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">FECHA DE NACIMIENTO *</label>
-                <input required type="date" value={newPatient.dateOfBirth?.split('T')[0] || ''} onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">GÉNERO / SEXO</label>
-                <select value={newPatient.gender || 'U'} onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none">
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="O">Otro</option>
-                  <option value="U">Desconocido</option>
-                </select>
-              </div>
-            </div>
+                <div>
+                  <label className={rotulo}>EDAD</label>
+                  <input type="number" min={0} max={120} value={newPatient.edad ?? ''} onChange={(e) => set('edad', e.target.value)} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>GÉNERO</label>
+                  <div className="flex gap-1.5">
+                    {[['F', 'F'], ['M', 'M']].map(([v, t]) => (
+                      <button key={v} type="button" onClick={() => set('gender', newPatient.gender === v ? 'U' : v)}
+                        className={`flex-1 p-2.5 rounded-lg font-bold border ${newPatient.gender === v ? 'bg-primary-light text-black border-primary-light' : 'bg-black border-secondary-dark text-gray-300 hover:text-white'}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className={rotulo}>AVC *</label>
+                  <input required type="text" placeholder="Ej. 123456ABC" value={newPatient.numeroAsegurado || ''} onChange={(e) => set('numeroAsegurado', e.target.value.toUpperCase())} className={`${campo} font-mono`} />
+                </div>
+                <div>
+                  <label className={rotulo}>BENEF.</label>
+                  <input type="text" placeholder="ID / 50 / 18" value={newPatient.codigoBeneficiario || ''} onChange={(e) => set('codigoBeneficiario', e.target.value.toUpperCase())} className={campo} />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">TELÉFONO / CELULAR *</label>
-                <input required type="tel" placeholder="Ej. 71524311" value={newPatient.phone || ''} onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">CORREO ELECTRÓNICO</label>
-                <input type="email" placeholder="Opcional" value={newPatient.email || ''} onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-            </div>
+                <div>
+                  <label className={rotulo}>CONSULTORIO</label>
+                  <input type="text" value={adm.consultorio || ''} onChange={(e) => setAdm('consultorio', e.target.value.toUpperCase())} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>MÉDICO</label>
+                  <input type="text" value={adm.medico || ''} onChange={(e) => setAdm('medico', e.target.value.toUpperCase())} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>FECHA SOLICIT.</label>
+                  <input type="date" value={adm.fechaSolicitud || ''} onChange={(e) => setAdm('fechaSolicitud', e.target.value)} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>FECHA MUESTRA</label>
+                  <input type="date" value={adm.fechaMuestra || ''} onChange={(e) => setAdm('fechaMuestra', e.target.value)} className={campo} />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">CÓDIGO BENEFICIARIO</label>
-                <input type="text" placeholder="Ej. 0 (Titular), 1 (Cónyuge)..." value={newPatient.codigoBeneficiario || ''} onChange={(e) => setNewPatient({ ...newPatient, codigoBeneficiario: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
+                <div>
+                  <label className={rotulo}>FECHA EX.</label>
+                  <input type="date" value={adm.fechaExamen || ''} onChange={(e) => setAdm('fechaExamen', e.target.value)} className={campo} />
+                </div>
+                <div>
+                  <label className={rotulo}>CELULAR</label>
+                  <input type="tel" inputMode="numeric" placeholder="Ej. 70000000" value={newPatient.phone || ''} onChange={(e) => set('phone', e.target.value)} className={campo} />
+                </div>
               </div>
-              <div>
-                <label className="block text-gray-400 mb-1 font-bold">Nº DE ASEGURADO</label>
-                <input type="text" placeholder="Nº de asegurado CNS" value={newPatient.numeroAsegurado || ''} onChange={(e) => setNewPatient({ ...newPatient, numeroAsegurado: e.target.value })} className="w-full p-3 rounded-lg bg-black border border-secondary-dark text-white focus:border-primary-light outline-none" />
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* SELECTOR DE SERVICIO POST-REGISTRO */}
           <div className="space-y-3">

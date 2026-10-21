@@ -45,11 +45,11 @@ export default function RisModal({
     >
       <div
         ref={panelRef}
-        className={`relative bg-primary-main border border-secondary-dark rounded-xl shadow-2xl w-full ${maxWidth}`}
+        className={`relative bg-primary-main border border-secondary-dark rounded-xl shadow-2xl w-full ${maxWidth} max-h-[calc(100vh-2rem)] flex flex-col`}
         style={{ willChange: 'transform' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-secondary-dark">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-secondary-dark shrink-0">
           <h2 className="text-lg font-bold text-primary-light uppercase tracking-wide">
             {title}
           </h2>
@@ -64,7 +64,7 @@ export default function RisModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-6 py-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

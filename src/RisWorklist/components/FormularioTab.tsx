@@ -24,11 +24,23 @@ import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, 
 const claves = (params: { key: string; bagOverride?: string }[]) => params.filter((p) => !p.bagOverride).map((p) => p.key);
 
 
-interface FormularioTabProps {
-  patients?: Patient[];
+// Paciente que llegó el día programado (Preprogramación): se abre el editor directo,
+// solo con los exámenes que se marcaron en caja.
+export interface LaboratorioPendiente {
+  paciente: Patient;
+  examenes: string[];
+  nombres: string[];
+  admision?: any; // CONSULTORIO, MÉDICO, FECHAS y EMERGENCIA del registro
 }
 
-export default function FormularioTab({ patients = [] }: FormularioTabProps) {
+interface FormularioTabProps {
+  patients?: Patient[];
+  pendiente?: LaboratorioPendiente | null;
+  onPendienteAtendido?: () => void;
+}
+
+export default function FormularioTab({ patients = [], pendiente, onPendienteAtendido }: FormularioTabProps) {
+  const [soloExamenes, setSoloExamenes] = useState<{ ids: string[]; nombres: string[]; admision?: any } | null>(null);
   // Vista del tab: lista de informes → selector de paciente → editor.
   const [vista, setVista] = useState<'lista' | 'selector' | 'editor'>('lista');
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
@@ -127,6 +139,7 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
   const reiniciarModulo = () => {
     setVista('lista');
     setPacienteSeleccionado(null);
+    setSoloExamenes(null);
     setResetKey(prev => prev + 1);
   };
 
@@ -146,7 +159,8 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
     cod: pt.patientId || pt._id,
     nombres: pt.firstName,
     paterno: pt.lastName,
-    edad: calcularEdadAnios(pt.dateOfBirth),
+    // Las columnas del Excel traen EDAD directamente (sin fecha de nacimiento)
+    edad: (pt as any).edad != null && (pt as any).edad !== '' ? String((pt as any).edad) : calcularEdadAnios(pt.dateOfBirth),
     id_paciente: pt._id,
     id: pt._id,
     codigoBeneficiario: (pt as any).codigoBeneficiario || '-',
@@ -162,6 +176,15 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
     setInformePrevio(previos[0] || null); // el historial está "más nuevo primero"
     setVista('editor');
   };
+
+  useEffect(() => {
+    if (!pendiente?.paciente) return;
+    seleccionarPaciente(pendiente.paciente);
+    setSoloExamenes({ ids: pendiente.examenes || [], nombres: pendiente.nombres || [], admision: pendiente.admision });
+    setResetKey((prev) => prev + 1);
+    onPendienteAtendido?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendiente]);
 
   // Abrir un informe de la lista → carpeta de reportes enfocada en ese paciente.
   const abrirInforme = (informe: any) => {
@@ -703,6 +726,9 @@ export default function FormularioTab({ patients = [] }: FormularioTabProps) {
             informePrevio={informePrevio}
             onVolver={reiniciarModulo}
             onGuardarLocal={guardarEnRisServer}
+            soloExamenes={soloExamenes?.ids}
+            nombresExamenes={soloExamenes?.nombres}
+            admision={soloExamenes?.admision}
           />
         )}
       </div>

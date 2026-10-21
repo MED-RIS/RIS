@@ -29,7 +29,9 @@ import {
   Radio,
   GraduationCap,
   Briefcase,
-  Form
+  Form,
+  ClipboardList,
+  CalendarDays,
 } from 'lucide-react';
 
 import {
@@ -89,6 +91,8 @@ import OrdersTab from './components/OrdersTab';
 import PatientsTab from './components/PatientsTab';
 import AppointmentsTab from './components/AppointmentsTab';
 import ReportsTab from './components/ReportsTab';
+import LecturaTab from './components/LecturaTab';
+import PreprogramacionTab from './components/PreprogramacionTab';
 import ModalitiesTab from './components/ModalitiesTab';
 import EquipmentTab from './components/EquipmentTab';
 import ServicesTab from './components/ServicesTab';
@@ -96,7 +100,8 @@ import BranchesTab from './components/BranchesTab';
 import OrganizationsTab from './components/OrganizationsTab';
 import MetricsTab from './components/MetricsTab';
 import ConsultaTab from './components/ConsultaTab';
-import FormularioTab from './components/FormularioTab';
+import FormularioTab, { LaboratorioPendiente } from './components/FormularioTab';
+import { pacienteVacio, pacienteAFormulario, formularioAPaciente, separarNombreCompleto, admisionVacia } from './pacienteExcel';
 
 // New Tabs
 import TemplatesTab from './components/TemplatesTab';
@@ -118,8 +123,10 @@ const MENU_GROUPS = [
   {
     title: 'Atención Clínica',
     items: [
+      { id: 'preprogramacion', label: 'Preprogramación', icon: <CalendarDays className="w-5 h-5" /> },
       { id: 'citas', label: 'Recepción', icon: <Calendar className="w-5 h-5" /> },
       { id: 'consulta', label: 'Registro', icon: <Stethoscope className="w-5 h-5" /> },
+      { id: 'lectura', label: 'Lista de lectura', icon: <ClipboardList className="w-5 h-5" /> },
       { id: 'informes', label: 'Informes', icon: <FileText className="w-5 h-5" /> },
       { id: 'pacientes', label: 'Pacientes', icon: <Users className="w-5 h-5" /> },
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },
@@ -258,7 +265,7 @@ function RisWorklistPanel({ servicesManager }) {
   const [isCreatingCashRegister, setIsCreatingCashRegister] = useState(false);
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
-  const [newPatient, setNewPatient] = useState({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
+  const [newPatient, setNewPatient] = useState<any>(pacienteVacio);
   const [newOrder, setNewOrder] = useState({ patient: '', accessionNumber: '', modality: '', procedureDescription: '', scheduledDate: '', referringPhysician: '', branch: '', receptionStatus: 'WAITING' });
   const [newModality, setNewModality] = useState({ name: '', dicom_code: '', description: '' });
   const [newEquipment, setNewEquipment] = useState({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '' });
@@ -465,24 +472,26 @@ function RisWorklistPanel({ servicesManager }) {
   // Devuelve el paciente creado (para poder rutearlo al servicio elegido tras el registro).
   const handleCreatePatient = async (e: React.FormEvent): Promise<Patient | undefined> => {
     e.preventDefault();
-    const datosPaciente = { ...newPatient, dateOfBirth: newPatient.dateOfBirth || undefined };
+    const datosPaciente = formularioAPaciente(newPatient);
 
     const normalizar = (v: any) => (v || '').toString().trim().toLowerCase();
-    const documentIdNuevo = normalizar(datosPaciente.documentId);
+    const avcNuevo = normalizar(datosPaciente.numeroAsegurado);
+    const benefNuevo = normalizar(datosPaciente.codigoBeneficiario);
     const patientIdNuevo = normalizar(datosPaciente.patientId);
     const yaExiste = patients.some((p: any) => {
-      const coincideDocumento = documentIdNuevo && normalizar(p.documentId) === documentIdNuevo;
+      // El titular y sus beneficiarios comparten AVC: el mismo paciente es AVC + BENEF.
+      const mismoAsegurado = avcNuevo && normalizar(p.numeroAsegurado) === avcNuevo && normalizar(p.codigoBeneficiario) === benefNuevo;
       const coincideMrn = patientIdNuevo && normalizar(p.patientId) === patientIdNuevo;
-      return coincideDocumento || coincideMrn;
+      return mismoAsegurado || coincideMrn;
     });
     if (yaExiste) {
-      toast.error('Ya existe un paciente registrado con esa cédula/matrícula o MRN.');
+      toast.error('Ya existe un paciente con ese AVC y BENEF.');
       return undefined;
     }
 
     const resetForm = () => {
       setIsCreatingPatient(false);
-      setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
+      setNewPatient(pacienteVacio());
     };
     try {
       const creado = await createPatient(datosPaciente);
@@ -504,6 +513,51 @@ function RisWorklistPanel({ servicesManager }) {
       resetForm();
       return local;
     }
+  };
+
+  // Preprogramación: el paciente vino el día programado. Si ya está registrado (misma
+  // matrícula) se pasa directo al laboratorio; si no, se abre su registro con los datos de
+  // caja y, al guardarlo, el laboratorio con los exámenes que se marcaron.
+  const [labPendiente, setLabPendiente] = useState<LaboratorioPendiente | null>(null);
+  const [examenesPorRegistrar, setExamenesPorRegistrar] = useState<{ examenes: string[]; nombres: string[] } | null>(null);
+
+  const registrarDesdePreprogramacion = (f: any) => {
+    const examenes = { examenes: f.examenes || [], nombres: f.nombresExamenes || [] };
+    const matricula = String(f.matricula || '').trim().toUpperCase();
+    const existente = matricula
+      ? patients.find((p: any) => String(p.numeroAsegurado || '').trim().toUpperCase() === matricula)
+      : null;
+    if (existente) {
+      setLabPendiente({ paciente: existente, ...examenes, admision: { ...admisionVacia(), fechaExamen: f.fechaExamen || admisionVacia().fechaExamen } });
+      setActiveTab('Formulario');
+      return;
+    }
+    // En la hoja se escribe "Nombres Paterno Materno" (el operador lo corrige si viene al revés)
+    const { nombres, paterno, materno } = separarNombreCompleto(f.nombreCompleto);
+    setNewPatient({
+      ...pacienteVacio(),
+      firstName: nombres,
+      apellidoPaterno: paterno,
+      apellidoMaterno: materno,
+      numeroAsegurado: matricula,
+      phone: f.celular || '',
+      admision: { ...admisionVacia(), fechaExamen: f.fechaExamen || admisionVacia().fechaExamen },
+    });
+    setExamenesPorRegistrar(examenes);
+    setIsCreatingPatient(true);
+    setActiveTab('pacientes');
+  };
+
+  // Paciente recién registrado con servicio "Laboratorio": al editor de resultados
+  const irALaboratorioConPaciente = (paciente: Patient) => {
+    setLabPendiente({
+      paciente,
+      examenes: examenesPorRegistrar?.examenes || [],
+      nombres: examenesPorRegistrar?.nombres || [],
+      admision: (paciente as any)?.ultimaAdmision,
+    });
+    setExamenesPorRegistrar(null);
+    setActiveTab('Formulario');
   };
 
   // Tras registrar un paciente con servicio "Imagenología": ir a Recepción con el paciente cargado.
@@ -615,7 +669,7 @@ function RisWorklistPanel({ servicesManager }) {
   const handleEdit = (type: string, data: any) => {
     setEditingItem({ type, data });
     setIsEditing(true);
-    if (type === 'patient') setNewPatient({ ...data });
+    if (type === 'patient') setNewPatient(pacienteAFormulario(data));
     if (type === 'modality') setNewModality({ ...data });
     if (type === 'equipment') setNewEquipment({ ...data });
     if (type === 'service') setNewService({ ...data, fk_equipments: data.fk_equipments?.map(e => (typeof e === 'string' ? e : e._id)) || [] });
@@ -637,7 +691,7 @@ function RisWorklistPanel({ servicesManager }) {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingItem(null);
-    setNewPatient({ patientId: '', documentId: '', firstName: '', lastName: '', dateOfBirth: '', gender: 'U', phone: '', email: '', address: '', codigoBeneficiario: '0', numeroAsegurado: '' });
+    setNewPatient(pacienteVacio());
     setNewModality({ name: '', dicom_code: '', description: '' });
     setNewEquipment({ name: '', manufacturer: '', model: '', serial_number: '', aeTitle: '', ipAddress: '', dicomPort: 104, modality: '' });
     setNewService({ name: '', fk_branch: '', fk_modality: '', fk_equipments: [], price: 0 });
@@ -663,7 +717,7 @@ function RisWorklistPanel({ servicesManager }) {
     try {
       const { type, data } = editingItem;
       const id = data._id;
-      if (type === 'patient') await updatePatient(id, newPatient);
+      if (type === 'patient') await updatePatient(id, formularioAPaciente(newPatient));
       if (type === 'modality') await updateModality(id, newModality);
       if (type === 'equipment') await updateEquipment(id, newEquipment);
       if (type === 'service') await updateService(id, newService);
@@ -983,7 +1037,7 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'pacientes' && (
-                <PatientsTab patients={patients} fuzzySearch={fuzzySearch} paginate={paginate} isCreatingPatient={isCreatingPatient} setIsCreatingPatient={setIsCreatingPatient} isEditing={isEditing} editingItem={editingItem} handleCreatePatient={handleCreatePatient} handleUpdate={handleUpdate} handleCancelEdit={handleCancelEdit} handleEdit={handleEdit} handleDelete={handleDelete} newPatient={newPatient} setNewPatient={setNewPatient} PaginationControls={Paginator} openPatientProfile={setSelectedPatientProfile} irARecepcionConPaciente={irARecepcionConPaciente} />
+                <PatientsTab patients={patients} fuzzySearch={fuzzySearch} paginate={paginate} isCreatingPatient={isCreatingPatient} setIsCreatingPatient={setIsCreatingPatient} isEditing={isEditing} editingItem={editingItem} handleCreatePatient={handleCreatePatient} handleUpdate={handleUpdate} handleCancelEdit={handleCancelEdit} handleEdit={handleEdit} handleDelete={handleDelete} newPatient={newPatient} setNewPatient={setNewPatient} PaginationControls={Paginator} openPatientProfile={setSelectedPatientProfile} irARecepcionConPaciente={irARecepcionConPaciente} irALaboratorioConPaciente={irALaboratorioConPaciente} />
               )}
 
               {activeTab === 'citas' && (
@@ -1007,8 +1061,12 @@ function RisWorklistPanel({ servicesManager }) {
               )}
 
               {activeTab === 'Formulario' && (
-                <FormularioTab patients={patients} />
+                <FormularioTab patients={patients} pendiente={labPendiente} onPendienteAtendido={() => setLabPendiente(null)} />
               )}
+
+              {activeTab === 'lectura' && <LecturaTab appConfig={appConfig} />}
+
+              {activeTab === 'preprogramacion' && <PreprogramacionTab onRegistrar={registrarDesdePreprogramacion} />}
 
               {activeTab === 'informes' && (
                 <ReportsTab
