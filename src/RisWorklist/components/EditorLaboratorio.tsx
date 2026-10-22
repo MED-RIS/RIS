@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
   ArrowLeft, ClipboardList, Search, FileText, Clock, CheckCircle2,
-  Lock, User, Tag, CalendarDays, Stethoscope, ListChecks, Building, DoorOpen,
+  Lock, User, CalendarDays, Stethoscope, ListChecks, DoorOpen, Phone, FlaskConical,
 } from 'lucide-react';
 import { CATEGORIAS_LAB, ParametroLab, parametrosDeExamenes, COLUMNAS_EXCEL } from '../laboratorio/catalogoLaboratorio';
 import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
+import { UNIDAD_SANITARIA, letraDelDia } from '../pacienteExcel';
 
 type EstadoInforme = 'BORRADOR' | 'COMPLETADO' | 'FIRMADO';
 
@@ -18,8 +19,10 @@ interface EditorLaboratorioProps {
   soloExamenes?: string[];
   nombresExamenes?: string[];
   // Datos de la visita cargados en el registro (columnas del Excel): CONSULTORIO, MÉDICO,
-  // FECHA SOLICIT., FECHA MUESTRA, FECHA EX. y EMERGENCIA
+  // FECHA SOLICIT., FECHA MUESTRA y FECHA EX.
   admision?: any;
+  // Informes ya guardados: con ellos se saca la letra EMERGENCIAS del día (A, B, C…)
+  historial?: any[];
 }
 
 // Calcula el flag ESTADO (H alto / L bajo / N normal) solo cuando el parámetro tiene
@@ -66,7 +69,8 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
   return out;
 };
 
-export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision }: EditorLaboratorioProps) {
+export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [] }: EditorLaboratorioProps) {
+  const admision = admisionProp || pacienteData?.admision;
   const permitidos = useMemo(() => parametrosDeExamenes(soloExamenes || []), [soloExamenes]);
   const filtrado = Object.keys(permitidos).length > 0;
   const categoriasVisibles = CATEGORIAS_LAB.filter((c) => !filtrado || permitidos[c.id]);
@@ -75,27 +79,24 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
   const [valores, setValores] = useState<Record<string, Record<string, string>>>({});
   const [observaciones, setObservaciones] = useState('');
   const [general, setGeneral] = useState({
-
-    ordenRelacionada: '',
-    nroSolicitud: '',
+    letra: '', // vacío = la que toca en el día
     medicoDerivante: admision?.medico || '',
-    centroAsistencial: '',
     consultorio: admision?.consultorio || '',
+    telefono: pacienteData?.telefono || '',
+    diagnostico: '',
+    muestra: '',
     // Fecha local: con toISOString a la noche de Bolivia ya salía el día siguiente
     fechaExamen: admision?.fechaExamen || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
     fechaSolicitud: admision?.fechaSolicitud || '',
     fechaMuestra: admision?.fechaMuestra || '',
-    emergencia: !!admision?.emergencia,
-    horaToma: '',
-    horaRecepcion: '',
-    horaEmision: '',
-
   });
   const [tabActiva, setTabActiva] = useState(() => categoriasVisibles[0]?.id || 'hematologia');
   const [filtro, setFiltro] = useState('');
   const [estado, setEstado] = useState<EstadoInforme>('BORRADOR');
 
   const nombrePaciente = `${pacienteData?.nombres || ''} ${pacienteData?.paterno || ''}`.trim() || 'Paciente sin nombre';
+  const letraSugerida = letraDelDia(historial.filter((i) => i?.fecha === general.fechaExamen).length);
+  const letra = general.letra.trim().toUpperCase() || letraSugerida;
 
   const categoria = CATEGORIAS_LAB.find((c) => c.id === tabActiva)!;
   const valoresCat = valores[tabActiva] || {};
@@ -128,16 +129,23 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
       paciente: nombrePaciente,
       fecha: general.fechaExamen,
       codigoAsegurado: pacienteData?.cod || 'S/M',
+      // Columnas de la hoja dat del Excel
+      emergencia: letra,
+      paterno: pacienteData?.apellidoPaterno || '',
+      materno: pacienteData?.apellidoMaterno || '',
+      nombres: pacienteData?.nombres || '',
+      edad: pacienteData?.edad || '',
+      genero: pacienteData?.genero || '',
+      avc: pacienteData?.codigoAsegurado || '',
+      benef: pacienteData?.codigoBeneficiario || '',
+      consultorio: general.consultorio,
       medico_solicitante: general.medicoDerivante,
       fecha_solicitud: general.fechaSolicitud,
       fecha_muestra: general.fechaMuestra,
-      emergencia: general.emergencia,
-      centro_asistencial: general.centroAsistencial,
-      consultorio: general.consultorio,
-      nro_solicitud: general.nroSolicitud,
-      hora_toma_muestra: general.horaToma,
-      hora_recepcion: general.horaRecepcion,
-      hora_emision: general.horaEmision,
+      telefono: general.telefono,
+      diagnostico: general.diagnostico,
+      muestra: general.muestra,
+      centro_asistencial: UNIDAD_SANITARIA,
       estadoInforme: nuevoEstado,
       observaciones,
     };
@@ -242,7 +250,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
             <button
               type="button"
               onClick={() => imprimirSolicitudExamenCNS({
-                paciente: { ...pacienteData, medico_solicitante: general.medicoDerivante, centro_asistencial: general.centroAsistencial, consultorio: general.consultorio, orden: general.nroSolicitud, fecha: general.fechaExamen },
+                paciente: { ...pacienteData, medico_solicitante: general.medicoDerivante, centro_asistencial: UNIDAD_SANITARIA, consultorio: general.consultorio, fecha: general.fechaExamen },
                 categoriaId: categoria.id,
               })}
               className="px-3 py-2 text-xs font-bold text-[#00bfa5] bg-[#00bfa5]/10 border border-[#00bfa5]/30 rounded-lg hover:bg-[#00bfa5]/20 transition-colors whitespace-nowrap"
@@ -287,32 +295,40 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
             <ClipboardList className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Información General</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Mismas columnas y nombres que la hoja dat del Excel */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className={labelBase}><User className="w-3 h-3" /> Paciente *</label>
-              <div className={`${inputBase} flex items-center text-gray-200 cursor-default`}>{nombrePaciente}</div>
+              <label className={labelBase} title="Letra de orden del paciente en el día (A, B, C…)">Emergencias</label>
+              <input
+                value={general.letra}
+                onChange={(e) => setGen('letra', e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2))}
+                placeholder={letraSugerida}
+                className={`${inputBase} text-center text-lg font-bold text-[#00bfa5] !placeholder-[#00bfa5]`}
+              />
             </div>
-            <div>
-              <label className={labelBase}><FileText className="w-3 h-3" /> Cód. Beneficiario</label>
-              <div className={`${inputBase} flex items-center text-gray-200 cursor-default`}>
-                {pacienteData?.codigoBeneficiario && pacienteData.codigoBeneficiario !== '-' ? pacienteData.codigoBeneficiario : '—'}
+            {[
+              ['Paterno', pacienteData?.apellidoPaterno],
+              ['Materno', pacienteData?.apellidoMaterno],
+              ['Nombres', pacienteData?.nombres],
+              ['Edad', pacienteData?.edad],
+              ['Género', pacienteData?.genero],
+              ['AVC', pacienteData?.codigoAsegurado],
+              ['Benef.', pacienteData?.codigoBeneficiario],
+            ].map(([rotulo, valor]) => (
+              <div key={rotulo}>
+                <label className={labelBase}>{rotulo === 'Paterno' && <User className="w-3 h-3" />}{rotulo}</label>
+                <div className={`${inputBase} flex items-center text-gray-200 cursor-default min-h-[38px]`}>
+                  {valor && valor !== '-' ? valor : '—'}
+                </div>
               </div>
-            </div>
+            ))}
             <div>
-              <label className={labelBase}><Tag className="w-3 h-3" /> Nro. de Solicitud / Recibo Físico</label>
-              <input value={general.nroSolicitud} onChange={(e) => setGen('nroSolicitud', e.target.value)} placeholder="Ej: CQREA-10293" className={inputBase} />
+              <label className={labelBase}><DoorOpen className="w-3 h-3" /> Consultorio</label>
+              <input value={general.consultorio} onChange={(e) => setGen('consultorio', e.target.value.toUpperCase())} placeholder="Ej: 5 o EMERGENCIA" className={inputBase} />
             </div>
             <div>
               <label className={labelBase}><Stethoscope className="w-3 h-3" /> Médico</label>
-              <input value={general.medicoDerivante} onChange={(e) => setGen('medicoDerivante', e.target.value)} placeholder="Dr. Juan Pérez" className={inputBase} />
-            </div>
-            <div>
-              <label className={labelBase}><Building className="w-3 h-3" /> Centro Asistencial</label>
-              <input value={general.centroAsistencial} onChange={(e) => setGen('centroAsistencial', e.target.value)} placeholder="Ej: CNS El Alto" className={inputBase} />
-            </div>
-            <div>
-              <label className={labelBase}><DoorOpen className="w-3 h-3" /> Consultorio</label>
-              <input value={general.consultorio} onChange={(e) => setGen('consultorio', e.target.value)} placeholder="Ej: Consultorio 4" className={inputBase} />
+              <input value={general.medicoDerivante} onChange={(e) => setGen('medicoDerivante', e.target.value.toUpperCase())} placeholder="Clave, ej: B123" className={inputBase} />
             </div>
             <div>
               <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Solicit.</label>
@@ -326,23 +342,17 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Ex.</label>
               <input type="date" value={general.fechaExamen} onChange={(e) => setGen('fechaExamen', e.target.value)} className={inputBase} />
             </div>
-            <div className="flex items-end">
-              <label className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer select-none ${general.emergencia ? 'bg-red-900/40 border-red-500/60 text-red-200' : 'bg-[#050a09] border-[#2a403a] text-gray-300'}`}>
-                <input type="checkbox" checked={general.emergencia} onChange={(e) => setGen('emergencia', e.target.checked)} className="w-4 h-4 accent-red-500" />
-                <span className="text-sm font-bold">EMERGENCIA</span>
-              </label>
+            <div>
+              <label className={labelBase}><Phone className="w-3 h-3" /> Teléfono</label>
+              <input value={general.telefono} onChange={(e) => setGen('telefono', e.target.value)} className={inputBase} />
             </div>
             <div>
-              <label className={labelBase}><Clock className="w-3 h-3" /> Hora Toma de Muestra</label>
-              <input type="time" value={general.horaToma} onChange={(e) => setGen('horaToma', e.target.value)} className={inputBase} />
+              <label className={labelBase}><FileText className="w-3 h-3" /> Diagnóstico</label>
+              <input value={general.diagnostico} onChange={(e) => setGen('diagnostico', e.target.value.toUpperCase())} className={inputBase} />
             </div>
             <div>
-              <label className={labelBase}><Clock className="w-3 h-3" /> Hora Recepción Muestra</label>
-              <input type="time" value={general.horaRecepcion} onChange={(e) => setGen('horaRecepcion', e.target.value)} className={inputBase} />
-            </div>
-            <div>
-              <label className={labelBase}><Clock className="w-3 h-3" /> Hora Emisión Resultados</label>
-              <input type="time" value={general.horaEmision} onChange={(e) => setGen('horaEmision', e.target.value)} className={inputBase} />
+              <label className={labelBase}><FlaskConical className="w-3 h-3" /> Muestra</label>
+              <input value={general.muestra} onChange={(e) => setGen('muestra', e.target.value.toUpperCase())} placeholder="Ej: SANGRE, ORINA" className={inputBase} />
             </div>
           </div>
         </div>

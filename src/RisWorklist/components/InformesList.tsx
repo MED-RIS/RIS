@@ -35,7 +35,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
     const est = estadoDe(inf);
     if (filtro !== 'TODOS' && est !== filtro) return false;
     if (!q) return true;
-    const texto = `${inf?.paciente ?? ''} ${inf?.datos?.medico_solicitante ?? ''} ${inf?.datos?.nro_solicitud ?? ''} ${inf?.cod ?? ''}`.toLowerCase();
+    const texto = `${inf?.paciente ?? ''} ${inf?.datos?.medico_solicitante ?? ''} ${inf?.datos?.avc ?? ''} ${inf?.cod ?? ''}`.toLowerCase();
     return texto.includes(q);
   });
 
@@ -68,7 +68,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por paciente, médico, nro. de solicitud..."
+            placeholder="Buscar por paciente, médico o AVC..."
             className="w-full bg-[#050a09] border border-[#2a403a] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#00bfa5] transition-colors"
           />
         </div>
@@ -95,8 +95,8 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-[#1f332d]">
+                <th className="text-left font-bold px-4 py-3">Emerg.</th>
                 <th className="text-left font-bold px-4 py-3">Paciente</th>
-                <th className="text-left font-bold px-4 py-3">Nro. Solicitud</th>
                 <th className="text-left font-bold px-4 py-3">Médico Derivante</th>
                 <th className="text-left font-bold px-4 py-3">Fecha</th>
                 <th className="text-left font-bold px-4 py-3">Estado</th>
@@ -108,8 +108,8 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
                 const est = estadoDe(inf);
                 return (
                   <tr key={inf.cod ?? idx} className="border-b border-[#1f332d] last:border-0 hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3 font-bold text-[#00bfa5]">{typeof inf?.datos?.emergencia === 'string' && inf.datos.emergencia ? inf.datos.emergencia : '—'}</td>
                     <td className="px-4 py-3 font-bold text-white">{inf.paciente || 'Sin nombre'}</td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{inf?.datos?.nro_solicitud || '—'}</td>
                     <td className="px-4 py-3 text-gray-300">{inf?.datos?.medico_solicitante || '—'}</td>
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs">{inf.fecha || '—'}</td>
                     <td className="px-4 py-3">

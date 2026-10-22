@@ -1,8 +1,24 @@
 // Formulario de pacientes con las columnas del Excel del laboratorio (CNS):
-// EMERGENCIA, PATERNO, MATERNO, NOMBRES, EDAD, GÉNERO, AVC, BENEF., CONSULTORIO,
-// MÉDICO, FECHA SOLICIT., FECHA MUESTRA, FECHA EX. (+ CELULAR).
-// AVC es la matrícula de asegurado; EMERGENCIA, CONSULTORIO, MÉDICO y las fechas son
-// datos de la visita y se guardan en `ultimaAdmision`.
+// PATERNO, MATERNO, NOMBRES, EDAD, GÉNERO, AVC, BENEF., CONSULTORIO, MÉDICO,
+// FECHA SOLICIT., FECHA MUESTRA, FECHA EX. (+ CELULAR).
+// AVC es la matrícula de asegurado; CONSULTORIO, MÉDICO y las fechas son datos de la
+// visita y se guardan en `ultimaAdmision`.
+
+// Unidad sanitaria que sale en los informes (en el Excel es la celda "Centro:" de la hoja dat)
+export const UNIDAD_SANITARIA = 'CIMFA VILLA TUNARI';
+
+// EMERGENCIAS en el Excel no es "es emergencia": es la letra de orden del paciente en el
+// día (A, B, C…) y vuelve a empezar cada día. Las emergencias van en CONSULTORIO.
+export const letraDelDia = (indice: number) => {
+  let n = indice + 1;
+  let s = '';
+  while (n > 0) {
+    n--;
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26);
+  }
+  return s;
+};
 
 export const hoyLocal = () => {
   const d = new Date();
@@ -10,7 +26,6 @@ export const hoyLocal = () => {
 };
 
 export const admisionVacia = () => ({
-  emergencia: false,
   consultorio: '',
   medico: '',
   fechaSolicitud: '',

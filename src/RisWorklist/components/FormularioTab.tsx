@@ -159,6 +159,12 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     cod: pt.patientId || pt._id,
     nombres: pt.firstName,
     paterno: pt.lastName,
+    // Columnas del Excel por separado (los registros viejos solo tienen lastName)
+    apellidoPaterno: (pt as any).apellidoPaterno ?? String(pt.lastName || '').trim().split(/\s+/)[0] ?? '',
+    apellidoMaterno: (pt as any).apellidoMaterno ?? String(pt.lastName || '').trim().split(/\s+/).slice(1).join(' '),
+    genero: pt.gender === 'F' || pt.gender === 'M' ? pt.gender : '',
+    telefono: (pt as any).phone || '',
+    admision: (pt as any).ultimaAdmision,
     // Las columnas del Excel traen EDAD directamente (sin fecha de nacimiento)
     edad: (pt as any).edad != null && (pt as any).edad !== '' ? String((pt as any).edad) : calcularEdadAnios(pt.dateOfBirth),
     id_paciente: pt._id,
@@ -729,6 +735,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             soloExamenes={soloExamenes?.ids}
             nombresExamenes={soloExamenes?.nombres}
             admision={soloExamenes?.admision}
+            historial={historialSimulado}
           />
         )}
       </div>

@@ -285,12 +285,8 @@ export default function PatientsTab({
             const rotulo = 'block text-gray-400 mb-1 font-bold';
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 text-xs">
-                <div className="col-span-full border-b border-secondary-dark pb-1 flex items-center justify-between">
+                <div className="col-span-full border-b border-secondary-dark pb-1">
                   <span className="text-xs text-gray-400 font-medium">📋 Datos del paciente</span>
-                  <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none ${adm.emergencia ? 'bg-red-900/40 border-red-500/60 text-red-200' : 'bg-black border-secondary-dark text-gray-300'}`}>
-                    <input type="checkbox" checked={!!adm.emergencia} onChange={(e) => setAdm('emergencia', e.target.checked)} className="w-4 h-4 accent-red-500" />
-                    <span className="font-bold">EMERGENCIA</span>
-                  </label>
                 </div>
 
                 <div>
