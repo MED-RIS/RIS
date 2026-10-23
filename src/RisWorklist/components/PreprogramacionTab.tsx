@@ -64,7 +64,19 @@ const nombreDe = (f: any) => f.nombreCompleto || [f.paterno, f.materno, f.nombre
 const ddmmaaaa = (s?: string) => (s ? s.split('-').reverse().join('/') : '');
 const ddmm = (v?: string) => (v ? new Date(v).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit' }) : '');
 
-const VACIO = { fechaExamen: '', nombreCompleto: '', matricula: '', celular: '', examenes: [] as string[] };
+const VACIO = { fechaExamen: '', nombreCompleto: '', matricula: '', celular: '', examenes: [] as string[], emergencia: false };
+
+// Para comparar nombres sin que molesten espacios de más ni minúsculas
+const normalizar = (s: any) => String(s || '').trim().replace(/\s+/g, ' ').toUpperCase();
+
+type Filtro = 'TODOS' | 'PROGRAMADO' | 'ASISTIO' | 'NO_VINO' | 'EMERGENCIA';
+const FILTROS: { id: Filtro; texto: string }[] = [
+  { id: 'TODOS', texto: 'Todos' },
+  { id: 'PROGRAMADO', texto: 'Por llegar' },
+  { id: 'ASISTIO', texto: 'Llegaron' },
+  { id: 'NO_VINO', texto: 'No vinieron' },
+  { id: 'EMERGENCIA', texto: 'Emergencias' },
+];
 
 const campo =
   'w-full p-2.5 rounded-lg bg-black/60 border border-white/10 text-white text-sm outline-none focus:border-primary-light/70 placeholder:text-gray-600';
@@ -80,6 +92,7 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
   const [cargando, setCargando] = useState(false);
   const [form, setForm] = useState<any>(null); // null = cerrado; { ...datos, _id? }
   const [guardando, setGuardando] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>('TODOS');
 
   const dias = useMemo(
     () =>
@@ -121,7 +134,14 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     llegaron: delDia.filter(f => f.estado === 'ASISTIO').length,
     noVinieron: delDia.filter(f => f.estado === 'NO_VINO').length,
     entregados: delDia.filter(f => f.entregado).length,
+    emergencias: delDia.filter(f => f.emergencia).length,
   };
+  // La planilla filtrada (para atender según llegada); el N.º sigue siendo el del día
+  const visibles = delDia.filter(f =>
+    filtro === 'TODOS' ? true : filtro === 'EMERGENCIA' ? f.emergencia : f.estado === filtro
+  );
+  const cuantos = (id: Filtro) =>
+    id === 'TODOS' ? delDia.length : id === 'EMERGENCIA' ? resumen.emergencias : delDia.filter(f => f.estado === id).length;
 
   const moverSemana = (n: number) => {
     const s = new Date(semana);
@@ -167,18 +187,31 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     if (!form.matricula.trim()) return toast.warning('Falta MATRÍCULA');
     if (!form.celular.trim()) return toast.warning('Falta CELULAR');
     if (!form.examenes.length) return toast.warning('Marque al menos un examen');
+    // Validador de duplicados: el mismo paciente (matrícula y nombre) el mismo día.
+    // El servidor también lo controla; esto avisa antes con lo que ya está en pantalla.
+    const repetida = filas.find(
+      x =>
+        x._id !== form._id &&
+        x.fechaExamen === form.fechaExamen &&
+        normalizar(x.matricula) === normalizar(form.matricula) &&
+        normalizar(nombreDe(x)) === normalizar(form.nombreCompleto)
+    );
+    if (repetida) {
+      return toast.error(`${nombreDe(repetida)} ya está programado para el ${ddmmaaaa(form.fechaExamen)}${repetida.creadoPor ? ` (lo anotó ${repetida.creadoPor})` : ''}`);
+    }
     setGuardando(true);
     try {
-      const { _id, fechaExamen, nombreCompleto, matricula, celular, examenes } = form;
-      const datos = { fechaExamen, nombreCompleto, matricula, celular, examenes };
-      if (_id) await updatePreprogramacion(_id, datos);
-      else await createPreprogramacion(datos);
+      const { _id, fechaExamen, nombreCompleto, matricula, celular, examenes, emergencia } = form;
+      const datos = { fechaExamen, nombreCompleto, matricula, celular, examenes, emergencia: !!emergencia };
+      const guardada = _id ? await updatePreprogramacion(_id, datos) : await createPreprogramacion(datos);
       toast.success(_id ? 'Preprogramación actualizada' : `Programado para el ${ddmmaaaa(fechaExamen)}`);
       if (fechaExamen !== dia) setDia(fechaExamen);
       const lunes = lunesDe(deDia(fechaExamen));
       if (lunes.getTime() !== semana.getTime()) setSemana(lunes);
       setForm(null);
       cargar();
+      // EMERGENCIA nueva: vino hoy con su boleta, se pasa directo a su registro
+      if (!_id && emergencia && guardada?._id) cambiarEstado(guardada, 'ASISTIO');
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -225,7 +258,7 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     const cuerpo = delDia
       .filter(f => f.estado !== 'NO_VINO')
       .map(
-        (f, i) => `<tr><td>${i + 1}</td><td class="n">${esc(nombreDe(f))}</td><td>${esc(f.matricula)}</td><td>${esc(f.celular)}</td>
+        (f, i) => `<tr><td>${i + 1}</td><td class="n">${esc(nombreDe(f))}${f.emergencia ? ' <b>(EMERGENCIA)</b>' : ''}</td><td>${esc(f.matricula)}</td><td>${esc(f.celular)}</td>
           ${TODOS.map(e => `<td class="c">${f.examenes.includes(e.id) ? '✓' : ''}</td>`).join('')}
           <td>${f.entregado ? `Entregado ${esc(ddmm(f.entregadoEl))}` : ''}</td></tr>`
       )
@@ -326,6 +359,9 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             <div><span className="text-2xl font-bold text-emerald-300">{resumen.llegaron}</span> <span className="text-gray-400">llegaron</span></div>
             <div><span className="text-2xl font-bold text-red-300">{resumen.noVinieron}</span> <span className="text-gray-400">no vinieron</span></div>
             <div><span className="text-2xl font-bold text-amber-300">{resumen.entregados}</span> <span className="text-gray-400">entregados</span></div>
+            {resumen.emergencias > 0 && (
+              <div><span className="text-2xl font-bold text-red-400">{resumen.emergencias}</span> <span className="text-gray-400">emergencias</span></div>
+            )}
           </div>
         </div>
         <div className="lg:col-span-2 bg-plom-main border border-white/10 rounded-2xl p-4">
@@ -342,6 +378,25 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             )}
           </div>
         </div>
+      </div>
+
+      {/* Atender según llegada: ver solo los que faltan, los que llegaron, etc. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {FILTROS.map(x => (
+          <button
+            key={x.id}
+            onClick={() => setFiltro(x.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+              filtro === x.id
+                ? x.id === 'EMERGENCIA'
+                  ? 'bg-red-600/30 border-red-500/60 text-red-200'
+                  : 'bg-primary-main border-primary-light/60 text-white'
+                : 'bg-black/40 border-white/10 text-gray-400 hover:text-white'
+            }`}
+          >
+            {x.texto} <span className="ml-1 opacity-70">{cuantos(x.id)}</span>
+          </button>
+        ))}
       </div>
 
       {/* Planilla del día: mismas columnas que la hoja de papel */}
@@ -369,6 +424,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                 )}
                 <th rowSpan={2} className={th}>Firma entrega</th>
                 <th rowSpan={2} className={th}>Estado</th>
+                <th rowSpan={2} className={th}>Programó</th>
                 <th rowSpan={2} className={th}></th>
               </tr>
               <tr>
@@ -384,12 +440,17 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             <tbody>
               {cargando && !filas.length ? (
                 <tr><td colSpan={20} className="p-8 text-center text-gray-500">Cargando…</td></tr>
-              ) : delDia.length === 0 ? (
-                <tr><td colSpan={20} className="p-8 text-center text-gray-500">No hay pacientes programados para este día.</td></tr>
+              ) : visibles.length === 0 ? (
+                <tr><td colSpan={20} className="p-8 text-center text-gray-500">
+                  {delDia.length === 0 ? 'No hay pacientes programados para este día.' : 'Ningún paciente en este filtro.'}
+                </td></tr>
               ) : (
-                delDia.map((f, i) => (
-                  <tr key={f._id} className={`border-t border-white/5 hover:bg-white/[.03] ${f.estado === 'NO_VINO' ? 'opacity-40' : ''}`}>
-                    <td className="px-2 py-2 text-gray-400">{i + 1}</td>
+                visibles.map(f => (
+                  <tr
+                    key={f._id}
+                    className={`border-t border-white/5 hover:bg-white/[.03] ${f.emergencia ? 'bg-red-900/25 shadow-[inset_3px_0_0_#ef4444]' : ''} ${f.estado === 'NO_VINO' ? 'opacity-40' : ''}`}
+                  >
+                    <td className="px-2 py-2 text-gray-400">{delDia.indexOf(f) + 1}</td>
                     <td className="px-2 py-2 whitespace-nowrap">
                       <button
                         onClick={() => cambiarEstado(f, 'ASISTIO')}
@@ -398,6 +459,9 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                       >
                         {nombreDe(f)}
                       </button>
+                      {f.emergencia && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold tracking-wider align-middle">EMERGENCIA</span>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-gray-300 font-mono text-xs whitespace-nowrap">{f.matricula}</td>
                     <td className="px-2 py-2 text-gray-300 whitespace-nowrap">{f.celular}</td>
@@ -413,6 +477,12 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded-full text-[11px] font-bold border ${ESTADOS[f.estado]?.clase}`}>{ESTADOS[f.estado]?.texto}</span>
+                    </td>
+                    <td
+                      className="px-2 py-2 text-xs text-gray-400 whitespace-nowrap max-w-[140px] truncate"
+                      title={f.creadoPor ? `${f.creadoPor} · ${new Date(f.createdAt).toLocaleString('es-BO')}` : ''}
+                    >
+                      {f.creadoPor || '—'}
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1 justify-end">
@@ -464,6 +534,21 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             </div>
 
             <div className="p-6 space-y-5">
+              {/* EMERGENCIA: vino hoy con su boleta; se registra y se atiende en el día */}
+              <button
+                type="button"
+                onClick={() => setForm((p: any) => ({ ...p, emergencia: !p.emergencia, ...(!p.emergencia ? { fechaExamen: hoy } : {}) }))}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
+                  form.emergencia ? 'bg-red-900/40 border-red-500/60' : 'bg-black/30 border-white/10 hover:border-red-500/40'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-bold ${form.emergencia ? 'bg-red-600 border-red-500 text-white' : 'border-white/30 text-transparent'}`}>✓</span>
+                <span>
+                  <span className={`block text-sm font-bold ${form.emergencia ? 'text-red-200' : 'text-gray-200'}`}>EMERGENCIA</span>
+                  <span className="block text-xs text-gray-400">Vino hoy con su boleta: queda marcado en rojo y se pasa directo a su registro</span>
+                </span>
+              </button>
+
               <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
                 <div className="col-span-2 md:col-span-3">
                   <label className={rotulo}>Fecha (día del examen) *</label>
