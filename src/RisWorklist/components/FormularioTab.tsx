@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FileDown, X, Clipboard, Calendar, FolderOpen, Layers, Pencil } from 'lucide-react';
+import { FileDown, X, Clipboard, Calendar, FolderOpen, Layers, Pencil, Trash2 } from 'lucide-react';
 import { Patient } from '../types';
 import InformesList from './InformesList';
 import SelectorPaciente from './SelectorPaciente';
 import EditarReporteModal from './EditarReporteModal';
 import EditorLaboratorio from './EditorLaboratorio';
+import { hoyLocal } from '../pacienteExcel';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
@@ -19,7 +20,10 @@ import { imprimirHtoHbLeucoWidalCNS } from '../reports/ReporteHtoHbLeucoWidal';
 import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
 import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
 import { imprimirCategoriaCNS } from '../reports/ReporteCatalogo';
-import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA } from '../laboratorio/catalogoLaboratorio';
+import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA, CATEGORIAS_LAB } from '../laboratorio/catalogoLaboratorio';
+
+// "Lab_Hemato" -> "Hematología" (para los avisos)
+const nombreEstudio = (tipo: string) => CATEGORIAS_LAB.find((c) => c.storage.tipoLab === tipo)?.label || tipo;
 
 const claves = (params: { key: string; bagOverride?: string }[]) => params.filter((p) => !p.bagOverride).map((p) => p.key);
 
@@ -59,6 +63,8 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
 
   // Último informe del paciente elegido (para precargar el editor en un control repetido).
   const [informePrevio, setInformePrevio] = useState<any>(null);
+  // Informe de este paciente para el día que se abre (si ya existe se edita ese, no se crea otro)
+  const [informeExistente, setInformeExistente] = useState<any>(null);
 
   // Modelo apilado: cada entrada de historialSimulado es UN informe (una visita), no un
   // paciente. Migración suave: a los registros viejos (sin `id`) se les asigna uno.
@@ -78,9 +84,64 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
 
 
   const guardarEnRisServer = async (nuevoDocumento: any) => {
-    alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
-    
     const matriculaActual = pacienteSeleccionado?.cod || "S/M";
+
+    // Se estaba editando un informe que ya existía: se actualiza ese mismo
+    if (nuevoDocumento?.idInforme) {
+      const { idInforme, ...doc } = nuevoDocumento;
+      const sueltos = doc?.hematoDatos || doc?.datos || {};
+      const actualizado = historialSimulado.map((inf) =>
+        inf.id === idInforme
+          ? {
+              ...inf,
+              estado: doc.estadoInforme || inf.estado,
+              estudiosRealizados: Array.isArray(doc.estudiosRealizados) && doc.estudiosRealizados.length ? doc.estudiosRealizados : inf.estudiosRealizados,
+              datos: { ...doc, ...sueltos, orden: inf.orden },
+            }
+          : inf
+      );
+      setHistorialSimulado(actualizado);
+      localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+      alert('Informe actualizado.');
+      reiniciarModulo();
+      return;
+    }
+
+    // El mismo examen del mismo paciente el mismo día no se duplica: se actualiza el que ya existe
+    const fechaNueva = nuevoDocumento?.fecha || new Date().toLocaleDateString();
+    const estudiosDoc: string[] = Array.isArray(nuevoDocumento?.estudiosRealizados) && nuevoDocumento.estudiosRealizados.length
+      ? nuevoDocumento.estudiosRealizados
+      : [nuevoDocumento?.tipoLaboratorio || "Lab_Hemato"];
+    const existente = historialSimulado.find(
+      (inf) => inf.cod === matriculaActual && inf.fecha === fechaNueva &&
+        (inf.estudiosRealizados || []).some((e: string) => estudiosDoc.includes(e))
+    );
+    if (existente) {
+      const repetidos = estudiosDoc.filter((e) => (existente.estudiosRealizados || []).includes(e)).map(nombreEstudio).join(', ');
+      if (existente.estado === 'FIRMADO') {
+        alert(`Este paciente ya tiene ${repetidos} del ${fechaNueva} y está FIRMADO. No se crea otro informe.`);
+        return;
+      }
+      if (!window.confirm(`Este paciente ya tiene ${repetidos} del ${fechaNueva}.\n\nNo se puede crear otro igual. ¿Reemplazar los valores de ese informe con los que acaba de llenar?`)) return;
+      const datosSueltos = nuevoDocumento?.hematoDatos || nuevoDocumento?.datos || {};
+      const actualizado = historialSimulado.map((inf) =>
+        inf.id === existente.id
+          ? {
+              ...inf,
+              estado: nuevoDocumento?.estadoInforme || inf.estado,
+              estudiosRealizados: [...new Set([...(inf.estudiosRealizados || []), ...estudiosDoc])],
+              datos: { ...inf.datos, ...nuevoDocumento, ...datosSueltos, orden: inf.orden },
+            }
+          : inf
+      );
+      setHistorialSimulado(actualizado);
+      localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+      alert('Informe actualizado (no se creó uno nuevo).');
+      reiniciarModulo();
+      return;
+    }
+
+    alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
     const idPaciente = pacienteSeleccionado?.id || pacienteSeleccionado?.id_paciente || pacienteSeleccionado?.cod || "S/M";
     const nombreCompleto = `${pacienteSeleccionado?.nombres || ''} ${pacienteSeleccionado?.paterno || ''}`.trim();
  
@@ -140,6 +201,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     setVista('lista');
     setPacienteSeleccionado(null);
     setSoloExamenes(null);
+    setInformeExistente(null);
     setResetKey(prev => prev + 1);
   };
 
@@ -174,18 +236,30 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   });
 
   // Nuevo Informe: se eligió un paciente existente → abrir el editor para él.
-  const seleccionarPaciente = (pt: Patient) => {
+  const seleccionarPaciente = (pt: Patient, fecha: string = hoyLocal()): boolean => {
     const paciente = mapPacienteAInforme(pt);
+    // ¿Ya tiene informe este día? Se abre ese (con sus valores), no uno nuevo
+    const delDia = historialSimulado.find((inf) => inf.cod === paciente.cod && inf.fecha === fecha);
+    if (delDia?.estado === 'FIRMADO') {
+      alert(`Este paciente ya tiene un informe FIRMADO del ${fecha}. Se abre para verlo; un informe firmado no se modifica.`);
+      abrirInforme(delDia);
+      return false;
+    }
     setPacienteSeleccionado(paciente);
+    setInformeExistente(delDia || null);
     // Último informe de este paciente (por matrícula) para ofrecer precarga en un control repetido.
     const previos = historialSimulado.filter((inf) => inf.cod === paciente.cod);
-    setInformePrevio(previos[0] || null); // el historial está "más nuevo primero"
+    setInformePrevio(delDia ? null : previos[0] || null); // el historial está "más nuevo primero"
     setVista('editor');
+    return true;
   };
 
   useEffect(() => {
     if (!pendiente?.paciente) return;
-    seleccionarPaciente(pendiente.paciente);
+    if (!seleccionarPaciente(pendiente.paciente, pendiente.admision?.fechaExamen || hoyLocal())) {
+      onPendienteAtendido?.();
+      return;
+    }
     setSoloExamenes({ ids: pendiente.examenes || [], nombres: pendiente.nombres || [], admision: pendiente.admision });
     setResetKey((prev) => prev + 1);
     onPendienteAtendido?.();
@@ -235,6 +309,16 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       <Pencil className="w-3.5 h-3.5" /> Editar
     </button>
   );
+
+  const eliminarInforme = (inf: any) => {
+    if (inf.estado === 'FIRMADO') return alert('Un informe FIRMADO no se puede eliminar.');
+    const estudios = (inf.estudiosRealizados || []).map(nombreEstudio).join(', ') || 'sin estudios';
+    if (!window.confirm(`¿Eliminar el informe del ${inf.fecha} (${estudios}) de ${inf.paciente}?`)) return;
+    const resto = historialSimulado.filter((i) => i.id !== inf.id);
+    setHistorialSimulado(resto);
+    localStorage.setItem('ris_historial_cns', JSON.stringify(resto));
+    setPacienteFichaActiva(resto.find((i) => i.cod === inf.cod) || null);
+  };
 
   // Persiste la edición del reporte: reemplaza `datos` del INFORME puntual (por id),
   // guarda en localStorage y refresca la ficha activa para que las cards se re-evalúen.
@@ -308,10 +392,20 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-bold text-sm truncate">{inf.fecha}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5 font-mono">
-                              {(inf.estudiosRealizados?.length || 0)} estudio(s) · {inf.estado}
+                            <div className="text-[11px] text-gray-400 mt-0.5 font-mono truncate">
+                              {(inf.estudiosRealizados || []).map(nombreEstudio).join(', ') || 'Sin estudios'} · {inf.estado}
                             </div>
                           </div>
+                          {!soloLectura && inf.estado !== 'FIRMADO' && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); eliminarInforme(inf); }}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10"
+                              title="Eliminar este informe"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))
@@ -736,6 +830,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             nombresExamenes={soloExamenes?.nombres}
             admision={soloExamenes?.admision}
             historial={historialSimulado}
+            informeExistente={informeExistente}
           />
         )}
       </div>

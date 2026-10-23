@@ -23,7 +23,20 @@ interface EditorLaboratorioProps {
   admision?: any;
   // Informes ya guardados: con ellos se saca la letra EMERGENCIAS del día (A, B, C…)
   historial?: any[];
+  // Informe de este paciente para este día que ya existe: se abre con sus valores para
+  // corregirlo o completarlo, en vez de crear otro (evita duplicados)
+  informeExistente?: any;
 }
+
+// Quién está usando el sistema (para el historial de correcciones)
+const usuarioActual = () => {
+  try {
+    const s = JSON.parse(localStorage.getItem('usuario') || 'null');
+    return s?.user?.nombre || s?.user?.correo || 'Usuario';
+  } catch {
+    return 'Usuario';
+  }
+};
 
 // Calcula el flag ESTADO (H alto / L bajo / N normal) solo cuando el parámetro tiene
 // min/max numéricos. Rangos por sexo o de texto devuelven null (columna "—").
@@ -69,33 +82,37 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
   return out;
 };
 
-export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [] }: EditorLaboratorioProps) {
+export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [], informeExistente }: EditorLaboratorioProps) {
   const admision = admisionProp || pacienteData?.admision;
+  const previo = informeExistente?.datos;
   const permitidos = useMemo(() => parametrosDeExamenes(soloExamenes || []), [soloExamenes]);
   const filtrado = Object.keys(permitidos).length > 0;
   const categoriasVisibles = CATEGORIAS_LAB.filter((c) => !filtrado || permitidos[c.id]);
   const totalCategoria = (catId: string) => (filtrado ? permitidos[catId]?.size || 0 : CATEGORIAS_LAB.find((c) => c.id === catId)?.total || 0);
   // Valores por categoría: { [categoriaId]: { [paramKey]: valor } }.
-  const [valores, setValores] = useState<Record<string, Record<string, string>>>({});
-  const [observaciones, setObservaciones] = useState('');
+  const [valores, setValores] = useState<Record<string, Record<string, string>>>(() => (previo ? hidratarValores(previo) : {}));
+  const [observaciones, setObservaciones] = useState(previo?.observaciones || '');
   const [general, setGeneral] = useState({
-    letra: '', // vacío = la que toca en el día
-    medicoDerivante: admision?.medico || '',
-    consultorio: admision?.consultorio || '',
-    telefono: pacienteData?.telefono || '',
-    diagnostico: '',
-    muestra: '',
+    letra: typeof previo?.emergencia === 'string' ? previo.emergencia : '', // vacío = la que toca en el día
+    medicoDerivante: previo?.medico_solicitante ?? admision?.medico ?? '',
+    consultorio: previo?.consultorio ?? admision?.consultorio ?? '',
+    telefono: previo?.telefono ?? pacienteData?.telefono ?? '',
+    diagnostico: previo?.diagnostico || '',
+    muestra: previo?.muestra || '',
     // Fecha local: con toISOString a la noche de Bolivia ya salía el día siguiente
-    fechaExamen: admision?.fechaExamen || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
-    fechaSolicitud: admision?.fechaSolicitud || '',
-    fechaMuestra: admision?.fechaMuestra || '',
+    fechaExamen: informeExistente?.fecha || admision?.fechaExamen || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
+    fechaSolicitud: previo?.fecha_solicitud ?? admision?.fechaSolicitud ?? '',
+    fechaMuestra: previo?.fecha_muestra ?? admision?.fechaMuestra ?? '',
   });
   const [tabActiva, setTabActiva] = useState(() => categoriasVisibles[0]?.id || 'hematologia');
   const [filtro, setFiltro] = useState('');
-  const [estado, setEstado] = useState<EstadoInforme>('BORRADOR');
+  const [estado, setEstado] = useState<EstadoInforme>(() =>
+    ['BORRADOR', 'COMPLETADO', 'FIRMADO'].includes(informeExistente?.estado) ? informeExistente.estado : 'BORRADOR'
+  );
+  const correccionesPrevias: any[] = previo?.correcciones || [];
 
   const nombrePaciente = `${pacienteData?.nombres || ''} ${pacienteData?.paterno || ''}`.trim() || 'Paciente sin nombre';
-  const letraSugerida = letraDelDia(historial.filter((i) => i?.fecha === general.fechaExamen).length);
+  const letraSugerida = letraDelDia(historial.filter((i) => i?.fecha === general.fechaExamen && i?.id !== informeExistente?.id).length);
   const letra = general.letra.trim().toUpperCase() || letraSugerida;
 
   const categoria = CATEGORIAS_LAB.find((c) => c.id === tabActiva)!;
@@ -119,6 +136,33 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     if (!hayResultados) {
       alert('Ingrese al menos un resultado de laboratorio antes de guardar.');
       return;
+    }
+
+    // Corrección de valores ya registrados (error al copiar la boleta, por ejemplo):
+    // se muestra qué cambia, se pide el motivo y queda en el historial del informe
+    let correcciones = correccionesPrevias;
+    if (informeExistente) {
+      const antes = hidratarValores(previo);
+      const cambios: { campo: string; antes: string; despues: string }[] = [];
+      for (const cat of CATEGORIAS_LAB) {
+        for (const p of cat.catalogo) {
+          const a = String(antes[cat.id]?.[p.key] ?? '').trim();
+          const d = String(valores[cat.id]?.[p.key] ?? '').trim();
+          if (a !== '' && a !== d) cambios.push({ campo: p.label, antes: a, despues: d || '(vacío)' });
+        }
+      }
+      if (cambios.length) {
+        const lista = cambios.map((c) => `• ${c.campo}: ${c.antes} → ${c.despues}`).join('\n');
+        const motivo = window.prompt(
+          `Está corrigiendo ${cambios.length} valor(es) ya registrado(s):\n${lista}\n\nEscriba el motivo de la corrección (queda registrado con su nombre):`
+        );
+        if (motivo === null) return;
+        if (!motivo.trim()) {
+          alert('Para corregir valores ya registrados hay que escribir el motivo.');
+          return;
+        }
+        correcciones = [...correcciones, { fecha: new Date().toISOString(), usuario: usuarioActual(), motivo: motivo.trim(), cambios }];
+      }
     }
 
     setEstado(nuevoEstado);
@@ -148,6 +192,8 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
       centro_asistencial: UNIDAD_SANITARIA,
       estadoInforme: nuevoEstado,
       observaciones,
+      idInforme: informeExistente?.id,
+      correcciones,
     };
 
     const estudios = new Set<string>();
@@ -242,7 +288,7 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-base font-bold text-white">Crear Informe de Laboratorio</h2>
+              <h2 className="text-base font-bold text-white">{informeExistente ? 'Editar Informe de Laboratorio' : 'Crear Informe de Laboratorio'}</h2>
               <p className="text-xs text-gray-500 mt-0.5">Llene los datos del paciente y resultados analíticos</p>
             </div>
           </div>
@@ -267,8 +313,33 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
           </div>
         </div>
 
+        {/* Informe ya registrado este día: se corrige o completa este, no se crea otro */}
+        {informeExistente && (
+          <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-4 mb-5 text-sm">
+            <div className="text-amber-200 font-bold">
+              Este paciente ya tiene un informe del {informeExistente.fecha}: se muestran los valores guardados.
+            </div>
+            <div className="text-gray-400 text-xs mt-1">
+              Puede completar lo que falta. Si cambia un valor ya registrado, se le pedirá el motivo y la corrección queda registrada.
+            </div>
+            {correccionesPrevias.length > 0 && (
+              <details className="mt-2 text-xs text-gray-300">
+                <summary className="cursor-pointer text-amber-300">{correccionesPrevias.length} corrección(es) registradas</summary>
+                <ul className="mt-2 space-y-1">
+                  {correccionesPrevias.map((c: any, i: number) => (
+                    <li key={i}>
+                      <b>{new Date(c.fecha).toLocaleString('es-BO')}</b> · {c.usuario} · {c.motivo}:{' '}
+                      {c.cambios.map((x: any) => `${x.campo} ${x.antes} → ${x.despues}`).join('; ')}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
+
         {/* Precarga de control repetido: reutiliza el último informe del paciente */}
-        {informePrevio && (
+        {informePrevio && !informeExistente && (
           <div className="bg-[#00bfa5]/5 border border-[#00bfa5]/25 rounded-xl p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               <ListChecks className="w-4 h-4 text-[#00bfa5]" />
