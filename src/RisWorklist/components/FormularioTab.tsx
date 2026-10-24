@@ -65,6 +65,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   const [informePrevio, setInformePrevio] = useState<any>(null);
   // Informe de este paciente para el día que se abre (si ya existe se edita ese, no se crea otro)
   const [informeExistente, setInformeExistente] = useState<any>(null);
+  const [categoriaInicial, setCategoriaInicial] = useState<string | undefined>(undefined);
 
   // Modelo apilado: cada entrada de historialSimulado es UN informe (una visita), no un
   // paciente. Migración suave: a los registros viejos (sin `id`) se les asigna uno.
@@ -96,7 +97,15 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
               ...inf,
               estado: doc.estadoInforme || inf.estado,
               estudiosRealizados: Array.isArray(doc.estudiosRealizados) && doc.estudiosRealizados.length ? doc.estudiosRealizados : inf.estudiosRealizados,
-              datos: { ...doc, ...sueltos, orden: inf.orden },
+              datos: (() => {
+                const datos: any = { ...inf.datos };
+                for (const [k, v] of Object.entries({ ...doc, ...sueltos })) {
+                  datos[k] = v && typeof v === 'object' && !Array.isArray(v) && datos[k] && typeof datos[k] === 'object'
+                    ? { ...datos[k], ...(v as any) }
+                    : v;
+                }
+                return { ...datos, orden: inf.orden };
+              })(),
             }
           : inf
       );
@@ -202,6 +211,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     setPacienteSeleccionado(null);
     setSoloExamenes(null);
     setInformeExistente(null);
+    setCategoriaInicial(undefined);
     setResetKey(prev => prev + 1);
   };
 
@@ -299,10 +309,55 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     !!obj && campos.some((c) => tieneValor(obj[c]));
 
   // Botón "Editar" uniforme para las cards de reporte. Oculto en modo solo-lectura.
+  // Editar abre el MISMO editor con el que se llena (columnas del Excel), con los valores
+  // guardados, para que no haya dos formatos distintos
+  const PESTANA_DE_REPORTE: Record<string, string> = {
+    hematologia: 'hematologia', grupo_sanguineo: 'hematologia', coagulograma: 'hematologia', hto_hb: 'hematologia',
+    hto_hb_widal: 'hematologia', quimica: 'quimica', electrolitos: 'quimica', serologia: 'serologia', ego: 'ego',
+    tolerancia_glucosa: 'glucosa', liquidos: 'liquidos', urologia: 'urologia', bacteriologia: 'bacteriologia', patologia: 'patologia',
+  };
+  const editarEnEditor = (informe: any, idReporte: string) => {
+    if (!informe) return;
+    if (informe.estado === 'FIRMADO') {
+      alert('Este informe está FIRMADO: no se puede modificar.');
+      return;
+    }
+    // El formato del Excel no tiene campos para este estudio: se usa el formulario anterior
+    if (!PESTANA_DE_REPORTE[idReporte]) {
+      setReporteEnEdicion({ id: idReporte, paciente: informe });
+      return;
+    }
+    const pt = patients.find((p) =>
+      p._id === informe.id_paciente || (informe.cod && (p.patientId === informe.cod || p.documentId === informe.cod))
+    );
+    // Sin el paciente en la lista: se usan los datos guardados en el propio informe
+    const d = informe.datos || {};
+    const [nombres, ...apellidos] = String(informe.paciente || '').split(' ');
+    setPacienteSeleccionado(pt ? mapPacienteAInforme(pt) : {
+      cod: informe.cod,
+      nombres: d.nombres || nombres,
+      paterno: [d.paterno, d.materno].filter(Boolean).join(' ') || apellidos.join(' '),
+      apellidoPaterno: d.paterno || '',
+      apellidoMaterno: d.materno || '',
+      edad: d.edad || informe.edad,
+      genero: d.genero || '',
+      codigoBeneficiario: d.benef || informe.codigoBeneficiario,
+      codigoAsegurado: d.avc || informe.codigoAsegurado,
+    });
+    setInformeExistente(informe);
+    setInformePrevio(null);
+    setSoloExamenes(null);
+    setCategoriaInicial(PESTANA_DE_REPORTE[idReporte]);
+    setVerReportesGlobal(false);
+    setPacienteFichaActiva(null);
+    setVista('editor');
+    setResetKey((prev) => prev + 1);
+  };
+
   const botonEditar = (idReporte: string) => soloLectura ? null : (
     <button
       type="button"
-      onClick={() => setReporteEnEdicion({ id: idReporte, paciente: pacienteFichaActiva })}
+      onClick={() => editarEnEditor(pacienteFichaActiva, idReporte)}
       className="flex items-center justify-center gap-1 px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 rounded-lg text-xs font-bold transition-colors"
       title="Editar reporte"
     >
@@ -831,6 +886,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             admision={soloExamenes?.admision}
             historial={historialSimulado}
             informeExistente={informeExistente}
+            categoriaInicial={categoriaInicial}
           />
         )}
       </div>

@@ -26,6 +26,8 @@ interface EditorLaboratorioProps {
   // Informe de este paciente para este día que ya existe: se abre con sus valores para
   // corregirlo o completarlo, en vez de crear otro (evita duplicados)
   informeExistente?: any;
+  // Pestaña con la que se abre (al editar desde la tarjeta de un estudio)
+  categoriaInicial?: string;
 }
 
 // Quién está usando el sistema (para el historial de correcciones)
@@ -82,7 +84,7 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
   return out;
 };
 
-export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [], informeExistente }: EditorLaboratorioProps) {
+export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [], informeExistente, categoriaInicial }: EditorLaboratorioProps) {
   const admision = admisionProp || pacienteData?.admision;
   const previo = informeExistente?.datos;
   const permitidos = useMemo(() => parametrosDeExamenes(soloExamenes || []), [soloExamenes]);
@@ -104,7 +106,9 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     fechaSolicitud: previo?.fecha_solicitud ?? admision?.fechaSolicitud ?? '',
     fechaMuestra: previo?.fecha_muestra ?? admision?.fechaMuestra ?? '',
   });
-  const [tabActiva, setTabActiva] = useState(() => categoriasVisibles[0]?.id || 'hematologia');
+  const [tabActiva, setTabActiva] = useState(() =>
+    categoriasVisibles.some((c) => c.id === categoriaInicial) ? (categoriaInicial as string) : categoriasVisibles[0]?.id || 'hematologia'
+  );
   const [filtro, setFiltro] = useState('');
   const [estado, setEstado] = useState<EstadoInforme>(() =>
     ['BORRADOR', 'COMPLETADO', 'FIRMADO'].includes(informeExistente?.estado) ? informeExistente.estado : 'BORRADOR'
