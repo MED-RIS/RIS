@@ -67,11 +67,17 @@ export default function PatientsTab({
 
   const handleQrDecoded = (raw: string) => {
     setIsQrScannerOpen(false);
-    const { fields, recognized } = parseBoletaQr(raw);
+    const { fields, visita, recognized } = parseBoletaQr(raw);
     setQrRawText(raw);
     setQrRecognized(recognized);
-    if (Object.keys(fields).length > 0) {
-      const merged = { ...newPatient, ...fields };
+    if (Object.keys(fields).length > 0 || Object.keys(visita).length > 0) {
+      const { edad, ...datosVisita } = visita;
+      const merged = {
+        ...newPatient,
+        ...fields,
+        ...(edad && /^\d+$/.test(edad) ? { edad } : {}),
+        admision: { ...(newPatient.admision || {}), ...datosVisita },
+      };
       if (fields.documentId && !fields.patientId) {
         merged.patientId = `MRN-${fields.documentId}`;
       }

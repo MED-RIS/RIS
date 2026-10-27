@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@ohif/ui-next';
-import { ChevronLeft, ChevronRight, Plus, Printer, UserCheck, UserX, Pencil, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Printer, UserCheck, UserX, Pencil, Trash2, X, ScanLine } from 'lucide-react';
 import { fetchPreprogramacion, createPreprogramacion, updatePreprogramacion, deletePreprogramacion } from '../risService';
+import QrBoletaScanner from './QrBoletaScanner';
+import { parseBoletaQr } from '../../utils/parseBoletaQr';
+import { imprimirComprobante, leerQrComprobante } from '../laboratorio/comprobante';
 
 // Preprogramación del laboratorio (CNS). El paciente llega a caja con su boleta y se
 // lo anota para un DÍA (sin hora) con lo mínimo: nombre y apellido, matrícula, celular
@@ -93,6 +96,11 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
   const [form, setForm] = useState<any>(null); // null = cerrado; { ...datos, _id? }
   const [guardando, setGuardando] = useState(false);
   const [filtro, setFiltro] = useState<Filtro>('TODOS');
+  // QR de la boleta CNS: llena nombre, matrícula y celular
+  const [qrAbierto, setQrAbierto] = useState(false);
+  const [qrLeido, setQrLeido] = useState<{ texto: string; reconocido: boolean; sinDatos?: boolean } | null>(null);
+  // QR del comprobante que se le entregó al paciente: al volver se lo encuentra al instante
+  const [scanComprobante, setScanComprobante] = useState(false);
 
   const dias = useMemo(
     () =>
@@ -154,7 +162,27 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     setDia(hoy);
   };
 
-  const nuevo = () => setForm({ ...VACIO, fechaExamen: dia });
+  const nuevo = () => {
+    setQrLeido(null);
+    setForm({ ...VACIO, fechaExamen: dia });
+  };
+
+  // Lo que se pudo leer del QR se pone en el formulario; si el formato no se reconoce,
+  // se muestra el texto para copiarlo a mano (no se adivina)
+  const usarQr = useCallback((raw: string) => {
+    setQrAbierto(false);
+    const { fields, recognized, sinDatos } = parseBoletaQr(raw);
+    setQrLeido({ texto: raw, reconocido: recognized, sinDatos });
+    const nombre =
+      fields.nombreCompleto ||
+      [fields.firstName, fields.apellidoPaterno ?? fields.lastName, fields.apellidoMaterno].filter(Boolean).join(' ').toUpperCase();
+    setForm((p: any) => ({
+      ...p,
+      ...(nombre ? { nombreCompleto: nombre } : {}),
+      ...(fields.numeroAsegurado ? { matricula: String(fields.numeroAsegurado).toUpperCase() } : {}),
+      ...(fields.phone ? { celular: fields.phone } : {}),
+    }));
+  }, []);
   const editar = (f: any) => setForm({ ...VACIO, ...f, nombreCompleto: nombreDe(f), celular: f.celular || '' });
   const set = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
   const alternarEnForm = (id: string) =>
@@ -223,6 +251,32 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     if ((await actualizarFila(f, { estado })) && estado === 'ASISTIO') {
       const nombresExamenes = TODOS.filter(e => f.examenes.includes(e.id)).map(e => e.label);
       onRegistrar?.({ ...f, nombreCompleto: nombreDe(f), nombresExamenes });
+    }
+  };
+
+  // Comprobante para el paciente: su día, sus exámenes, indicaciones y nuestro QR
+  const comprobante = (f: any) => {
+    const examenes = TODOS.filter(e => f.examenes.includes(e.id)).map(e => ({ id: e.id, label: e.label }));
+    if (!imprimirComprobante(f, nombreDe(f), examenes)) toast.warning('Permita ventanas emergentes para imprimir');
+  };
+
+  // El paciente volvió con su comprobante: se lo busca por el QR y se lo marca como "Llegó"
+  const usarComprobante = async (raw: string) => {
+    setScanComprobante(false);
+    const datos = leerQrComprobante(raw);
+    if (!datos) return toast.error('Ese QR no es un comprobante de programación del sistema');
+    try {
+      const lista = await fetchPreprogramacion(datos.fecha, datos.fecha);
+      const f = lista.find((x: any) => x._id === datos.id);
+      if (!f) return toast.error('No se encontró esa programación (pudo haber sido eliminada)');
+      setDia(datos.fecha);
+      const lunes = lunesDe(deDia(datos.fecha));
+      if (lunes.getTime() !== semana.getTime()) setSemana(lunes);
+      if (datos.fecha !== hoy && !window.confirm(`${nombreDe(f)} estaba programado para el ${ddmmaaaa(datos.fecha)}. ¿Registrar que llegó hoy?`)) return;
+      toast.success(`${nombreDe(f)}: llegó`);
+      cambiarEstado(f, 'ASISTIO');
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -304,6 +358,13 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
         <div className="flex gap-2">
           <button onClick={imprimir} className="px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-gray-300 hover:text-white text-xs font-bold flex items-center gap-1.5">
             <Printer className="w-3.5 h-3.5" /> Imprimir planilla del día
+          </button>
+          <button
+            onClick={() => setScanComprobante(true)}
+            className="px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30 text-xs font-bold flex items-center gap-1.5"
+            title="El paciente volvió: escanear el QR de su comprobante para marcar que llegó"
+          >
+            <ScanLine className="w-3.5 h-3.5" /> Escanear comprobante
           </button>
           <button onClick={nuevo} className="px-4 py-2 rounded-lg bg-primary-main hover:bg-primary-dark text-white text-sm font-bold flex items-center gap-1.5 shadow-lg">
             <Plus className="w-4 h-4" /> Preprogramar paciente
@@ -500,6 +561,9 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                             ↶
                           </button>
                         )}
+                        <button onClick={() => comprobante(f)} className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-gray-400 hover:text-white" title="Imprimir el comprobante para el paciente (con QR)">
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
                         <button onClick={() => editar(f)} className="p-1.5 rounded-lg bg-black/40 border border-white/10 text-gray-400 hover:text-white" title="Editar o cambiar de día">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -534,6 +598,30 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             </div>
 
             <div className="p-6 space-y-5">
+              {/* QR de la boleta CNS: evita tipear nombre y matrícula */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQrAbierto(true)}
+                  className="px-4 py-2 rounded-lg bg-primary-main/30 border border-primary-light/40 text-primary-light text-sm font-bold flex items-center gap-2 hover:bg-primary-main/50"
+                >
+                  <ScanLine className="w-4 h-4" /> Escanear QR de la boleta
+                </button>
+                <span className="text-xs text-gray-500">Con la cámara o subiendo una foto: llena nombre y matrícula</span>
+              </div>
+              {qrLeido && (
+                <div className={`text-xs rounded-lg border p-3 ${qrLeido.reconocido ? 'border-primary-light/30 bg-primary-main/10' : 'border-amber-500/40 bg-amber-900/20'}`}>
+                  <div className={`font-bold ${qrLeido.reconocido ? 'text-primary-light' : 'text-amber-300'}`}>
+                    {qrLeido.reconocido
+                      ? '✓ Datos leídos del QR y puestos abajo: revíselos.'
+                      : qrLeido.sinDatos
+                        ? '⚠ El QR de esta boleta viene sin los datos del paciente (así lo genera el sistema de la CNS): copie los datos de la boleta a mano.'
+                        : '⚠ El QR se leyó pero su formato no se reconoce: copie los datos a mano.'}
+                  </div>
+                  <div className="mt-1 font-mono break-all text-gray-400">{qrLeido.texto}</div>
+                </div>
+              )}
+
               {/* EMERGENCIA: vino hoy con su boleta; se registra y se atiende en el día */}
               <button
                 type="button"
@@ -608,6 +696,14 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
           </form>
         </div>
       )}
+
+      <QrBoletaScanner isOpen={qrAbierto} onClose={() => setQrAbierto(false)} onDecoded={usarQr} />
+      <QrBoletaScanner
+        isOpen={scanComprobante}
+        onClose={() => setScanComprobante(false)}
+        onDecoded={usarComprobante}
+        titulo="Escanear comprobante del paciente"
+      />
     </div>
   );
 }
