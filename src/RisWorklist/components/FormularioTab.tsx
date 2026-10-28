@@ -20,6 +20,7 @@ import { imprimirHtoHbLeucoWidalCNS } from '../reports/ReporteHtoHbLeucoWidal';
 import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
 import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
 import { imprimirCategoriaCNS } from '../reports/ReporteCatalogo';
+import { imprimirPlanillaCNS } from '../reports/ReportePlanilla';
 import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA, CATEGORIAS_LAB } from '../laboratorio/catalogoLaboratorio';
 
 // "Lab_Hemato" -> "Hematología" (para los avisos)
@@ -480,9 +481,22 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                       <h3 className="text-lg font-bold text-white mt-1">📋 {pacienteFichaActiva.paciente}</h3>
                       <p className="text-xs text-gray-400 mt-0.5 font-mono">Código CNS: {pacienteFichaActiva.cod}</p>
                     </div>
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" /> Admisión: {pacienteFichaActiva.fecha}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" /> Admisión: {pacienteFichaActiva.fecha}
+                      </span>
+                      {/* Todo el informe en el formato de las hojas de la planilla Excel del laboratorio */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!imprimirPlanillaCNS(conDatosPacienteActuales(pacienteFichaActiva))) alert('Permita ventanas emergentes para imprimir.');
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#e00000]/80 hover:bg-[#e00000] text-white text-xs font-bold shadow-md"
+                        title="Imprimir con el mismo formato de la planilla Excel del laboratorio"
+                      >
+                        <FileDown className="w-3.5 h-3.5" /> Imprimir formato planilla
+                      </button>
+                    </div>
                   </div>
 
                   {/* Listado de Formularios Mapeados de este paciente */}
