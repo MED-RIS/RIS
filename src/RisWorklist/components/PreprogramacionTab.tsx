@@ -5,6 +5,7 @@ import { fetchPreprogramacion, createPreprogramacion, updatePreprogramacion, del
 import QrBoletaScanner from './QrBoletaScanner';
 import { parseBoletaQr } from '../../utils/parseBoletaQr';
 import { imprimirComprobante, leerQrComprobante } from '../laboratorio/comprobante';
+import EstadoBadge from './EstadoBadge';
 
 // Preprogramación del laboratorio (CNS). El paciente llega a caja con su boleta y se
 // lo anota para un DÍA (sin hora) con lo mínimo: nombre y apellido, matrícula, celular
@@ -45,11 +46,6 @@ const GRUPOS: { grupo: string | null; items: Examen[] }[] = [
 ];
 const TODOS = GRUPOS.flatMap(g => g.items);
 
-const ESTADOS: Record<string, { texto: string; clase: string }> = {
-  PROGRAMADO: { texto: 'Programado', clase: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  ASISTIO: { texto: 'Llegó', clase: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  NO_VINO: { texto: 'No vino', clase: 'bg-red-500/15 text-red-300 border-red-500/30' },
-};
 
 // Fechas como "AAAA-MM-DD" en hora local (la programación es por día, sin hora)
 const aDia = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -467,7 +463,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
             <thead className="bg-black/40">
               <tr>
                 <th rowSpan={2} className={th}>N.º</th>
-                <th rowSpan={2} className={`${th} min-w-[200px]`}>Nombre y apellido</th>
+                <th rowSpan={2} className={`${th} min-w-[200px] sticky left-0 z-20 bg-[#161918] shadow-[2px_0_0_rgba(255,255,255,0.08)]`}>Nombre y apellido</th>
                 <th rowSpan={2} className={th}>Matrícula</th>
                 <th rowSpan={2} className={th}>Celular</th>
                 {GRUPOS.map(g =>
@@ -486,7 +482,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                 <th rowSpan={2} className={th}>Firma entrega</th>
                 <th rowSpan={2} className={th}>Estado</th>
                 <th rowSpan={2} className={th}>Programó</th>
-                <th rowSpan={2} className={th}></th>
+                <th rowSpan={2} className={`${th} sticky right-0 z-20 bg-[#161918] shadow-[-2px_0_0_rgba(255,255,255,0.08)] text-right`}>Acciones</th>
               </tr>
               <tr>
                 {GRUPOS.filter(g => g.grupo).flatMap(g =>
@@ -509,10 +505,14 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                 visibles.map(f => (
                   <tr
                     key={f._id}
-                    className={`border-t border-white/5 hover:bg-white/[.03] ${f.emergencia ? 'bg-red-900/25 shadow-[inset_3px_0_0_#ef4444]' : ''} ${f.estado === 'NO_VINO' ? 'opacity-40' : ''}`}
+                    className={`group border-t border-white/5 hover:bg-white/[.03] ${f.emergencia ? 'bg-red-900/25' : ''} ${f.estado === 'NO_VINO' ? 'opacity-40' : ''}`}
                   >
                     <td className="px-2 py-2 text-gray-400">{delDia.indexOf(f) + 1}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">
+                    <td
+                      className={`px-2 py-2 whitespace-nowrap sticky left-0 z-10 ${
+                        f.emergencia ? 'bg-[#3a2123] group-hover:bg-[#422628] shadow-[inset_3px_0_0_#ef4444,2px_0_0_rgba(255,255,255,0.08)]' : 'bg-[#252928] group-hover:bg-[#2b302e] shadow-[2px_0_0_rgba(255,255,255,0.08)]'
+                      }`}
+                    >
                       <button
                         onClick={() => cambiarEstado(f, 'ASISTIO')}
                         className="font-semibold text-white hover:text-primary-light hover:underline text-left"
@@ -537,7 +537,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                       </button>
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-[11px] font-bold border ${ESTADOS[f.estado]?.clase}`}>{ESTADOS[f.estado]?.texto}</span>
+                      <EstadoBadge estado={f.estado} />
                     </td>
                     <td
                       className="px-2 py-2 text-xs text-gray-400 whitespace-nowrap max-w-[140px] truncate"
@@ -545,7 +545,11 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                     >
                       {f.creadoPor || '—'}
                     </td>
-                    <td className="px-2 py-2">
+                    <td
+                      className={`px-2 py-2 sticky right-0 z-10 shadow-[-2px_0_0_rgba(255,255,255,0.08)] ${
+                        f.emergencia ? 'bg-[#3a2123] group-hover:bg-[#422628]' : 'bg-[#252928] group-hover:bg-[#2b302e]'
+                      }`}
+                    >
                       <div className="flex items-center gap-1 justify-end">
                         {f.estado !== 'ASISTIO' && (
                           <button onClick={() => cambiarEstado(f, 'ASISTIO')} className="p-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30" title="Llegó: abrir su registro formal con estos datos">

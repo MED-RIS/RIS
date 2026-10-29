@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileDown, X, Clipboard, Calendar, FolderOpen, Layers, Pencil, Trash2 } from 'lucide-react';
+import { FileDown, X, Clipboard, Calendar, FolderOpen, Layers, Pencil, Trash2, User, Eye, FlaskConical } from 'lucide-react';
+import EstadoBadge from './EstadoBadge';
 import { Patient } from '../types';
 import InformesList from './InformesList';
 import SelectorPaciente from './SelectorPaciente';
@@ -151,7 +152,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       return;
     }
 
-    alert("🎉 ¡Registro Clínico guardado con éxito en la base de datos de RIS-SERVER!");
+    alert('Informe de laboratorio guardado.');
     const idPaciente = pacienteSeleccionado?.id || pacienteSeleccionado?.id_paciente || pacienteSeleccionado?.cod || "S/M";
     const nombreCompleto = `${pacienteSeleccionado?.nombres || ''} ${pacienteSeleccionado?.paterno || ''}`.trim();
  
@@ -418,8 +419,8 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             
             {/* 🚪 COLUMNA IZQUIERDA: HISTÓRICO APILADO DEL PACIENTE (por matrícula) */}
             <div className="lg:col-span-1 bg-[#0e1715] border border-[#2a403a] rounded-xl p-4 space-y-3 flex flex-col">
-              <span className="text-xs font-bold text-gray-400 uppercase block border-b border-[#1f332d] pb-2">
-                🗂️ Histórico del Paciente
+              <span className="text-xs font-bold text-gray-400 uppercase block leading-relaxed border-b border-[#1f332d] pb-2">
+                <FolderOpen className="inline w-4 h-4 mr-1 -mt-0.5 text-[#00bfa5]" /> Histórico del paciente
                 {pacienteFichaActiva && (() => {
                   const n = historialSimulado.filter((i) => i.cod === pacienteFichaActiva.cod).length;
                   return ` · MAT ${pacienteFichaActiva.cod} (${n})`;
@@ -447,10 +448,13 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                             <Calendar className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-sm truncate">{inf.fecha}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5 font-mono truncate">
-                              {(inf.estudiosRealizados || []).map(nombreEstudio).join(', ') || 'Sin estudios'} · {inf.estado}
+                            <div className="font-bold text-sm whitespace-nowrap">
+                              {/^\d{4}-\d{2}-\d{2}$/.test(String(inf.fecha)) ? String(inf.fecha).split('-').reverse().join('/') : inf.fecha}
                             </div>
+                            <div className="text-[11px] text-gray-400 mt-0.5 leading-snug break-words">
+                              {(inf.estudiosRealizados || []).map(nombreEstudio).join(', ') || 'Sin estudios'}
+                            </div>
+                            <div className="mt-1.5"><EstadoBadge estado={inf.estado} /></div>
                           </div>
                           {!soloLectura && inf.estado !== 'FIRMADO' && (
                             <button
@@ -478,7 +482,9 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                   <div className="border-b border-[#1f332d] pb-4 flex justify-between items-start">
                     <div>
                       <span className="text-[10px] bg-primary-light/10 text-[#00bfa5] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Expediente Clínico Activo</span>
-                      <h3 className="text-lg font-bold text-white mt-1">📋 {pacienteFichaActiva.paciente}</h3>
+                      <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
+                        <User className="w-5 h-5 text-[#00bfa5] shrink-0" /> {pacienteFichaActiva.paciente}
+                      </h3>
                       <p className="text-xs text-gray-400 mt-0.5 font-mono">Código CNS: {pacienteFichaActiva.cod}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -559,7 +565,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                         <div className="bg-[#050a09] border border-[#1f332d] rounded-xl p-4 flex flex-col justify-between hover:border-teal-500/40 transition-all">
                           <div>
                             <div className="flex justify-between items-start">
-                              <span className="text-[10px] bg-teal-600/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded font-bold">🧪 BIOQUÍMICA / EGO</span>
+                              <span className="text-[10px] bg-teal-600/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"><FlaskConical className="w-3 h-3" /> BIOQUÍMICA / EGO</span>
                               <Layers className="w-4 h-4 text-teal-500" />
                             </div>
                             <h5 className="font-bold text-sm text-white mt-3">Examen General de Orina</h5>
@@ -855,7 +861,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${!soloLectura ? 'bg-[#00bfa5] text-[#04140f]' : 'text-gray-400 hover:text-white'}`}
             title="Técnico / doctor encargado: crea y edita"
           >
-            ✏️ Edición
+            <span className="inline-flex items-center gap-1"><Pencil className="w-3 h-3" /> Edición</span>
           </button>
           <button
             type="button"
@@ -863,7 +869,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${soloLectura ? 'bg-[#00bfa5] text-[#04140f]' : 'text-gray-400 hover:text-white'}`}
             title="Especialista / usuario final: solo ve y descarga"
           >
-            👁️ Consulta
+            <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" /> Consulta</span>
           </button>
         </div>
       </div>

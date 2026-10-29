@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Plus, Search, FolderOpen, AlertCircle } from 'lucide-react';
+import EstadoBadge from './EstadoBadge';
 
 interface InformesListProps {
   informes: any[];               // registros de ris_historial_cns
@@ -20,11 +21,6 @@ const estadoDe = (informe: any): 'BORRADOR' | 'COMPLETADO' | 'FIRMADO' => {
   return 'COMPLETADO';
 };
 
-const ESTADO_BADGE: Record<string, string> = {
-  BORRADOR: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  COMPLETADO: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-  FIRMADO: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-};
 
 export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLectura }: InformesListProps) {
   const [busqueda, setBusqueda] = useState('');
@@ -113,7 +109,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
                     <td className="px-4 py-3 text-gray-300">{inf?.datos?.medico_solicitante || '—'}</td>
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs">{inf.fecha || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ESTADO_BADGE[est]}`}>{est}</span>
+                      <EstadoBadge estado={est} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

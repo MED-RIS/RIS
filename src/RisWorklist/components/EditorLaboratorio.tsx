@@ -2,10 +2,12 @@ import React, { useMemo, useState } from 'react';
 import {
   ArrowLeft, ClipboardList, Search, FileText, Clock, CheckCircle2,
   Lock, User, CalendarDays, Stethoscope, ListChecks, DoorOpen, Phone, FlaskConical,
+  Printer,
 } from 'lucide-react';
 import { CATEGORIAS_LAB, ParametroLab, parametrosDeExamenes, COLUMNAS_EXCEL } from '../laboratorio/catalogoLaboratorio';
 import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
 import { UNIDAD_SANITARIA, letraDelDia } from '../pacienteExcel';
+import EstadoBadge from './EstadoBadge';
 
 type EstadoInforme = 'BORRADOR' | 'COMPLETADO' | 'FIRMADO';
 
@@ -58,11 +60,6 @@ const FLAG_META: Record<string, { txt: string; cls: string }> = {
   N: { txt: 'NORMAL', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
 };
 
-const ESTADO_META: Record<EstadoInforme, { txt: string; cls: string }> = {
-  BORRADOR: { txt: '🕓 BORRADOR', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
-  COMPLETADO: { txt: '✓ COMPLETADO', cls: 'bg-sky-500/10 text-sky-400 border-sky-500/30' },
-  FIRMADO: { txt: '🔒 FIRMADO', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
-};
 
 const esLleno = (v: any) => String(v ?? '').trim() !== '';
 
@@ -303,16 +300,14 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
                 paciente: { ...pacienteData, medico_solicitante: general.medicoDerivante, centro_asistencial: UNIDAD_SANITARIA, consultorio: general.consultorio, fecha: general.fechaExamen },
                 categoriaId: categoria.id,
               })}
-              className="px-3 py-2 text-xs font-bold text-[#00bfa5] bg-[#00bfa5]/10 border border-[#00bfa5]/30 rounded-lg hover:bg-[#00bfa5]/20 transition-colors whitespace-nowrap"
+              className="px-3 py-2 text-xs font-bold text-[#00bfa5] bg-[#00bfa5]/10 border border-[#00bfa5]/30 rounded-lg hover:bg-[#00bfa5]/20 transition-colors whitespace-nowrap inline-flex items-center gap-1.5"
               title="Imprimir la solicitud de este examen para que el paciente la lleve al servicio"
             >
-              🖨️ Imprimir Solicitud ({categoria.label})
+              <Printer className="w-3.5 h-3.5" /> Imprimir Solicitud ({categoria.label})
             </button>
             <div className="text-right">
               <span className="text-[9px] text-gray-500 uppercase tracking-wider block mb-1">Estado actual</span>
-              <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${ESTADO_META[estado].cls}`}>
-                {ESTADO_META[estado].txt}
-              </span>
+              <EstadoBadge estado={estado} grande />
             </div>
           </div>
         </div>
