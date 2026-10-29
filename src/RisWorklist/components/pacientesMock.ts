@@ -1,20 +1,20 @@
 // src/pages/pacientesMock.ts
-// 📋 Pacientes reales tomados de la planilla "RESULTADOS 14-05-2026.xlsx" (hoja DATOS)
+// Pacientes ficticios para pruebas y demostraciones (no corresponden a personas reales)
 export const listaPacientesPrueba = [
-  { id_paciente: 101, cod: "530421 SSA", paterno: "Sirpa", materno: "Sirpa", nombres: "Ancelmo", edad: 72, genero: "Masculino" },
-  { id_paciente: 102, cod: "795222 CLC", paterno: "Condori", materno: "Leoca", nombres: "Conzi Amalia", edad: 47, genero: "Femenino" },
-  { id_paciente: 103, cod: "800720 GSE", paterno: "Sallinas", materno: "Asquicho", nombres: "Felipa", edad: 73, genero: "Femenino" },
-  { id_paciente: 104, cod: "430610 CPJ", paterno: "Condori", materno: "Paco", nombres: "Juan", edad: 82, genero: "Masculino" },
-  { id_paciente: 105, cod: "680412 CBJ", paterno: "Copa", materno: "Beniz", nombres: "Julio Raul", edad: 57, genero: "Masculino" },
-  { id_paciente: 106, cod: "770729 CTF", paterno: "Mamani", materno: "Canaviri", nombres: "Rosmery", edad: 45, genero: "Femenino" },
-  { id_paciente: 107, cod: "685606 AEM", paterno: "Acero", materno: "Espinal", nombres: "Maria Elena", edad: 57, genero: "Femenino" },
-  { id_paciente: 108, cod: "571031 RCQ", paterno: "Choque", materno: "Villca", nombres: "Amalia", edad: 67, genero: "Femenino" },
-  { id_paciente: 109, cod: "661207 PCP", paterno: "Paredes", materno: "Choque", nombres: "Policarpio", edad: 59, genero: "Masculino" },
-  { id_paciente: 110, cod: "850501 CAO", paterno: "Contreras", materno: "Ali", nombres: "Ovidio", edad: 41, genero: "Masculino" },
-  { id_paciente: 111, cod: "570805 CHA", paterno: "Chura", materno: "Huacoto", nombres: "Angelino", edad: 68, genero: "Masculino" },
-  { id_paciente: 112, cod: "890805 CCH", paterno: "Torrez", materno: "Vargas", nombres: "Delia", edad: 35, genero: "Femenino" },
-  { id_paciente: 113, cod: "805910 RAR", paterno: "Rojas", materno: "Alanoca", nombres: "Raquel", edad: 45, genero: "Femenino" },
-  { id_paciente: 114, cod: "820716 VAM", paterno: "Vargas", materno: "Aruquipa", nombres: "Miller", edad: 43, genero: "Masculino" },
-  { id_paciente: 115, cod: "810101 YCA", paterno: "Yujra", materno: "Cachi", nombres: "Alejandro", edad: 45, genero: "Masculino" },
-  { id_paciente: 116, cod: "810824 CGE", paterno: "Condori", materno: "Moya", nombres: "Aleida", edad: 36, genero: "Femenino" }
+  { id_paciente: 101, cod: "000101 PEA", paterno: "Prueba", materno: "Ejemplo", nombres: "Ana Lucia", edad: 47, genero: "Femenino" },
+  { id_paciente: 102, cod: "000102 DFC", paterno: "Demo", materno: "Ficticio", nombres: "Carlos Alberto", edad: 52, genero: "Masculino" },
+  { id_paciente: 103, cod: "000103 TMM", paterno: "Test", materno: "Muestra", nombres: "Maria Elena", edad: 63, genero: "Femenino" },
+  { id_paciente: 104, cod: "000104 EPJ", paterno: "Ensayo", materno: "Prueba", nombres: "Juan Pablo", edad: 71, genero: "Masculino" },
+  { id_paciente: 105, cod: "000105 MDR", paterno: "Modelo", materno: "Demo", nombres: "Rosa", edad: 38, genero: "Femenino" },
+  { id_paciente: 106, cod: "000106 SEL", paterno: "Simulado", materno: "Ejemplo", nombres: "Luis Fernando", edad: 44, genero: "Masculino" },
+  { id_paciente: 107, cod: "000107 PTC", paterno: "Prueba", materno: "Test", nombres: "Carmen", edad: 55, genero: "Femenino" },
+  { id_paciente: 108, cod: "000108 FMP", paterno: "Ficticio", materno: "Modelo", nombres: "Pedro", edad: 66, genero: "Masculino" },
+  { id_paciente: 109, cod: "000109 DSS", paterno: "Demo", materno: "Simulado", nombres: "Sofia", edad: 29, genero: "Femenino" },
+  { id_paciente: 110, cod: "000110 MEJ", paterno: "Muestra", materno: "Ensayo", nombres: "Jorge", edad: 41, genero: "Masculino" },
+  { id_paciente: 111, cod: "000111 EFL", paterno: "Ejemplo", materno: "Ficticio", nombres: "Lucia", edad: 58, genero: "Femenino" },
+  { id_paciente: 112, cod: "000112 TPM", paterno: "Test", materno: "Prueba", nombres: "Miguel Angel", edad: 35, genero: "Masculino" },
+  { id_paciente: 113, cod: "000113 SDP", paterno: "Simulado", materno: "Demo", nombres: "Patricia", edad: 49, genero: "Femenino" },
+  { id_paciente: 114, cod: "000114 MMR", paterno: "Modelo", materno: "Muestra", nombres: "Roberto", edad: 62, genero: "Masculino" },
+  { id_paciente: 115, cod: "000115 EEV", paterno: "Ensayo", materno: "Ejemplo", nombres: "Veronica", edad: 33, genero: "Femenino" },
+  { id_paciente: 116, cod: "000116 FTD", paterno: "Ficticio", materno: "Test", nombres: "Daniel", edad: 27, genero: "Masculino" }
 ];

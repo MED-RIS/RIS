@@ -8,7 +8,7 @@ import { parseBoletaQr } from '../../utils/parseBoletaQr';
 import { Patient } from '../types';
 import { pacienteVacio } from '../pacienteExcel';
 
-// 📦 Importamos los pacientes reales de la planilla Excel "RESULTADOS 14-05-2026"
+// Pacientes ficticios para pruebas (sin datos reales)
 import { listaPacientesPrueba } from './pacientesMock';
 
 interface PatientsTabProps {

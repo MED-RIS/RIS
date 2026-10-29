@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Planillas y fotos con datos de pacientes: no se suben
+info/
