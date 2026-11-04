@@ -588,7 +588,7 @@ export const PARAMETROS_POR_EXAMEN: Record<string, Record<string, Seleccion>> = 
   HTO: { hematologia: ['hto'] },
   HB: { hematologia: ['hb'] },
   HEMOGRAMA: {
-    hematologia: ['globulos_rojos', 'globulos_blancos', 'hb', 'hto', 'mielo', 'metamie', 'cay', 'seg', 'eosi', 'baso', 'linf', 'mon', 'formula_total', 'plaquetas', 'comentario_serie_roja', 'comentario_serie_blanca', 'responsable_hemato'],
+    hematologia: ['globulos_rojos', 'globulos_blancos', 'hb', 'hto', 'ves_1_hora', 'mielo', 'metamie', 'cay', 'seg', 'eosi', 'baso', 'linf', 'mon', 'formula_total', 'plaquetas', 'comentario_serie_roja', 'comentario_serie_blanca', 'responsable_hemato'],
   },
   QMC_SANGUINEA: { quimica: { sinSeccion: 'Hormonas' } },
   SEROLOGIA: { serologia: { sinSeccion: 'COVID-19' } },
