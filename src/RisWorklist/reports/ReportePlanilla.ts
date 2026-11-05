@@ -26,6 +26,9 @@ const HOJAS: Hoja[] = [
         { t: 'Hemoglobina', k: 'hb', u: 'g/dl' },
         { t: 'Reticulocitos', k: 'reticulocitos', u: '%' },
         { t: 'VES', k: 'ves_1_hora', u: '1ra Hr.' },
+        { t: 'V.C.M.', k: 'vcm', u: 'fL' },
+        { t: 'H.C.M.', k: 'hcm', u: 'pg' },
+        { t: 'C.H.C.M.', k: 'chcm', u: 'g/dl' },
         { t: 'Grupo sanguíneo', k: 'grupo_sanguineo' },
       ],
       [
@@ -58,6 +61,7 @@ const HOJAS: Hoja[] = [
     pie: [
       { t: 'COMENTARIOS SERIE BLANCA', k: 'comentario_serie_blanca' },
       { t: 'COMENTARIOS SERIE ROJA', k: 'comentario_serie_roja' },
+      { t: 'COMENTARIOS PLAQUETAS', k: 'comentario_plaquetas' },
       { t: 'OBSERVACIONES', k: 'observaciones' },
     ],
   },

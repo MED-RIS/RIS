@@ -100,6 +100,10 @@ export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 'globulos_rojos', label: 'Glóbulos Rojos (GR)', unidad: 'mm³', rango: 'Varones: 4.5 - 5.5 mill · Mujeres: 4.0 - 5.0 mill', seccion: 'Serie Roja y Recuento' },
   { key: 'hto', label: 'Hematocrito (HTO)', unidad: '%', rango: 'Varones: 42 - 52% · Mujeres: 37 - 47%', seccion: 'Serie Roja y Recuento' },
   { key: 'hb', label: 'Hemoglobina (HB)', unidad: 'g/dL', rango: 'Varones: 14 - 18 · Mujeres: 12 - 16', seccion: 'Serie Roja y Recuento' },
+  // Índices eritrocitarios (columnas V.C.M., H.C.M. y C.H.C.M. de la hoja DATOS)
+  { key: 'vcm', label: 'V.C.M.', unidad: 'fL', rango: '80 - 100', min: 80, max: 100, seccion: 'Serie Roja y Recuento' },
+  { key: 'hcm', label: 'H.C.M.', unidad: 'pg', rango: '27 - 33', min: 27, max: 33, seccion: 'Serie Roja y Recuento' },
+  { key: 'chcm', label: 'C.H.C.M.', unidad: 'g/dL', rango: '32 - 36', min: 32, max: 36, seccion: 'Serie Roja y Recuento' },
   { key: 'plaquetas', label: 'Plaquetas', unidad: 'mm³', rango: '150.000 - 450.000', min: 150000, max: 450000, seccion: 'Serie Roja y Recuento' },
   { key: 'reticulocitos', label: 'Reticulocitos', unidad: '%', rango: '0.5 - 2%', min: 0.5, max: 2, seccion: 'Serie Roja y Recuento' },
   { key: 'mielo', label: 'Mielocitos', unidad: '%', rango: '0%', min: 0, max: 0, seccion: 'Fórmula Diferencial' },
@@ -127,6 +131,7 @@ export const CATALOGO_HEMATOLOGIA: ParametroLab[] = [
   { key: 'formula_total', label: 'Total (Fórmula Diferencial)', unidad: '%', rango: '100%', seccion: 'Fórmula Diferencial' },
   { key: 'comentario_serie_roja', label: 'Comentario Serie Roja', rango: '—', tipo: 'texto', seccion: 'Comentarios' },
   { key: 'comentario_serie_blanca', label: 'Comentario Serie Blanca', rango: '—', tipo: 'texto', seccion: 'Comentarios' },
+  { key: 'comentario_plaquetas', label: 'Comentario Plaquetas', rango: '—', tipo: 'texto', seccion: 'Comentarios' },
   { key: 'responsable_hemato', label: 'Responsable', rango: '—', tipo: 'texto', seccion: 'Responsable' },
 ];
 
@@ -420,6 +425,9 @@ export const COLUMNAS_EXCEL: Record<string, ColumnaExcel[]> = {
     ['HEMATOLOGIA', 'HEMO GLOB', 'hb'],
     ['HEMATOLOGIA', 'HEMA TOCRI', 'hto'],
     ['HEMATOLOGIA', 'VES', 'ves_1_hora'],
+    ['HEMATOLOGIA', 'V.C.M.', 'vcm'],
+    ['HEMATOLOGIA', 'H.C.M.', 'hcm'],
+    ['HEMATOLOGIA', 'C.H.C.M.', 'chcm'],
     ['HEMATOLOGIA', 'GRUPO', 'grupo_sanguineo'],
     ['HEMATOLOGIA', 'RETI', 'reticulocitos'],
     ['HEMATOLOGIA', 'MIEL', 'mielo'],
@@ -439,6 +447,7 @@ export const COLUMNAS_EXCEL: Record<string, ColumnaExcel[]> = {
     ['HEMATOLOGIA', 'T.COAG', 't_coagulacion_min'],
     ['HEMATOLOGIA', 'COM.S.ROJA', 'comentario_serie_roja'],
     ['HEMATOLOGIA', 'COM.S.BLANCA', 'comentario_serie_blanca'],
+    ['HEMATOLOGIA', 'COM.PLAQUETAS', 'comentario_plaquetas'],
     ['HEMATOLOGIA', 'RESPONSABLE', 'responsable_hemato'],
   ]),
   quimica: col([
@@ -588,7 +597,7 @@ export const PARAMETROS_POR_EXAMEN: Record<string, Record<string, Seleccion>> = 
   HTO: { hematologia: ['hto'] },
   HB: { hematologia: ['hb'] },
   HEMOGRAMA: {
-    hematologia: ['globulos_rojos', 'globulos_blancos', 'hb', 'hto', 'ves_1_hora', 'mielo', 'metamie', 'cay', 'seg', 'eosi', 'baso', 'linf', 'mon', 'formula_total', 'plaquetas', 'comentario_serie_roja', 'comentario_serie_blanca', 'responsable_hemato'],
+    hematologia: ['globulos_rojos', 'globulos_blancos', 'hb', 'hto', 'ves_1_hora', 'vcm', 'hcm', 'chcm', 'mielo', 'metamie', 'cay', 'seg', 'eosi', 'baso', 'linf', 'mon', 'formula_total', 'plaquetas', 'comentario_serie_roja', 'comentario_serie_blanca', 'comentario_plaquetas', 'responsable_hemato'],
   },
   QMC_SANGUINEA: { quimica: { sinSeccion: 'Hormonas' } },
   SEROLOGIA: { serologia: { sinSeccion: 'COVID-19' } },

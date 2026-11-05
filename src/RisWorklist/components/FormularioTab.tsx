@@ -62,6 +62,15 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   // 'edicion' = técnico/doctor encargado (crea y edita) · 'consulta' = especialista (solo ve y descarga).
   const [rol, setRol] = useState<'edicion' | 'consulta'>('edicion');
   const soloLectura = rol === 'consulta';
+  // Superusuario (rol admin del login): es el único que puede corregir un informe ya FIRMADO
+  // por el médico. Cada valor que cambie pide motivo y queda en el historial de correcciones.
+  const esSuperusuario = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('usuario') || 'null')?.user?.role === 'admin';
+    } catch {
+      return false;
+    }
+  })();
 
   // Último informe del paciente elegido (para precargar el editor en un control repetido).
   const [informePrevio, setInformePrevio] = useState<any>(null);
@@ -321,8 +330,13 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   const editarEnEditor = (informe: any, idReporte: string) => {
     if (!informe) return;
     if (informe.estado === 'FIRMADO') {
-      alert('Este informe está FIRMADO: no se puede modificar.');
-      return;
+      if (!esSuperusuario) {
+        alert('Este informe está FIRMADO: no se puede modificar. Solo el superusuario (administrador) puede corregirlo.');
+        return;
+      }
+      const aviso = 'Este informe ya está FIRMADO por el médico. Como superusuario puede corregirlo: '
+        + 'cada valor que cambie le pedirá el motivo y quedará registrado con su nombre. ¿Continuar?';
+      if (!window.confirm(aviso)) return;
     }
     // El formato del Excel no tiene campos para este estudio: se usa el formulario anterior
     if (!PESTANA_DE_REPORTE[idReporte]) {
