@@ -613,3 +613,25 @@ export const updatePreprogramacion = (id: string, datos: any) =>
 
 export const deletePreprogramacion = (id: string) =>
   pedirPreprogramacion(`${api}/api/ris/preprogramacion/${id}`, { method: 'DELETE' });
+
+// --- Informes de laboratorio (en el servidor; el navegador guarda solo una copia) ---
+const pedirInformeLab = async (url: string, options: RequestInit = {}) => {
+  const response = await fetchWithAuth(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Error con el informe de laboratorio');
+  return data;
+};
+
+export const fetchInformesLab = (): Promise<any[]> => pedirInformeLab(`${api}/api/ris/informes-lab`);
+
+export const guardarInformeLab = (informe: any) =>
+  pedirInformeLab(`${api}/api/ris/informes-lab/${encodeURIComponent(informe.id)}`, { method: 'PUT', body: JSON.stringify(informe) });
+
+export const eliminarInformeLab = (id: string) =>
+  pedirInformeLab(`${api}/api/ris/informes-lab/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+export const migrarInformesLab = (informes: any[]) =>
+  pedirInformeLab(`${api}/api/ris/informes-lab/migrar`, { method: 'POST', body: JSON.stringify({ informes }) });

@@ -7,6 +7,7 @@ import SelectorPaciente from './SelectorPaciente';
 import EditarReporteModal from './EditarReporteModal';
 import EditorLaboratorio from './EditorLaboratorio';
 import { hoyLocal } from '../pacienteExcel';
+import { fetchInformesLab, guardarInformeLab, eliminarInformeLab, migrarInformesLab } from '../risService';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
@@ -86,6 +87,45 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     return lista.map((r, i) => (r.id ? r : { ...r, id: `inf-legacy-${i}-${r.cod ?? 'sm'}` }));
   });
 
+  // Los informes viven en el servidor; el navegador guarda solo una copia para trabajar sin
+  // conexión. La primera vez se suben los que estaban únicamente en esta computadora.
+  const guardarCopiaLocal = (lista: any[]) => {
+    try { localStorage.setItem('ris_historial_cns', JSON.stringify(lista)); } catch { /* sin espacio */ }
+  };
+  const recargarDelServidor = async () => {
+    try {
+      if (localStorage.getItem('ris_historial_migrado') !== '1') {
+        const locales = JSON.parse(localStorage.getItem('ris_historial_cns') || '[]')
+          .map((r: any, i: number) => (r.id ? r : { ...r, id: `inf-legacy-${i}-${r.cod ?? 'sm'}` }));
+        if (locales.length) await migrarInformesLab(locales);
+        localStorage.setItem('ris_historial_migrado', '1');
+      }
+      const lista = await fetchInformesLab();
+      setHistorialSimulado(lista);
+      guardarCopiaLocal(lista);
+    } catch (e) {
+      console.warn('Informes de laboratorio: sin conexión con el servidor, se usa la copia local', e);
+    }
+  };
+  useEffect(() => { recargarDelServidor(); }, []);
+
+  // Manda al servidor solo los informes que cambiaron entre dos versiones del historial.
+  // Si el servidor no acepta (p. ej. un informe FIRMADO), avisa y vuelve a lo que hay allá.
+  const persistir = async (antes: any[], despues: any[]): Promise<boolean> => {
+    guardarCopiaLocal(despues);
+    const previos = new Map(antes.map((i) => [i.id, JSON.stringify(i)]));
+    const quedan = new Set(despues.map((i) => i.id));
+    try {
+      for (const inf of despues) if (previos.get(inf.id) !== JSON.stringify(inf)) await guardarInformeLab(inf);
+      for (const inf of antes) if (!quedan.has(inf.id)) await eliminarInformeLab(inf.id);
+      return true;
+    } catch (e: any) {
+      alert(`No se pudo guardar en el servidor: ${e.message}`);
+      recargarDelServidor();
+      return false;
+    }
+  };
+
   useEffect(() => {
   if (!verReportesGlobal) {
     document.body.style.overflow = 'unset';
@@ -121,7 +161,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
           : inf
       );
       setHistorialSimulado(actualizado);
-      localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+      if (!(await persistir(historialSimulado, actualizado))) return;
       alert('Informe actualizado.');
       reiniciarModulo();
       return;
@@ -155,7 +195,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
           : inf
       );
       setHistorialSimulado(actualizado);
-      localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+      if (!(await persistir(historialSimulado, actualizado))) return;
       alert('Informe actualizado (no se creó uno nuevo).');
       reiniciarModulo();
       return;
@@ -210,8 +250,9 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       return listaActualizada;
     });
 
+    const anterior = historialSimulado;
     setTimeout(() => {
-      localStorage.setItem('ris_historial_cns', JSON.stringify(listaActualizada));
+      persistir(anterior, listaActualizada);
     }, 50);
 
     reiniciarModulo();
@@ -387,12 +428,12 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     if (!window.confirm(`¿Eliminar el informe del ${inf.fecha} (${estudios}) de ${inf.paciente}?`)) return;
     const resto = historialSimulado.filter((i) => i.id !== inf.id);
     setHistorialSimulado(resto);
-    localStorage.setItem('ris_historial_cns', JSON.stringify(resto));
+    persistir(historialSimulado, resto);
     setPacienteFichaActiva(resto.find((i) => i.cod === inf.cod) || null);
   };
 
   // Persiste la edición del reporte: reemplaza `datos` del INFORME puntual (por id),
-  // guarda en localStorage y refresca la ficha activa para que las cards se re-evalúen.
+  // lo guarda en el servidor y refresca la ficha activa para que las cards se re-evalúen.
   const guardarEdicion = (nuevoDatos: any) => {
     if (!reporteEnEdicion) return;
     const idInforme = reporteEnEdicion.paciente.id;
@@ -400,7 +441,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       item.id === idInforme ? { ...item, datos: nuevoDatos } : item
     );
     setHistorialSimulado(actualizado);
-    localStorage.setItem('ris_historial_cns', JSON.stringify(actualizado));
+    persistir(historialSimulado, actualizado);
     setPacienteFichaActiva(actualizado.find((i) => i.id === idInforme) || null);
     setReporteEnEdicion(null);
   };
