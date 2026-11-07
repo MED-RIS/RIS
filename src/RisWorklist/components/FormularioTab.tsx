@@ -92,19 +92,28 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   const guardarCopiaLocal = (lista: any[]) => {
     try { localStorage.setItem('ris_historial_cns', JSON.stringify(lista)); } catch { /* sin espacio */ }
   };
+  const [errorServidor, setErrorServidor] = useState('');
   const recargarDelServidor = async () => {
-    try {
-      if (localStorage.getItem('ris_historial_migrado') !== '1') {
+    // La subida de lo que estaba solo en esta computadora va en partes chicas (el servidor
+    // puede rechazar envíos grandes) y si falla no impide traer la lista del servidor.
+    if (localStorage.getItem('ris_historial_migrado') !== '1') {
+      try {
         const locales = JSON.parse(localStorage.getItem('ris_historial_cns') || '[]')
           .map((r: any, i: number) => (r.id ? r : { ...r, id: `inf-legacy-${i}-${r.cod ?? 'sm'}` }));
-        if (locales.length) await migrarInformesLab(locales);
+        for (let i = 0; i < locales.length; i += 10) await migrarInformesLab(locales.slice(i, i + 10));
         localStorage.setItem('ris_historial_migrado', '1');
+      } catch (e) {
+        console.warn('Informes de laboratorio: no se pudieron subir los de esta computadora', e);
       }
+    }
+    try {
       const lista = await fetchInformesLab();
       setHistorialSimulado(lista);
+      setErrorServidor('');
       guardarCopiaLocal(lista);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Informes de laboratorio: sin conexión con el servidor, se usa la copia local', e);
+      setErrorServidor(e?.message || 'Sin conexión con el servidor');
     }
   };
   useEffect(() => { recargarDelServidor(); }, []);
@@ -932,6 +941,14 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       {/* SECCIÓN PRINCIPAL: lista de informes → selector de paciente → editor */}
       <div className="bg-primary-dark/40 border border-white/5 shadow-2xl rounded-xl p-6 min-h-[400px]">
 
+        {vista === 'lista' && errorServidor && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <span>No se pudo traer los informes del servidor ({errorServidor}). Se muestra la copia de esta computadora.</span>
+            <button type="button" onClick={recargarDelServidor} className="shrink-0 rounded-md border border-amber-400/40 px-3 py-1 text-xs font-bold hover:bg-amber-500/20">
+              Reintentar
+            </button>
+          </div>
+        )}
         {vista === 'lista' && (
           <InformesList
             informes={historialSimulado}
