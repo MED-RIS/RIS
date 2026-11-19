@@ -5,6 +5,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { CATEGORIAS_LAB, ParametroLab, parametrosDeExamenes, COLUMNAS_EXCEL } from '../laboratorio/catalogoLaboratorio';
+import { SEDE } from '../../config/sede';
 import { imprimirSolicitudExamenCNS } from '../reports/SolicitudExamenComplementario';
 import { UNIDAD_SANITARIA, letraDelDia } from '../pacienteExcel';
 import EstadoBadge from './EstadoBadge';
@@ -84,7 +85,9 @@ const hidratarValores = (datos: any): Record<string, Record<string, string>> => 
 export default function EditorLaboratorio({ pacienteData, informePrevio, onVolver, onGuardarLocal, soloExamenes, nombresExamenes, admision: admisionProp, historial = [], informeExistente, categoriaInicial }: EditorLaboratorioProps) {
   const admision = admisionProp || pacienteData?.admision;
   const previo = informeExistente?.datos;
-  const permitidos = useMemo(() => parametrosDeExamenes(soloExamenes || []), [soloExamenes]);
+  // Exámenes programados: los de la preprogramación o, al reabrir un borrador, los que quedaron guardados
+  const examenesFiltro: string[] = soloExamenes?.length ? soloExamenes : previo?.examenesProgramados || [];
+  const permitidos = useMemo(() => parametrosDeExamenes(examenesFiltro), [examenesFiltro.join('|')]);
   const filtrado = Object.keys(permitidos).length > 0;
   const categoriasVisibles = CATEGORIAS_LAB.filter((c) => !filtrado || permitidos[c.id]);
   const totalCategoria = (catId: string) => (filtrado ? permitidos[catId]?.size || 0 : CATEGORIAS_LAB.find((c) => c.id === catId)?.total || 0);
@@ -96,7 +99,13 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     medicoDerivante: previo?.medico_solicitante ?? admision?.medico ?? '',
     consultorio: previo?.consultorio ?? admision?.consultorio ?? '',
     telefono: previo?.telefono ?? pacienteData?.telefono ?? '',
-    diagnostico: previo?.diagnostico || '',
+    diagnostico: previo?.diagnostico || admision?.diagnostico || '',
+    // Hospital Corea: datos del formulario de solicitud y horas de la muestra
+    numeroSolicitud: previo?.numero_solicitud || '',
+    municipio: previo?.municipio ?? admision?.municipio ?? '',
+    horaToma: previo?.hora_toma || '',
+    horaRecepcion: previo?.hora_recepcion || '',
+    horaEmision: previo?.hora_emision || '',
     muestra: previo?.muestra || '',
     // Fecha local: con toISOString a la noche de Bolivia ya salía el día siguiente
     fechaExamen: informeExistente?.fecha || admision?.fechaExamen || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
@@ -131,11 +140,13 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
       alert('Ingrese al menos el nombre o apellido del paciente antes de guardar.');
       return;
     }
+    // El borrador se puede guardar sin resultados (el paciente queda registrado y en espera);
+    // para completar o firmar sí hace falta al menos un resultado
     const hayResultados = CATEGORIAS_LAB.some((cat) =>
       Object.values(valores[cat.id] || {}).some(esLleno)
     );
-    if (!hayResultados) {
-      alert('Ingrese al menos un resultado de laboratorio antes de guardar.');
+    if (!hayResultados && nuevoEstado !== 'BORRADOR') {
+      alert('Ingrese al menos un resultado de laboratorio antes de marcarlo como completado o firmarlo. Si aún no tiene resultados, use "Guardar Borrador".');
       return;
     }
 
@@ -190,6 +201,16 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
       telefono: general.telefono,
       diagnostico: general.diagnostico,
       muestra: general.muestra,
+      ...(SEDE.camposSolicitud
+        ? {
+            numero_solicitud: general.numeroSolicitud,
+            municipio: general.municipio,
+            hora_toma: general.horaToma,
+            hora_recepcion: general.horaRecepcion,
+            hora_emision: general.horaEmision,
+            ci: pacienteData?.documentId || pacienteData?.ci || '',
+          }
+        : {}),
       centro_asistencial: UNIDAD_SANITARIA,
       estadoInforme: nuevoEstado,
       observaciones,
@@ -223,6 +244,11 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     // Hematología: plano (guardarEnRisServer usa hematoDatos como datosFormularioSueltos).
     doc.datos = { ...hematoBag, observaciones };
     doc.hematoDatos = { ...hematoBag, observaciones };
+    // Borrador sin resultados: se marcan las áreas de los exámenes programados para poder completarlo después
+    if (!estudios.size) {
+      for (const cat of CATEGORIAS_LAB) if (permitidos[cat.id]) estudios.add(cat.storage.tipoLab);
+    }
+    doc.examenesProgramados = examenesFiltro;
     doc.tipoLaboratorio = [...estudios][0] || 'Lab_Hemato';
     doc.estudiosRealizados = [...estudios];
 
@@ -237,7 +263,8 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
     (!q || p.label.toLowerCase().includes(q) || excel.toLowerCase().includes(q));
   type Fila = { grupo: string } | { p: ParametroLab; excel?: string };
   const filas: Fila[] = [];
-  const columnas = COLUMNAS_EXCEL[tabActiva];
+  // Los nombres de columna de la planilla Excel son de la CNS; otras sedes ven los nombres completos
+  const columnas = SEDE.id === 'vtunari' ? COLUMNAS_EXCEL[tabActiva] : undefined;
   if (columnas) {
     let area = '';
     for (const c of columnas) {
@@ -382,8 +409,9 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               ['Nombres', pacienteData?.nombres],
               ['Edad', pacienteData?.edad],
               ['Género', pacienteData?.genero],
-              ['AVC', pacienteData?.codigoAsegurado],
-              ['Benef.', pacienteData?.codigoBeneficiario],
+              ...(SEDE.camposSolicitud
+                ? [['CI', pacienteData?.documentId || pacienteData?.ci]]
+                : [['AVC', pacienteData?.codigoAsegurado], ['Benef.', pacienteData?.codigoBeneficiario]]),
             ].map(([rotulo, valor]) => (
               <div key={rotulo}>
                 <label className={labelBase}>{rotulo === 'Paterno' && <User className="w-3 h-3" />}{rotulo}</label>
@@ -393,13 +421,37 @@ export default function EditorLaboratorio({ pacienteData, informePrevio, onVolve
               </div>
             ))}
             <div>
-              <label className={labelBase}><DoorOpen className="w-3 h-3" /> Consultorio</label>
-              <input value={general.consultorio} onChange={(e) => setGen('consultorio', e.target.value.toUpperCase())} placeholder="Ej: 5 o EMERGENCIA" className={inputBase} />
+              <label className={labelBase}><DoorOpen className="w-3 h-3" /> {SEDE.camposSolicitud ? 'Sala y cama' : 'Consultorio'}</label>
+              <input value={general.consultorio} onChange={(e) => setGen('consultorio', e.target.value.toUpperCase())} placeholder={SEDE.camposSolicitud ? 'Ej: SALA 3, CAMA 12 o EXTERNO' : 'Ej: 5 o EMERGENCIA'} className={inputBase} />
             </div>
             <div>
               <label className={labelBase}><Stethoscope className="w-3 h-3" /> Médico</label>
-              <input value={general.medicoDerivante} onChange={(e) => setGen('medicoDerivante', e.target.value.toUpperCase())} placeholder="Clave, ej: B123" className={inputBase} />
+              <input value={general.medicoDerivante} onChange={(e) => setGen('medicoDerivante', e.target.value.toUpperCase())} placeholder={SEDE.camposSolicitud ? 'Ej: DR. JUAN PÉREZ' : 'Clave, ej: B123'} className={inputBase} />
             </div>
+            {SEDE.camposSolicitud && (
+              <>
+                <div>
+                  <label className={labelBase}><FileText className="w-3 h-3" /> N.º solicitud</label>
+                  <input value={general.numeroSolicitud} onChange={(e) => setGen('numeroSolicitud', e.target.value.toUpperCase())} placeholder="Ej: COREA-10293" className={inputBase} />
+                </div>
+                <div>
+                  <label className={labelBase}>Municipio</label>
+                  <input value={general.municipio} onChange={(e) => setGen('municipio', e.target.value.toUpperCase())} placeholder="Ej: EL ALTO" className={inputBase} />
+                </div>
+                <div>
+                  <label className={labelBase}>Hora toma muestra</label>
+                  <input type="time" value={general.horaToma} onChange={(e) => setGen('horaToma', e.target.value)} className={inputBase} />
+                </div>
+                <div>
+                  <label className={labelBase}>Hora recepción</label>
+                  <input type="time" value={general.horaRecepcion} onChange={(e) => setGen('horaRecepcion', e.target.value)} className={inputBase} />
+                </div>
+                <div>
+                  <label className={labelBase}>Hora emisión</label>
+                  <input type="time" value={general.horaEmision} onChange={(e) => setGen('horaEmision', e.target.value)} className={inputBase} />
+                </div>
+              </>
+            )}
             <div>
               <label className={labelBase}><CalendarDays className="w-3 h-3" /> Fecha Solicit.</label>
               <input type="date" value={general.fechaSolicitud} onChange={(e) => setGen('fechaSolicitud', e.target.value)} className={inputBase} />

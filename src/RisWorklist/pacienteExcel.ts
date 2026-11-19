@@ -1,3 +1,4 @@
+import { SEDE } from '../config/sede';
 // Formulario de pacientes con las columnas del Excel del laboratorio (CNS):
 // PATERNO, MATERNO, NOMBRES, EDAD, GÉNERO, AVC, BENEF., CONSULTORIO, MÉDICO,
 // FECHA SOLICIT., FECHA MUESTRA, FECHA EX. (+ CELULAR).
@@ -5,7 +6,7 @@
 // visita y se guardan en `ultimaAdmision`.
 
 // Unidad sanitaria que sale en los informes (en el Excel es la celda "Centro:" de la hoja dat)
-export const UNIDAD_SANITARIA = 'CIMFA VILLA TUNARI';
+export const UNIDAD_SANITARIA = SEDE.id === 'hcorea' ? 'HOSPITAL MUNICIPAL MODELO COREA' : 'CIMFA VILLA TUNARI';
 
 // EMERGENCIAS en el Excel no es "es emergencia": es la letra de orden del paciente en el
 // día (A, B, C…) y vuelve a empezar cada día. Las emergencias van en CONSULTORIO.
@@ -88,8 +89,13 @@ export const formularioAPaciente = (f: any) => {
     codigoBeneficiario: benef,
     edad: f.edad === '' || f.edad === null || f.edad === undefined ? undefined : Number(f.edad),
     dateOfBirth: f.dateOfBirth || undefined,
-    // El titular y sus beneficiarios comparten el AVC: el ID del paciente es AVC + BENEF.
-    patientId: f.patientId || (avc ? `MRN-${avc}${benef ? `-${benef}` : ''}` : ''),
+    // CNS: el titular y sus beneficiarios comparten el AVC → ID = AVC + BENEF.
+    // Hospital Corea: el paciente se identifica con su CI → ID = CI.
+    patientId:
+      f.patientId ||
+      (SEDE.camposSolicitud
+        ? (f.documentId ? `MRN-${String(f.documentId).trim().toUpperCase().replace(/\s+/g, '')}` : '')
+        : avc ? `MRN-${avc}${benef ? `-${benef}` : ''}` : ''),
     ultimaAdmision: admision,
   };
 };

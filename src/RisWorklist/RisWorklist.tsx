@@ -102,6 +102,7 @@ import MetricsTab from './components/MetricsTab';
 import ConsultaTab from './components/ConsultaTab';
 import FormularioTab, { LaboratorioPendiente } from './components/FormularioTab';
 import { pacienteVacio, pacienteAFormulario, formularioAPaciente, separarNombreCompleto, admisionVacia } from './pacienteExcel';
+import { SEDE, PESTANA_INICIAL } from '../config/sede';
 
 // New Tabs
 import TemplatesTab from './components/TemplatesTab';
@@ -251,7 +252,7 @@ function RisWorklistPanel({ servicesManager }) {
   // itemsPerPage is now the module-level ITEMS_PER_PAGE constant
 
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('citas');
+  const [activeTab, setActiveTab] = useState(PESTANA_INICIAL);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -524,11 +525,22 @@ function RisWorklistPanel({ servicesManager }) {
   const registrarDesdePreprogramacion = (f: any) => {
     const examenes = { examenes: f.examenes || [], nombres: f.nombresExamenes || [] };
     const matricula = String(f.matricula || '').trim().toUpperCase();
+    // CNS: matrícula de asegurado · Hospital Corea: CI (documento del paciente)
+    const campoId = SEDE.etiquetaId === 'CI' ? 'documentId' : 'numeroAsegurado';
     const existente = matricula
-      ? patients.find((p: any) => String(p.numeroAsegurado || '').trim().toUpperCase() === matricula)
+      ? patients.find((p: any) => String(p[campoId] || '').trim().toUpperCase() === matricula)
       : null;
+    // Datos de la solicitud médica (Hospital Corea): el médico y la sala pasan al informe
+    const admision = {
+      ...admisionVacia(),
+      fechaExamen: f.fechaExamen || admisionVacia().fechaExamen,
+      ...(f.medicoSolicitante ? { medico: f.medicoSolicitante } : {}),
+      ...(f.salaCama ? { consultorio: f.salaCama } : {}),
+      ...(f.municipio ? { municipio: f.municipio } : {}),
+      ...(f.diagnostico ? { diagnostico: f.diagnostico } : {}),
+    };
     if (existente) {
-      setLabPendiente({ paciente: existente, ...examenes, admision: { ...admisionVacia(), fechaExamen: f.fechaExamen || admisionVacia().fechaExamen } });
+      setLabPendiente({ paciente: existente, ...examenes, admision });
       setActiveTab('Formulario');
       return;
     }
@@ -539,9 +551,9 @@ function RisWorklistPanel({ servicesManager }) {
       firstName: nombres,
       apellidoPaterno: paterno,
       apellidoMaterno: materno,
-      numeroAsegurado: matricula,
+      [campoId]: matricula,
       phone: f.celular || '',
-      admision: { ...admisionVacia(), fechaExamen: f.fechaExamen || admisionVacia().fechaExamen },
+      admision,
     });
     setExamenesPorRegistrar(examenes);
     setIsCreatingPatient(true);

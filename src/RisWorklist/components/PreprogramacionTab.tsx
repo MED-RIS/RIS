@@ -6,6 +6,7 @@ import QrBoletaScanner from './QrBoletaScanner';
 import { parseBoletaQr } from '../../utils/parseBoletaQr';
 import { imprimirComprobante, leerQrComprobante } from '../laboratorio/comprobante';
 import EstadoBadge from './EstadoBadge';
+import { SEDE, TODOS_EXAMENES, type ExamenProgramable } from '../../config/sede';
 
 // Preprogramación del laboratorio (CNS). El paciente llega a caja con su boleta y se
 // lo anota para un DÍA (sin hora) con lo mínimo: nombre y apellido, matrícula, celular
@@ -13,38 +14,12 @@ import EstadoBadge from './EstadoBadge';
 // REGPRG-001), más la firma de entrega. El día del examen, si vino, se lo registra
 // formalmente; si no, "No vino".
 
-type Examen = { id: string; label: string; corto: string };
-const GRUPOS: { grupo: string | null; items: Examen[] }[] = [
-  {
-    grupo: 'HEMATO',
-    items: [
-      { id: 'HTO', label: 'HTO', corto: 'HTO' },
-      { id: 'HB', label: 'Hb', corto: 'Hb' },
-      { id: 'HEMOGRAMA', label: 'Hemograma', corto: 'Hemogram' },
-    ],
-  },
-  {
-    grupo: null,
-    items: [
-      { id: 'QMC_SANGUINEA', label: 'Química sanguínea', corto: 'QMC sanguínea' },
-      { id: 'SEROLOGIA', label: 'Serología', corto: 'Serología' },
-      { id: 'EGO', label: 'E.G.O.', corto: 'E.G.O.' },
-      { id: 'COPROLOGIA', label: 'Coprología', corto: 'Coprología' },
-      { id: 'H_PYLORI_SANGRE_OCULTA', label: 'H. Pylori / Sangre oculta', corto: 'H. Pylori / S. oculta' },
-      { id: 'HORMONAS', label: 'Hormonas', corto: 'Hormonas' },
-      { id: 'PBAS_TRANSFERENCIA', label: 'Pbas. para transferencia', corto: 'Pbas. transferencia' },
-    ],
-  },
-  {
-    grupo: 'PBA RAP COVID-19',
-    items: [
-      { id: 'COVID_ANTIGENO', label: 'Antígeno', corto: 'Antígeno' },
-      { id: 'COVID_ANTICUERPOS', label: 'Anticuerpos', corto: 'Anticuerpos' },
-      { id: 'COVID_QUIMIO', label: 'Quimioluminiscencia', corto: 'Quimiolumin.' },
-    ],
-  },
-];
-const TODOS = GRUPOS.flatMap(g => g.items);
+// Exámenes, rótulos y encabezados propios de cada sede (CNS Villa Tunari, Hospital Corea…)
+type Examen = ExamenProgramable;
+const GRUPOS = SEDE.gruposExamenes;
+const TODOS = TODOS_EXAMENES;
+const ID = SEDE.etiquetaId;
+const TEL = SEDE.etiquetaTelefono;
 
 
 // Fechas como "AAAA-MM-DD" en hora local (la programación es por día, sin hora)
@@ -63,7 +38,11 @@ const nombreDe = (f: any) => f.nombreCompleto || [f.paterno, f.materno, f.nombre
 const ddmmaaaa = (s?: string) => (s ? s.split('-').reverse().join('/') : '');
 const ddmm = (v?: string) => (v ? new Date(v).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit' }) : '');
 
-const VACIO = { fechaExamen: '', nombreCompleto: '', matricula: '', celular: '', examenes: [] as string[], emergencia: false };
+const VACIO = {
+  fechaExamen: '', nombreCompleto: '', matricula: '', celular: '', examenes: [] as string[], emergencia: false,
+  // Solo sedes con formulario de solicitud (Hospital Corea)
+  medicoSolicitante: '', salaCama: '', municipio: '', diagnostico: '',
+};
 
 // Para comparar nombres sin que molesten espacios de más ni minúsculas
 const normalizar = (s: any) => String(s || '').trim().replace(/\s+/g, ' ').toUpperCase();
@@ -208,8 +187,8 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
   const guardar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nombreCompleto.trim()) return toast.warning('Falta NOMBRE Y APELLIDO');
-    if (!form.matricula.trim()) return toast.warning('Falta MATRÍCULA');
-    if (!form.celular.trim()) return toast.warning('Falta CELULAR');
+    if (!form.matricula.trim()) return toast.warning(`Falta ${ID.toUpperCase()}`);
+    if (!form.celular.trim()) return toast.warning(`Falta ${TEL.toUpperCase()}`);
     if (!form.examenes.length) return toast.warning('Marque al menos un examen');
     // Validador de duplicados: el mismo paciente (matrícula y nombre) el mismo día.
     // El servidor también lo controla; esto avisa antes con lo que ya está en pantalla.
@@ -226,7 +205,10 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     setGuardando(true);
     try {
       const { _id, fechaExamen, nombreCompleto, matricula, celular, examenes, emergencia } = form;
-      const datos = { fechaExamen, nombreCompleto, matricula, celular, examenes, emergencia: !!emergencia };
+      const datos: any = { fechaExamen, nombreCompleto, matricula, celular, examenes, emergencia: !!emergencia };
+      if (SEDE.camposSolicitud) {
+        for (const k of ['medicoSolicitante', 'salaCama', 'municipio', 'diagnostico']) datos[k] = String(form[k] || '').trim();
+      }
       const guardada = _id ? await updatePreprogramacion(_id, datos) : await createPreprogramacion(datos);
       toast.success(_id ? 'Preprogramación actualizada' : `Programado para el ${ddmmaaaa(fechaExamen)}`);
       if (fechaExamen !== dia) setDia(fechaExamen);
@@ -296,20 +278,25 @@ export default function PreprogramacionTab({ onRegistrar }: { onRegistrar?: (fil
     const v = window.open('', '_blank');
     if (!v) return toast.warning('Permita ventanas emergentes para imprimir');
     const esc = (s: any) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
-    const cab1 = GRUPOS.map(g =>
+    const porColumnas = SEDE.planillaPorColumnas;
+    const cab1 = !porColumnas ? '<th rowspan="2">EXÁMENES</th>' : GRUPOS.map(g =>
       g.grupo
         ? `<th colspan="${g.items.length}">${esc(g.grupo)}</th>`
         : g.items.map(e => `<th rowspan="2" class="v"><div>${esc(e.label)}</div></th>`).join('')
     ).join('');
-    const cab2 = GRUPOS.filter(g => g.grupo)
+    const cab2 = !porColumnas ? '' : GRUPOS.filter(g => g.grupo)
       .flatMap(g => g.items)
       .map(e => `<th class="v"><div>${esc(e.corto)}</div></th>`)
       .join('');
     const cuerpo = delDia
       .filter(f => f.estado !== 'NO_VINO')
       .map(
-        (f, i) => `<tr><td>${i + 1}</td><td class="n">${esc(nombreDe(f))}${f.emergencia ? ' <b>(EMERGENCIA)</b>' : ''}</td><td>${esc(f.matricula)}</td><td>${esc(f.celular)}</td>
-          ${TODOS.map(e => `<td class="c">${f.examenes.includes(e.id) ? '✓' : ''}</td>`).join('')}
+        (f, i) => `<tr><td>${i + 1}</td><td class="n">${esc(nombreDe(f))}${f.emergencia ? ' <b>(EMERGENCIA)</b>' : ''}${
+            SEDE.camposSolicitud && (f.salaCama || f.medicoSolicitante) ? `<br><small>${esc([f.salaCama, f.medicoSolicitante].filter(Boolean).join(' · '))}</small>` : ''
+          }</td><td>${esc(f.matricula)}</td><td>${esc(f.celular)}</td>
+          ${porColumnas
+            ? TODOS.map(e => `<td class="c">${f.examenes.includes(e.id) ? '✓' : ''}</td>`).join('')
+            : `<td>${esc(TODOS.filter(e => f.examenes.includes(e.id)).map(e => e.corto).join(', '))}</td>`}
           <td>${f.entregado ? `Entregado ${esc(ddmm(f.entregadoEl))}` : ''}</td></tr>`
       )
       .join('');
@@ -320,9 +307,9 @@ table{width:100%;border-collapse:collapse}th,td{border:1px solid #444;padding:3p
 th.v{height:95px;width:20px;padding:0}th.v div{writing-mode:vertical-rl;transform:rotate(180deg);margin:auto;white-space:nowrap}
 td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}</style></head><body>
 <h1>REGISTRO DIARIO DE PROGRAMACIÓN DE PACIENTES</h1>
-<div class="sub"><span>LABORATORIO</span><span>FECHA: <b>${ddmmaaaa(dia)}</b></span><span>CNS – CVT REGPRG-001</span></div>
+<div class="sub"><span>${esc(SEDE.institucion)} · LABORATORIO</span><span>FECHA: <b>${ddmmaaaa(dia)}</b></span><span>${esc(SEDE.codigoPlanilla)}</span></div>
 <table><thead>
-<tr><th rowspan="2">N.º</th><th rowspan="2">NOMBRE Y APELLIDO</th><th rowspan="2">MATRÍCULA</th><th rowspan="2">CELULAR</th>${cab1}<th rowspan="2">FIRMA ENTREGA</th></tr>
+<tr><th rowspan="2">N.º</th><th rowspan="2">NOMBRE Y APELLIDO</th><th rowspan="2">${esc(ID.toUpperCase())}</th><th rowspan="2">${esc(TEL.toUpperCase())}</th>${cab1}<th rowspan="2">FIRMA ENTREGA</th></tr>
 <tr>${cab2}</tr></thead>
 <tbody>${cuerpo || '<tr><td colspan="18" style="text-align:center;padding:12px">Sin pacientes programados</td></tr>'}</tbody></table>
 <script>window.onload=()=>setTimeout(()=>window.print(),300)</script></body></html>`);
@@ -464,9 +451,10 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
               <tr>
                 <th rowSpan={2} className={th}>N.º</th>
                 <th rowSpan={2} className={`${th} min-w-[200px] sticky left-0 z-20 bg-[#161918] shadow-[2px_0_0_rgba(255,255,255,0.08)]`}>Nombre y apellido</th>
-                <th rowSpan={2} className={th}>Matrícula</th>
-                <th rowSpan={2} className={th}>Celular</th>
-                {GRUPOS.map(g =>
+                <th rowSpan={2} className={th}>{ID}</th>
+                <th rowSpan={2} className={th}>{TEL}</th>
+                {!SEDE.planillaPorColumnas && <th rowSpan={2} className={`${th} min-w-[220px]`}>Exámenes</th>}
+                {SEDE.planillaPorColumnas && GRUPOS.map(g =>
                   g.grupo ? (
                     <th key={g.grupo} colSpan={g.items.length} className={`${th} text-center text-primary-light`}>
                       {g.grupo}
@@ -485,7 +473,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                 <th rowSpan={2} className={`${th} sticky right-0 z-20 bg-[#161918] shadow-[-2px_0_0_rgba(255,255,255,0.08)] text-right`}>Acciones</th>
               </tr>
               <tr>
-                {GRUPOS.filter(g => g.grupo).flatMap(g =>
+                {SEDE.planillaPorColumnas && GRUPOS.filter(g => g.grupo).flatMap(g =>
                   g.items.map(e => (
                     <th key={e.id} className={thVertical}>
                       <div className="[writing-mode:vertical-rl] rotate-180 mx-auto whitespace-nowrap">{e.corto}</div>
@@ -526,7 +514,19 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                     </td>
                     <td className="px-2 py-2 text-gray-300 font-mono text-xs whitespace-nowrap">{f.matricula}</td>
                     <td className="px-2 py-2 text-gray-300 whitespace-nowrap">{f.celular}</td>
-                    {TODOS.map(e => celdaExamen(f, e))}
+                    {SEDE.planillaPorColumnas ? (
+                      TODOS.map(e => celdaExamen(f, e))
+                    ) : (
+                      <td className="px-2 py-2 border-l border-white/5">
+                        <button onClick={() => editar(f)} className="flex flex-wrap gap-1 text-left" title="Cambiar los exámenes">
+                          {TODOS.filter(e => f.examenes.includes(e.id)).map(e => (
+                            <span key={e.id} className="px-1.5 py-0.5 rounded bg-primary-main/25 border border-primary-light/30 text-primary-light text-[11px] font-bold whitespace-nowrap">
+                              {e.corto}
+                            </span>
+                          ))}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-2 py-2 border-l border-white/5 whitespace-nowrap">
                       <button
                         onClick={() => alternarEntrega(f)}
@@ -583,7 +583,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
           </table>
         </div>
         <div className="px-4 py-2.5 border-t border-white/10 text-xs text-gray-500">
-          Toque el nombre cuando el paciente llegue para completar sus datos y cargar sus resultados · Toque una casilla para marcar o quitar un examen
+          Toque el nombre cuando el paciente llegue para completar sus datos y cargar sus resultados · {SEDE.planillaPorColumnas ? 'Toque una casilla para marcar o quitar un examen' : 'Toque los exámenes para cambiarlos'}
         </div>
       </div>
 
@@ -603,6 +603,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
 
             <div className="p-6 space-y-5">
               {/* QR de la boleta CNS: evita tipear nombre y matrícula */}
+              {SEDE.qrBoletaCns && (<>
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -625,6 +626,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                   <div className="mt-1 font-mono break-all text-gray-400">{qrLeido.texto}</div>
                 </div>
               )}
+              </>)}
 
               {/* EMERGENCIA: vino hoy con su boleta; se registra y se atiende en el día */}
               <button
@@ -637,7 +639,7 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                 <span className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-bold ${form.emergencia ? 'bg-red-600 border-red-500 text-white' : 'border-white/30 text-transparent'}`}>✓</span>
                 <span>
                   <span className={`block text-sm font-bold ${form.emergencia ? 'text-red-200' : 'text-gray-200'}`}>EMERGENCIA</span>
-                  <span className="block text-xs text-gray-400">Vino hoy con su boleta: queda marcado en rojo y se pasa directo a su registro</span>
+                  <span className="block text-xs text-gray-400">Vino hoy: queda marcado en rojo y se pasa directo a su registro</span>
                 </span>
               </button>
 
@@ -651,13 +653,33 @@ td{height:20px}td.c{text-align:center;font-weight:bold}td.n{white-space:nowrap}<
                   <input required autoFocus value={form.nombreCompleto} onChange={e => set('nombreCompleto', e.target.value)} className={campo} placeholder="Ej. ANA MARIA QUISPE MAMANI" />
                 </div>
                 <div className="col-span-2 md:col-span-6">
-                  <label className={rotulo}>Matrícula *</label>
-                  <input required value={form.matricula} onChange={e => set('matricula', e.target.value.toUpperCase())} className={`${campo} font-mono`} placeholder="Ej. 123456ABC" />
+                  <label className={rotulo}>{ID} *</label>
+                  <input required value={form.matricula} onChange={e => set('matricula', e.target.value.toUpperCase())} className={`${campo} font-mono`} placeholder={SEDE.placeholderId} />
                 </div>
                 <div className="col-span-2 md:col-span-6">
-                  <label className={rotulo}>Celular *</label>
+                  <label className={rotulo}>{TEL} *</label>
                   <input required type="tel" inputMode="numeric" value={form.celular} onChange={e => set('celular', e.target.value)} className={campo} placeholder="Ej. 70000000" />
                 </div>
+                {SEDE.camposSolicitud && (
+                  <>
+                    <div className="col-span-2 md:col-span-6">
+                      <label className={rotulo}>Médico solicitante</label>
+                      <input value={form.medicoSolicitante || ''} onChange={e => set('medicoSolicitante', e.target.value)} className={campo} placeholder="Ej. Dr. Juan Pérez" />
+                    </div>
+                    <div className="col-span-2 md:col-span-3">
+                      <label className={rotulo}>Sala y cama</label>
+                      <input value={form.salaCama || ''} onChange={e => set('salaCama', e.target.value)} className={campo} placeholder="Ej. Sala 3, cama 12" />
+                    </div>
+                    <div className="col-span-2 md:col-span-3">
+                      <label className={rotulo}>Municipio</label>
+                      <input value={form.municipio || ''} onChange={e => set('municipio', e.target.value)} className={campo} placeholder="Ej. El Alto" />
+                    </div>
+                    <div className="col-span-2 md:col-span-12">
+                      <label className={rotulo}>Diagnóstico principal</label>
+                      <input value={form.diagnostico || ''} onChange={e => set('diagnostico', e.target.value)} className={campo} placeholder="Ej. Diabetes mellitus tipo 2" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div>

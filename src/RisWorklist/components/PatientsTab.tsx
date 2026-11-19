@@ -10,6 +10,7 @@ import { pacienteVacio } from '../pacienteExcel';
 
 // Pacientes ficticios para pruebas (sin datos reales)
 import { listaPacientesPrueba } from './pacientesMock';
+import { SEDE } from '../../config/sede';
 
 interface PatientsTabProps {
   patients: Patient[];
@@ -192,7 +193,7 @@ export default function PatientsTab({
       <RisModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={isEditingPatient ? 'Editar Paciente' : 'Formulario de Admisión Unificada (CNS El Alto)'}
+        title={isEditingPatient ? 'Editar Paciente' : `Formulario de Admisión (${SEDE.id === 'hcorea' ? 'Hospital Corea' : 'CNS El Alto'})`}
         maxWidth="max-w-5xl"
       >
         <form
@@ -205,7 +206,7 @@ export default function PatientsTab({
               const creado = await handleCreatePatient(e);
               if (!creado) {
                 // no se creó (paciente duplicado): dejamos el modal abierto y avisamos en el formulario
-                setDuplicateError('Ya existe un paciente con ese AVC y BENEF. Verifique los datos o búsquelo en la lista.');
+                setDuplicateError(`Ya existe un paciente con ese ${SEDE.camposSolicitud ? 'CI' : 'AVC y BENEF.'}. Verifique los datos o búsquelo en la lista.`);
                 return;
               }
               // Ruteo según el servicio elegido en el selector post-registro.
@@ -237,7 +238,8 @@ export default function PatientsTab({
             </div>
           )}
 
-          {/* Carga desde Excel y lector QR en una sola franja */}
+          {/* Carga desde Excel y lector QR en una sola franja (solo CNS) */}
+          {SEDE.qrBoletaCns && (
           <div className="flex flex-col lg:flex-row gap-3 lg:items-stretch">
           <div className="flex lg:order-2 lg:items-center justify-end">
             <button 
@@ -276,6 +278,7 @@ export default function PatientsTab({
             )}
           </div>
           </div>
+          )}
           <QrBoletaScanner
             isOpen={isQrScannerOpen}
             onClose={() => setIsQrScannerOpen(false)}
@@ -323,6 +326,19 @@ export default function PatientsTab({
                     ))}
                   </div>
                 </div>
+                {SEDE.camposSolicitud ? (
+                  <>
+                    <div>
+                      <label className={rotulo}>CI *</label>
+                      <input required type="text" placeholder="Ej. 1234567 LP" value={newPatient.documentId || ''} onChange={(e) => set('documentId', e.target.value.toUpperCase())} className={`${campo} font-mono`} />
+                    </div>
+                    <div>
+                      <label className={rotulo}>MUNICIPIO</label>
+                      <input type="text" placeholder="Ej. EL ALTO" value={adm.municipio || ''} onChange={(e) => setAdm('municipio', e.target.value.toUpperCase())} className={campo} />
+                    </div>
+                  </>
+                ) : (
+                  <>
                 <div>
                   <label className={rotulo}>AVC *</label>
                   <input required type="text" placeholder="Ej. 123456ABC" value={newPatient.numeroAsegurado || ''} onChange={(e) => set('numeroAsegurado', e.target.value.toUpperCase())} className={`${campo} font-mono`} />
@@ -331,13 +347,15 @@ export default function PatientsTab({
                   <label className={rotulo}>BENEF.</label>
                   <input type="text" placeholder="ID / 50 / 18" value={newPatient.codigoBeneficiario || ''} onChange={(e) => set('codigoBeneficiario', e.target.value.toUpperCase())} className={campo} />
                 </div>
+                  </>
+                )}
 
                 <div>
-                  <label className={rotulo}>CONSULTORIO</label>
+                  <label className={rotulo}>{SEDE.camposSolicitud ? 'SALA Y CAMA' : 'CONSULTORIO'}</label>
                   <input type="text" value={adm.consultorio || ''} onChange={(e) => setAdm('consultorio', e.target.value.toUpperCase())} className={campo} />
                 </div>
                 <div>
-                  <label className={rotulo}>MÉDICO</label>
+                  <label className={rotulo}>{SEDE.camposSolicitud ? 'MÉDICO SOLICITANTE' : 'MÉDICO'}</label>
                   <input type="text" value={adm.medico || ''} onChange={(e) => setAdm('medico', e.target.value.toUpperCase())} className={campo} />
                 </div>
                 <div>
@@ -354,7 +372,7 @@ export default function PatientsTab({
                   <input type="date" value={adm.fechaExamen || ''} onChange={(e) => setAdm('fechaExamen', e.target.value)} className={campo} />
                 </div>
                 <div>
-                  <label className={rotulo}>CELULAR</label>
+                  <label className={rotulo}>{SEDE.etiquetaTelefono.toUpperCase()}</label>
                   <input type="tel" inputMode="numeric" placeholder="Ej. 70000000" value={newPatient.phone || ''} onChange={(e) => set('phone', e.target.value)} className={campo} />
                 </div>
               </div>

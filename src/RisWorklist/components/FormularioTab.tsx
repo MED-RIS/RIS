@@ -23,6 +23,8 @@ import { imprimirLiquidosCNS } from '../reports/ReporteLiquidos';
 import { imprimirEspermatoCNS } from '../reports/ReporteEspermato';
 import { imprimirCategoriaCNS } from '../reports/ReporteCatalogo';
 import { imprimirPlanillaCNS } from '../reports/ReportePlanilla';
+import { imprimirInformeCorea } from '../reports/ReporteCorea';
+import { SEDE } from '../../config/sede';
 import { SEROLOGIA_SUS, QUIMICA_SUS, CATALOGO_UROLOGIA, CATALOGO_BACTERIOLOGIA, CATALOGO_PATOLOGIA, CATEGORIAS_LAB } from '../laboratorio/catalogoLaboratorio';
 
 // "Lab_Hemato" -> "Hematología" (para los avisos)
@@ -304,6 +306,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     id: pt._id,
     codigoBeneficiario: (pt as any).codigoBeneficiario || '-',
     codigoAsegurado: (pt as any).numeroAsegurado || pt.patientId || '-',
+    documentId: (pt as any).documentId || '', // CI (Hospital Corea)
   });
 
   // Nuevo Informe: se eligió un paciente existente → abrir el editor para él.
@@ -377,7 +380,8 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     hto_hb_widal: 'hematologia', quimica: 'quimica', electrolitos: 'quimica', serologia: 'serologia', ego: 'ego',
     tolerancia_glucosa: 'glucosa', liquidos: 'liquidos', urologia: 'urologia', bacteriologia: 'bacteriologia', patologia: 'patologia',
   };
-  const editarEnEditor = (informe: any, idReporte: string) => {
+  // Sin idReporte: "Completar resultados" de un borrador (abre el editor con sus exámenes programados)
+  const editarEnEditor = (informe: any, idReporte?: string) => {
     if (!informe) return;
     if (informe.estado === 'FIRMADO') {
       if (!esSuperusuario) {
@@ -389,7 +393,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       if (!window.confirm(aviso)) return;
     }
     // El formato del Excel no tiene campos para este estudio: se usa el formulario anterior
-    if (!PESTANA_DE_REPORTE[idReporte]) {
+    if (idReporte && !PESTANA_DE_REPORTE[idReporte]) {
       setReporteEnEdicion({ id: idReporte, paciente: informe });
       return;
     }
@@ -412,8 +416,8 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     });
     setInformeExistente(informe);
     setInformePrevio(null);
-    setSoloExamenes(null);
-    setCategoriaInicial(PESTANA_DE_REPORTE[idReporte]);
+    setSoloExamenes(idReporte ? null : { ids: informe.datos?.examenesProgramados || [], nombres: [] });
+    setCategoriaInicial(idReporte ? PESTANA_DE_REPORTE[idReporte] : undefined);
     setVerReportesGlobal(false);
     setPacienteFichaActiva(null);
     setVista('editor');
@@ -466,7 +470,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
           <div className="flex justify-between items-center border-b border-[#1f332d] pb-4 mb-6">
             <div>
               <h2 className="text-xl font-bold text-[#00bfa5] flex items-center gap-2">
-                <Clipboard className="w-5 h-5" /> EXPEDIENTES Y REPORTES CLÍNICOS - CNS
+                <Clipboard className="w-5 h-5" /> EXPEDIENTES Y REPORTES CLÍNICOS - {SEDE.institucionCorta}
               </h2>
               <p className="text-xs text-gray-400 mt-1">Selecciona un paciente a la izquierda para desplegar sus carpetas e informes individuales oficiales.</p>
             </div>
@@ -549,22 +553,34 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                       <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
                         <User className="w-5 h-5 text-[#00bfa5] shrink-0" /> {pacienteFichaActiva.paciente}
                       </h3>
-                      <p className="text-xs text-gray-400 mt-0.5 font-mono">Código CNS: {pacienteFichaActiva.cod}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 font-mono">{SEDE.etiquetaId === 'CI' ? 'CI' : 'Código CNS'}: {pacienteFichaActiva.cod}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" /> Admisión: {pacienteFichaActiva.fecha}
                       </span>
+                      {/* Borrador o completado: completar o corregir resultados sin depender de las tarjetas */}
+                      {!soloLectura && pacienteFichaActiva.estado !== 'FIRMADO' && (
+                        <button
+                          type="button"
+                          onClick={() => editarEnEditor(pacienteFichaActiva)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-bold shadow-md"
+                          title="Abrir el editor para cargar o corregir los resultados de este informe"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Completar resultados
+                        </button>
+                      )}
                       {/* Todo el informe en el formato de las hojas de la planilla Excel del laboratorio */}
                       <button
                         type="button"
                         onClick={() => {
-                          if (!imprimirPlanillaCNS(conDatosPacienteActuales(pacienteFichaActiva))) alert('Permita ventanas emergentes para imprimir.');
+                          const imprimir = SEDE.id === 'hcorea' ? imprimirInformeCorea : imprimirPlanillaCNS;
+                          if (!imprimir(conDatosPacienteActuales(pacienteFichaActiva))) alert('Permita ventanas emergentes para imprimir.');
                         }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#e00000]/80 hover:bg-[#e00000] text-white text-xs font-bold shadow-md"
-                        title="Imprimir con el mismo formato de la planilla Excel del laboratorio"
+                        title={SEDE.id === 'hcorea' ? 'Imprimir el informe de resultados con el formato del hospital' : 'Imprimir con el mismo formato de la planilla Excel del laboratorio'}
                       >
-                        <FileDown className="w-3.5 h-3.5" /> Imprimir formato planilla
+                        <FileDown className="w-3.5 h-3.5" /> {SEDE.id === 'hcorea' ? 'Imprimir informe del hospital' : 'Imprimir formato planilla'}
                       </button>
                     </div>
                   </div>
@@ -587,7 +603,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
                               <Layers className="w-4 h-4 text-red-500" />
                             </div>
                             <h5 className="font-bold text-sm text-white mt-3">Hemograma Completo Oficial</h5>
-                            <p className="text-[11px] text-gray-400 mt-1">Formato Estructurado del Policlínico CNS El Alto.</p>
+                            <p className="text-[11px] text-gray-400 mt-1">{SEDE.id === 'hcorea' ? 'Formato del Hospital Municipal Modelo Corea.' : 'Formato Estructurado del Policlínico CNS El Alto.'}</p>
                           </div>
                           <div className="mt-4 flex gap-2">
                             {botonEditar('hematologia')}
