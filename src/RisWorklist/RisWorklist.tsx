@@ -99,6 +99,7 @@ import ServicesTab from './components/ServicesTab';
 import BranchesTab from './components/BranchesTab';
 import OrganizationsTab from './components/OrganizationsTab';
 import MetricsTab from './components/MetricsTab';
+import EstadisticasLabTab from './components/EstadisticasLabTab';
 import ConsultaTab from './components/ConsultaTab';
 import FormularioTab, { LaboratorioPendiente } from './components/FormularioTab';
 import { pacienteVacio, pacienteAFormulario, formularioAPaciente, separarNombreCompleto, admisionVacia } from './pacienteExcel';
@@ -132,6 +133,7 @@ const MENU_GROUPS = [
       { id: 'pacientes', label: 'Pacientes', icon: <Users className="w-5 h-5" /> },
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },
       { id: 'Formulario', label: 'Formulario', icon: <Form className="w-5 h-5" /> },
+      { id: 'estadisticas', label: 'Estadísticas', icon: <BarChart className="w-5 h-5" /> },
     ]
   },
   {
@@ -1125,6 +1127,8 @@ function RisWorklistPanel({ servicesManager }) {
               {activeTab === 'caja' && (
                 <CashRegisterTab registersList={cashRegisters} fuzzySearch={fuzzySearch} paginate={paginate} isCreating={isCreatingCashRegister} setIsCreating={setIsCreatingCashRegister} isEditing={isEditing} editingItem={editingItem} handleCreate={handleCreateCashRegister} handleUpdate={handleUpdate} handleCancelEdit={handleCancelEdit} handleEdit={handleEdit} handleDelete={handleDelete} newItemState={newCashRegister} setNewItemState={setNewCashRegister} PaginationControls={Paginator} orders={orders} />
               )}
+
+              {activeTab === 'estadisticas' && <EstadisticasLabTab />}
 
               {activeTab === 'metricas' && (
                 <MetricsTab analytics={analytics} orders={orders} reports={reports} />
