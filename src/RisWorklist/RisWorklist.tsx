@@ -133,7 +133,8 @@ const MENU_GROUPS = [
       { id: 'preprogramacion', label: 'Preprogramación', icon: <CalendarDays className="w-5 h-5" /> },
       { id: 'citas', label: 'Recepción', icon: <Calendar className="w-5 h-5" /> },
       { id: 'consulta', label: 'Registro', icon: <Stethoscope className="w-5 h-5" /> },
-      { id: 'lectura', label: 'Lista de lectura', icon: <ClipboardList className="w-5 h-5" /> },
+      // Lista de lectura (estudios del PACS para informar): solo imagenología; las sedes de laboratorio no tienen PACS
+      ...(!import.meta.env.VITE_SEDE ? [{ id: 'lectura', label: 'Lista de lectura', icon: <ClipboardList className="w-5 h-5" /> }] : []),
       { id: 'informes', label: 'Informes', icon: <FileText className="w-5 h-5" /> },
       { id: 'pacientes', label: 'Pacientes', icon: <Users className="w-5 h-5" /> },
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },

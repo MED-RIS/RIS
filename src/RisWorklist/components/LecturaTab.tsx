@@ -92,6 +92,10 @@ export default function LecturaTab({ appConfig }: any) {
         fetchAllReports().catch(() => []),
       ]);
       if (!resPacs.ok && resPacs.status !== 204) throw new Error(`El PACS respondió ${resPacs.status}`);
+      // Sin PACS conectado la dirección devuelve la página del sitio (HTML) en vez de la lista de estudios
+      if (resPacs.status !== 204 && !/json/i.test(resPacs.headers.get('content-type') || '')) {
+        throw new Error('Esta instalación no tiene un PACS conectado. La lista de lectura está en Imagenología (MED Viewer).');
+      }
       setEstudios(resPacs.status === 204 ? [] : await resPacs.json());
       setInformes(Array.isArray(reps) ? reps : []);
       setAhora(Date.now());
