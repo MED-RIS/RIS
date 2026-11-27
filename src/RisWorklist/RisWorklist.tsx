@@ -102,6 +102,7 @@ import MetricsTab from './components/MetricsTab';
 import EstadisticasLabTab from './components/EstadisticasLabTab';
 import FormatoInformeTab from './components/FormatoInformeTab';
 import CargaPlanillasTab from './components/CargaPlanillasTab';
+import SolicitudSusTab from './components/SolicitudSusTab';
 import ConsultaTab from './components/ConsultaTab';
 import FormularioTab, { LaboratorioPendiente } from './components/FormularioTab';
 import { pacienteVacio, pacienteAFormulario, formularioAPaciente, separarNombreCompleto, admisionVacia } from './pacienteExcel';
@@ -127,6 +128,8 @@ const MENU_GROUPS = [
   {
     title: 'Atención Clínica',
     items: [
+      // Solicitud única del SUS (D-8): solo en las sedes con formulario de solicitud (Hospital Corea)
+      ...(SEDE.camposSolicitud ? [{ id: 'solicitudSus', label: 'Solicitud SUS', icon: <ClipboardList className="w-5 h-5" /> }] : []),
       { id: 'preprogramacion', label: 'Preprogramación', icon: <CalendarDays className="w-5 h-5" /> },
       { id: 'citas', label: 'Recepción', icon: <Calendar className="w-5 h-5" /> },
       { id: 'consulta', label: 'Registro', icon: <Stethoscope className="w-5 h-5" /> },
@@ -1139,6 +1142,8 @@ function RisWorklistPanel({ servicesManager }) {
               {activeTab === 'formatoInforme' && <FormatoInformeTab />}
 
               {activeTab === 'cargaPlanillas' && <CargaPlanillasTab />}
+
+              {activeTab === 'solicitudSus' && <SolicitudSusTab />}
 
               {activeTab === 'metricas' && (
                 <MetricsTab analytics={analytics} orders={orders} reports={reports} />
