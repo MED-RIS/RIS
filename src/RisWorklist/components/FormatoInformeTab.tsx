@@ -12,7 +12,27 @@ type Formato = {
   alineacionMembrete: 'izquierda' | 'centro'; subtitulo: string; direccion: string; telefono: string; correo: string; web: string;
   mostrarLogoSecundario: boolean; pie: string; textoCargo: string; mostrarFirmaImagen: boolean; mostrarSelloElectronico: boolean;
   campos: Record<string, boolean>; titulos: Record<string, string>;
+  logoIzq: string; logoCentro: string; logoDer: string; mostrarNombreInstitucion: boolean; lineasMembrete: boolean;
+  estiloDatos: 'tabla' | 'lista'; etiquetas: Record<string, string>; marcaAgua: string; marcaAguaOpacidad: number;
+  columnaLateral: string; conclusionDestacada: boolean;
 };
+const ETIQUETAS: [string, string][] = [
+  ['paciente', 'Paciente'], ['accession', 'N.º de orden'], ['fechaEstudio', 'Fecha del estudio'], ['solicitante', 'Médico solicitante'],
+  ['documento', 'C.I. / ID'], ['edadSexo', 'Edad / Sexo'], ['modalidad', 'Modalidad'], ['medico', 'Médico informante'], ['estudio', 'Estudio'],
+];
+// Diseños de partida: se aplican sobre lo que ya está y después se ajusta a gusto
+const DISENOS: { nombre: string; detalle: string; cambios: Partial<Formato> }[] = [
+  {
+    nombre: 'Clásico',
+    detalle: 'Membrete con líneas de color y datos en recuadro',
+    cambios: { estiloDatos: 'tabla', lineasMembrete: true, conclusionDestacada: false, alineacionMembrete: 'izquierda', fuenteCuerpo: 'serif' },
+  },
+  {
+    nombre: 'Membrete con logos',
+    detalle: 'Logos arriba, datos en lista «PACIENTE : …» y conclusión en negrita',
+    cambios: { estiloDatos: 'lista', lineasMembrete: false, conclusionDestacada: true, alineacionMembrete: 'centro', fuenteCuerpo: 'sans' },
+  },
+];
 type Medico = { _id: string; nombre: string; role: string; matricula: string; especialidad: string; firma: string | null };
 
 const PALETAS: { nombre: string; acento: string; titulo: string }[] = [
@@ -34,7 +54,7 @@ const pedir = async (ruta: string, init: RequestInit = {}) => {
   return r;
 };
 
-const leerImagen = (archivo: File): Promise<string> =>
+const leerImagen = (archivo: File, maxAncho = 600): Promise<string> =>
   new Promise((ok, mal) => {
     if (!/^image\/(png|jpeg|webp)$/.test(archivo.type)) return mal(new Error('Use una imagen PNG o JPG'));
     const lector = new FileReader();
@@ -42,7 +62,7 @@ const leerImagen = (archivo: File): Promise<string> =>
       // Se reduce a 600 px de ancho para que el informe no pese
       const img = new Image();
       img.onload = () => {
-        const k = Math.min(1, 600 / img.width);
+        const k = Math.min(1, maxAncho / img.width);
         const c = document.createElement('canvas');
         c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
         c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
@@ -198,8 +218,37 @@ export default function FormatoInformeTab() {
 
       <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-5 items-start">
         <fieldset disabled={!esAdmin} className="space-y-5 min-w-0">
+          <Seccion icono={<LayoutTemplate />} titulo="Diseño de la hoja">
+            <div className="grid sm:grid-cols-2 gap-2">
+              {DISENOS.map((d) => {
+                const activo = Object.entries(d.cambios).every(([k, v]) => (formato as any)[k] === v);
+                return (
+                  <button
+                    key={d.nombre}
+                    type="button"
+                    onClick={() => setFormato({ ...formato, ...d.cambios })}
+                    className={`text-left rounded-xl border px-3 py-2 ${activo ? 'border-primary-light/60 bg-primary-main/25' : 'border-white/10 bg-black/40 hover:border-white/30'}`}
+                  >
+                    <div className="text-sm font-bold text-white">{activo ? '✓ ' : ''}{d.nombre}</div>
+                    <div className="text-[11px] text-gray-400">{d.detalle}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Interruptor valor={formato.lineasMembrete} onChange={(v) => set('lineasMembrete', v)} texto="Líneas de color bajo el membrete" />
+              <Interruptor valor={formato.conclusionDestacada} onChange={(v) => set('conclusionDestacada', v)} texto="Conclusión en negrita y mayúsculas" />
+            </div>
+          </Seccion>
+
           <Seccion icono={<LayoutTemplate />} titulo="Membrete">
-            <Campo etiqueta="Subtítulo bajo el nombre de la institución">
+            <div className="grid grid-cols-3 gap-2">
+              <CajaImagen etiqueta="Logo izquierdo" valor={formato.logoIzq} ayuda={info.tieneLogo ? 'Usa el de la institución' : 'Sin logo'} onCambiar={(v) => set('logoIzq', v)} />
+              <CajaImagen etiqueta="Logo central (grande)" valor={formato.logoCentro} ayuda="Sin logo central" ancho={900} onCambiar={(v) => set('logoCentro', v)} />
+              <CajaImagen etiqueta="Logo derecho" valor={formato.logoDer} ayuda={info.tieneLogo2 && formato.mostrarLogoSecundario ? 'Usa el secundario' : 'Sin logo'} onCambiar={(v) => set('logoDer', v)} />
+            </div>
+            <Interruptor valor={formato.mostrarNombreInstitucion} onChange={(v) => set('mostrarNombreInstitucion', v)} texto="Escribir el nombre de la institución (apáguelo si el logo central ya lo trae)" />
+            <Campo etiqueta="Subtítulo o lema bajo el nombre">
               {texto('subtitulo', 'Sin subtítulo')}
             </Campo>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -251,6 +300,10 @@ export default function FormatoInformeTab() {
 
           <Seccion icono={<Eye />} titulo="Datos del paciente que se imprimen">
             <div className="flex flex-wrap gap-2">
+              <Opcion activo={formato.estiloDatos !== 'lista'} onClick={() => set('estiloDatos', 'tabla')}>En recuadro</Opcion>
+              <Opcion activo={formato.estiloDatos === 'lista'} onClick={() => set('estiloDatos', 'lista')}>En lista (PACIENTE : …)</Opcion>
+            </div>
+            <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1.5 rounded-lg text-xs font-bold border border-white/10 bg-white/5 text-gray-400">Paciente (siempre)</span>
               {CAMPOS.map(([k, t]) => (
                 <Opcion key={k} activo={formato.campos[k] !== false} onClick={() => set('campos', { ...formato.campos, [k]: formato.campos[k] === false })}>
@@ -258,6 +311,44 @@ export default function FormatoInformeTab() {
                 </Opcion>
               ))}
             </div>
+            <details className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-semibold text-gray-300">Cambiar los nombres de los datos (p. ej. «N.º de orden» → «Código»)</summary>
+              <div className="grid sm:grid-cols-3 gap-2 mt-3">
+                {ETIQUETAS.map(([k, t]) => (
+                  <Campo key={k} etiqueta={t}>
+                    <CajaTexto
+                      valor={formato.etiquetas[k] || t}
+                      ayuda={t}
+                      deFabrica={t}
+                      clase={entrada}
+                      onCambiar={(v) => {
+                        const e = { ...formato.etiquetas };
+                        if (!v.trim() || v.trim() === t) delete e[k];
+                        else e[k] = v;
+                        set('etiquetas', e);
+                      }}
+                    />
+                  </Campo>
+                ))}
+              </div>
+            </details>
+          </Seccion>
+
+          <Seccion icono={<ImagePlus />} titulo="Fondo y columna lateral">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <CajaImagen etiqueta="Marca de agua (imagen tenue de fondo)" valor={formato.marcaAgua} ayuda="Sin marca de agua" ancho={900} onCambiar={(v) => set('marcaAgua', v)} />
+                {formato.marcaAgua && (
+                  <label className="flex items-center gap-2 text-xs text-gray-400">
+                    Intensidad
+                    <input type="range" min={0.02} max={0.3} step={0.01} value={formato.marcaAguaOpacidad} onChange={(e) => set('marcaAguaOpacidad', Number(e.target.value))} className="flex-1" />
+                    {Math.round(formato.marcaAguaOpacidad * 100)}%
+                  </label>
+                )}
+              </div>
+              <CajaImagen etiqueta="Columna lateral izquierda (servicios, fotos)" valor={formato.columnaLateral} ayuda="Sin columna lateral" ancho={400} alto onCambiar={(v) => set('columnaLateral', v)} />
+            </div>
+            <p className="text-[11px] text-gray-500">La marca de agua se ve en el PDF impreso; en el Word se omite.</p>
           </Seccion>
 
           <Seccion icono={<PenLine />} titulo="Título del informe por modalidad">
@@ -282,10 +373,22 @@ export default function FormatoInformeTab() {
               <Campo etiqueta="Cargo bajo el nombre (si el médico no tiene especialidad)">
                 {texto('textoCargo', 'Sin cargo')}
               </Campo>
-              <Campo etiqueta="Texto al pie">
-                {texto('pie', 'Sin texto al pie')}
-              </Campo>
             </div>
+            <Campo etiqueta="Pie de página (puede tener varias líneas: sucursales, teléfonos, correo)">
+              <div className="flex gap-1.5">
+                <textarea
+                  className={`${entrada} min-h-[84px] font-mono text-xs`}
+                  value={formato.pie}
+                  placeholder="Sin pie de página"
+                  onChange={(e) => set('pie', e.target.value)}
+                />
+                {formato.pie && (
+                  <button type="button" onClick={() => set('pie', '')} className="px-2 rounded-lg bg-black/40 border border-white/10 text-gray-400 hover:text-red-300 self-start py-2" title="Borrar el pie">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </Campo>
             <div className="flex flex-wrap gap-2">
               <Interruptor valor={formato.mostrarFirmaImagen} onChange={(v) => set('mostrarFirmaImagen', v)} texto="Imprimir la firma escaneada del médico" />
               <Interruptor valor={formato.mostrarSelloElectronico} onChange={(v) => set('mostrarSelloElectronico', v)} texto="Sello «Firmado electrónicamente»" />
@@ -413,6 +516,40 @@ function FilaMedico({ m, entrada, onGuardar, onVer }: { m: Medico; entrada: stri
         )}
       </td>
     </tr>
+  );
+}
+
+function CajaImagen({ etiqueta, valor, ayuda, onCambiar, ancho = 600, alto = false }: { etiqueta: string; valor: string; ayuda: string; onCambiar: (v: string) => void; ancho?: number; alto?: boolean }) {
+  const archivo = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <span className="block text-[11px] font-semibold text-gray-400 mb-1">{etiqueta}</span>
+      <div className={`rounded-lg border border-dashed border-white/15 bg-white/95 flex items-center justify-center overflow-hidden ${alto ? 'h-40' : 'h-20'}`}>
+        {valor ? <img src={valor} alt="" className="max-h-full max-w-full object-contain" /> : <span className="text-[11px] text-gray-500 px-2 text-center">{ayuda}</span>}
+      </div>
+      <div className="flex gap-1.5 mt-1.5">
+        <input
+          ref={archivo}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (!f) return;
+            try { onCambiar(await leerImagen(f, ancho)); } catch (err: any) { alert(err.message); }
+          }}
+        />
+        <button type="button" onClick={() => archivo.current?.click()} className="flex-1 px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-gray-300 hover:text-white text-[11px] font-semibold">
+          {valor ? 'Cambiar' : 'Cargar'}
+        </button>
+        {valor && (
+          <button type="button" onClick={() => onCambiar('')} className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-gray-400 hover:text-red-300" title="Quitar">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

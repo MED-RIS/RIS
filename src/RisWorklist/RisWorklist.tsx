@@ -101,6 +101,7 @@ import OrganizationsTab from './components/OrganizationsTab';
 import MetricsTab from './components/MetricsTab';
 import EstadisticasLabTab from './components/EstadisticasLabTab';
 import FormatoInformeTab from './components/FormatoInformeTab';
+import CargaPlanillasTab from './components/CargaPlanillasTab';
 import ConsultaTab from './components/ConsultaTab';
 import FormularioTab, { LaboratorioPendiente } from './components/FormularioTab';
 import { pacienteVacio, pacienteAFormulario, formularioAPaciente, separarNombreCompleto, admisionVacia } from './pacienteExcel';
@@ -135,6 +136,8 @@ const MENU_GROUPS = [
       { id: 'ordenes', label: 'Órdenes HL7', icon: <Activity className="w-5 h-5" /> },
       { id: 'Formulario', label: 'Formulario', icon: <Form className="w-5 h-5" /> },
       { id: 'estadisticas', label: 'Estadísticas', icon: <BarChart className="w-5 h-5" /> },
+      // Planillas Excel del laboratorio: el formato (hoja DAT) es el de Villa Tunari
+      ...(SEDE.id === 'vtunari' ? [{ id: 'cargaPlanillas', label: 'Cargar planillas', icon: <FileBadge className="w-5 h-5" /> }] : []),
     ]
   },
   {
@@ -143,7 +146,8 @@ const MENU_GROUPS = [
       { id: 'caja', label: 'Caja', icon: <DollarSign className="w-5 h-5" /> },
       { id: 'inventory', label: 'Insumos', icon: <Box className="w-5 h-5" /> },
       { id: 'templates', label: 'Plantillas', icon: <FileBadge className="w-5 h-5" /> },
-      { id: 'formatoInforme', label: 'Formato del informe', icon: <FileText className="w-5 h-5" /> },
+      // Formato del informe radiológico: solo imagenología (las sedes de laboratorio no lo usan)
+      ...(!import.meta.env.VITE_SEDE ? [{ id: 'formatoInforme', label: 'Formato del informe', icon: <FileText className="w-5 h-5" /> }] : []),
       { id: 'metricas', label: 'Métricas', icon: <BarChart className="w-5 h-5" /> },
     ]
   },
@@ -1133,6 +1137,8 @@ function RisWorklistPanel({ servicesManager }) {
               {activeTab === 'estadisticas' && <EstadisticasLabTab />}
 
               {activeTab === 'formatoInforme' && <FormatoInformeTab />}
+
+              {activeTab === 'cargaPlanillas' && <CargaPlanillasTab />}
 
               {activeTab === 'metricas' && (
                 <MetricsTab analytics={analytics} orders={orders} reports={reports} />
