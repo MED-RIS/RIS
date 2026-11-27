@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import RisWorklistPanel from './RisWorklist/RisWorklist';
 import LoginForm from './auth/Login';
+import IngresoPortal from './auth/IngresoPortal';
 
 const ProtectedRoute = ({ children }) => {
   const localStr = localStorage.getItem('usuario');
@@ -28,6 +29,7 @@ function App() {
 
   return (
     <div className="w-full h-screen bg-black">
+      <IngresoPortal>
       <Routes>
         {/* Ruta pública de acceso */}
         <Route path="/login" element={<LoginForm />} />
@@ -42,6 +44,7 @@ function App() {
           }
         />
       </Routes>
+      </IngresoPortal>
     </div>
   );
 }
