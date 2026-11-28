@@ -76,7 +76,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por paciente, médico o AVC..."
+            placeholder="Buscar por CI, matrícula, nombres o apellidos…"
             className="w-full bg-[#050a09] border border-[#2a403a] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#00bfa5] transition-colors"
           />
         </div>
@@ -155,7 +155,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
           <div className="flex items-center justify-between gap-3 border-t border-[#2a403a] px-4 py-3 text-xs text-gray-400">
             <span>
               Mostrando los {cargados.toLocaleString('es-BO')} informes más recientes de {total.toLocaleString('es-BO')}
-              {busqueda.trim().length >= 3 ? ' · la búsqueda revisa todos los informes' : ' · use la búsqueda para encontrar uno anterior'}
+              {busqueda.trim().length >= 3 ? " · la búsqueda revisa todos los informes" : " · para uno anterior, búsquelo por CI, nombre o apellido"}
             </span>
             {onCargarMas && cargados < total && (
               <button

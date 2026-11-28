@@ -96,7 +96,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   };
   const [errorServidor, setErrorServidor] = useState('');
   // La lista se trae de a POR_PARTE informes (los más nuevos); el resto, con "Cargar más" o buscando
-  const POR_PARTE = 300;
+  const POR_PARTE = 20;
   const [totalServidor, setTotalServidor] = useState(0);
   const [cargados, setCargados] = useState(0); // cuántos de la lista general ya se trajeron
   const [cargandoLista, setCargandoLista] = useState(false);
