@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Search, FolderOpen, AlertCircle } from 'lucide-react';
 import EstadoBadge from './EstadoBadge';
 
@@ -7,6 +7,11 @@ interface InformesListProps {
   onNuevoInforme: () => void;
   onAbrir: (informe: any) => void;
   soloLectura?: boolean;         // true = rol consulta: oculta "Nuevo Informe"
+  total?: number;                // informes en el servidor (la lista trae solo los más recientes)
+  cargados?: number;
+  cargando?: boolean;
+  onCargarMas?: () => void;
+  onBuscarServidor?: (q: string) => void; // busca en todos los informes del servidor
 }
 
 type FiltroEstado = 'TODOS' | 'BORRADOR' | 'COMPLETADO' | 'FIRMADO';
@@ -22,9 +27,16 @@ const estadoDe = (informe: any): 'BORRADOR' | 'COMPLETADO' | 'FIRMADO' => {
 };
 
 
-export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLectura }: InformesListProps) {
+export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLectura, total = 0, cargados = 0, cargando, onCargarMas, onBuscarServidor }: InformesListProps) {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroEstado>('TODOS');
+  // Al escribir (3 letras o más) se busca también en el servidor, medio segundo después de la última tecla
+  useEffect(() => {
+    const t = busqueda.trim();
+    if (!onBuscarServidor || t.length < 3) return;
+    const id = setTimeout(() => onBuscarServidor(t), 500);
+    return () => clearTimeout(id);
+  }, [busqueda]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = busqueda.trim().toLowerCase();
   const visibles = informes.filter((inf) => {
@@ -103,7 +115,7 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
               {visibles.map((inf, idx) => {
                 const est = estadoDe(inf);
                 return (
-                  <tr key={inf.cod ?? idx} className="border-b border-[#1f332d] last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr key={inf.id ?? `${inf.cod}-${idx}`} className="border-b border-[#1f332d] last:border-0 hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3 font-bold text-[#00bfa5]">{typeof inf?.datos?.emergencia === 'string' && inf.datos.emergencia ? inf.datos.emergencia : '—'}</td>
                     <td className="px-4 py-3 font-bold text-white">{inf.paciente || 'Sin nombre'}</td>
                     <td className="px-4 py-3 text-gray-300">{inf?.datos?.medico_solicitante || '—'}</td>
@@ -135,6 +147,26 @@ export default function InformesList({ informes, onNuevoInforme, onAbrir, soloLe
                 ? 'Haga clic en "Nuevo Informe" para registrar uno nuevo.'
                 : 'Probá con otro filtro o término de búsqueda.'}
             </p>
+          </div>
+        )}
+
+        {/* La lista trae solo los informes más recientes; el resto se pide a medida */}
+        {total > 0 && (
+          <div className="flex items-center justify-between gap-3 border-t border-[#2a403a] px-4 py-3 text-xs text-gray-400">
+            <span>
+              Mostrando los {cargados.toLocaleString('es-BO')} informes más recientes de {total.toLocaleString('es-BO')}
+              {busqueda.trim().length >= 3 ? ' · la búsqueda revisa todos los informes' : ' · use la búsqueda para encontrar uno anterior'}
+            </span>
+            {onCargarMas && cargados < total && (
+              <button
+                type="button"
+                onClick={onCargarMas}
+                disabled={cargando}
+                className="shrink-0 rounded-lg border border-[#2a403a] px-3 py-1.5 font-bold text-gray-200 hover:border-[#00bfa5] disabled:opacity-50"
+              >
+                {cargando ? 'Cargando…' : 'Cargar más'}
+              </button>
+            )}
           </div>
         )}
       </div>

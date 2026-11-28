@@ -627,6 +627,21 @@ const pedirInformeLab = async (url: string, options: RequestInit = {}) => {
 
 export const fetchInformesLab = (): Promise<any[]> => pedirInformeLab(`${api}/api/ris/informes-lab`);
 
+// De a partes (más nuevos primero): { lista, total }. q busca por paciente, matrícula/AVC o médico;
+// cod trae todos los informes de un paciente.
+export const fetchInformesLabParte = async (p: { limite?: number; saltar?: number; q?: string; cod?: string }) => {
+  const qs = new URLSearchParams();
+  if (p.limite) qs.set('limite', String(p.limite));
+  if (p.saltar) qs.set('saltar', String(p.saltar));
+  if (p.q) qs.set('q', p.q);
+  if (p.cod) qs.set('cod', p.cod);
+  const response = await fetchWithAuth(`${api}/api/ris/informes-lab?${qs}`, { headers: { 'Content-Type': 'application/json' } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || data.message || `Error ${response.status} con los informes de laboratorio`);
+  const total = Number(response.headers.get('X-Total'));
+  return { lista: Array.isArray(data) ? data : [], total: Number.isFinite(total) ? total : (Array.isArray(data) ? data.length : 0) };
+};
+
 export const guardarInformeLab = (informe: any) =>
   pedirInformeLab(`${api}/api/ris/informes-lab/${encodeURIComponent(informe.id)}`, { method: 'PUT', body: JSON.stringify(informe) });
 

@@ -7,7 +7,7 @@ import SelectorPaciente from './SelectorPaciente';
 import EditarReporteModal from './EditarReporteModal';
 import EditorLaboratorio from './EditorLaboratorio';
 import { hoyLocal } from '../pacienteExcel';
-import { fetchInformesLab, guardarInformeLab, eliminarInformeLab, migrarInformesLab } from '../risService';
+import { fetchInformesLabParte, guardarInformeLab, eliminarInformeLab, migrarInformesLab } from '../risService';
 import { obtenerCodigoBeneficiarioTexto } from '../../utils/helpers';
 import { imprimirHematologiaCNS } from '../reports/ReporteHematologia';
 import { imprimirGrupoSanguineoCNS as imprimirGrupoSanguineoUnicoCNS } from '../reports/ReporteGrupoSanguineo';
@@ -95,6 +95,17 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     try { localStorage.setItem('ris_historial_cns', JSON.stringify(lista)); } catch { /* sin espacio */ }
   };
   const [errorServidor, setErrorServidor] = useState('');
+  // La lista se trae de a POR_PARTE informes (los más nuevos); el resto, con "Cargar más" o buscando
+  const POR_PARTE = 300;
+  const [totalServidor, setTotalServidor] = useState(0);
+  const [cargados, setCargados] = useState(0); // cuántos de la lista general ya se trajeron
+  const [cargandoLista, setCargandoLista] = useState(false);
+  // Suma informes que llegan del servidor sin duplicar (por id) y deja la lista "más nuevo primero"
+  const mezclar = (prev: any[], nuevos: any[]) => {
+    const porId = new Map(prev.map((i) => [i.id, i]));
+    for (const n of nuevos) porId.set(n.id, n);
+    return [...porId.values()].sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')) || String(b.creadoEn || '').localeCompare(String(a.creadoEn || '')));
+  };
   const recargarDelServidor = async () => {
     // La subida de lo que estaba solo en esta computadora va en partes chicas (el servidor
     // puede rechazar envíos grandes) y si falla no impide traer la lista del servidor.
@@ -109,16 +120,55 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
       }
     }
     try {
-      const lista = await fetchInformesLab();
+      setCargandoLista(true);
+      const { lista, total } = await fetchInformesLabParte({ limite: POR_PARTE });
       setHistorialSimulado(lista);
+      setTotalServidor(total);
+      setCargados(lista.length);
       setErrorServidor('');
       guardarCopiaLocal(lista);
     } catch (e: any) {
       console.warn('Informes de laboratorio: sin conexión con el servidor, se usa la copia local', e);
       setErrorServidor(e?.message || 'Sin conexión con el servidor');
+    } finally {
+      setCargandoLista(false);
     }
   };
   useEffect(() => { recargarDelServidor(); }, []);
+
+  const cargarMas = async () => {
+    setCargandoLista(true);
+    try {
+      const { lista, total } = await fetchInformesLabParte({ limite: POR_PARTE, saltar: cargados });
+      setHistorialSimulado((prev) => mezclar(prev, lista));
+      setTotalServidor(total);
+      setCargados((c) => c + lista.length);
+    } catch (e: any) {
+      setErrorServidor(e?.message || 'Sin conexión con el servidor');
+    } finally {
+      setCargandoLista(false);
+    }
+  };
+  // Búsqueda en el servidor (en todos los informes, no solo en los cargados)
+  const buscarEnServidor = async (q: string) => {
+    try {
+      const { lista } = await fetchInformesLabParte({ q, limite: 500 });
+      setHistorialSimulado((prev) => mezclar(prev, lista));
+    } catch (e) {
+      /* sin conexión: se busca solo en lo cargado */
+    }
+  };
+  // Todos los informes de un paciente (para su ficha, el informe del día y los anteriores)
+  const traerDelPaciente = async (cod: string): Promise<any[]> => {
+    try {
+      const { lista } = await fetchInformesLabParte({ cod });
+      let resultado: any[] = [];
+      setHistorialSimulado((prev) => (resultado = mezclar(prev, lista)));
+      return resultado.length ? resultado : mezclar(historialSimulado, lista);
+    } catch (e) {
+      return historialSimulado;
+    }
+  };
 
   // Manda al servidor solo los informes que cambiaron entre dos versiones del historial.
   // Si el servidor no acepta (p. ej. un informe FIRMADO), avisa y vuelve a lo que hay allá.
@@ -310,10 +360,10 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   });
 
   // Nuevo Informe: se eligió un paciente existente → abrir el editor para él.
-  const seleccionarPaciente = (pt: Patient, fecha: string = hoyLocal()): boolean => {
+  const seleccionarPaciente = (pt: Patient, fecha: string = hoyLocal(), hist: any[] = historialSimulado): boolean => {
     const paciente = mapPacienteAInforme(pt);
     // ¿Ya tiene informe este día? Se abre ese (con sus valores), no uno nuevo
-    const delDia = historialSimulado.find((inf) => inf.cod === paciente.cod && inf.fecha === fecha);
+    const delDia = hist.find((inf) => inf.cod === paciente.cod && inf.fecha === fecha);
     if (delDia?.estado === 'FIRMADO') {
       alert(`Este paciente ya tiene un informe FIRMADO del ${fecha}. Se abre para verlo; un informe firmado no se modifica.`);
       abrirInforme(delDia);
@@ -322,21 +372,28 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
     setPacienteSeleccionado(paciente);
     setInformeExistente(delDia || null);
     // Último informe de este paciente (por matrícula) para ofrecer precarga en un control repetido.
-    const previos = historialSimulado.filter((inf) => inf.cod === paciente.cod);
+    const previos = hist.filter((inf) => inf.cod === paciente.cod);
     setInformePrevio(delDia ? null : previos[0] || null); // el historial está "más nuevo primero"
     setVista('editor');
     return true;
   };
+  // Antes de abrir el editor se traen todos los informes de ese paciente (la lista tiene solo los recientes)
+  const seleccionarConHistorial = async (pt: Patient, fecha: string = hoyLocal()) => {
+    const hist = await traerDelPaciente(mapPacienteAInforme(pt).cod);
+    return seleccionarPaciente(pt, fecha, hist);
+  };
 
   useEffect(() => {
     if (!pendiente?.paciente) return;
-    if (!seleccionarPaciente(pendiente.paciente, pendiente.admision?.fechaExamen || hoyLocal())) {
+    (async () => {
+      if (!(await seleccionarConHistorial(pendiente.paciente, pendiente.admision?.fechaExamen || hoyLocal()))) {
+        onPendienteAtendido?.();
+        return;
+      }
+      setSoloExamenes({ ids: pendiente.examenes || [], nombres: pendiente.nombres || [], admision: pendiente.admision });
+      setResetKey((prev) => prev + 1);
       onPendienteAtendido?.();
-      return;
-    }
-    setSoloExamenes({ ids: pendiente.examenes || [], nombres: pendiente.nombres || [], admision: pendiente.admision });
-    setResetKey((prev) => prev + 1);
-    onPendienteAtendido?.();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendiente]);
 
@@ -344,6 +401,7 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
   const abrirInforme = (informe: any) => {
     setPacienteFichaActiva(informe);
     setVerReportesGlobal(true);
+    if (informe?.cod) traerDelPaciente(informe.cod); // completa la ficha con todos sus informes
   };
 
   // El informe guarda una FOTO del paciente al momento de crearse. Si después se
@@ -971,13 +1029,18 @@ export default function FormularioTab({ patients = [], pendiente, onPendienteAte
             soloLectura={soloLectura}
             onNuevoInforme={() => setVista('selector')}
             onAbrir={abrirInforme}
+            total={totalServidor}
+            cargados={cargados}
+            cargando={cargandoLista}
+            onCargarMas={cargarMas}
+            onBuscarServidor={buscarEnServidor}
           />
         )}
 
         {vista === 'selector' && (
           <SelectorPaciente
             patients={patients}
-            onSeleccionar={seleccionarPaciente}
+            onSeleccionar={(pt: Patient) => { seleccionarConHistorial(pt); return true; }}
             onCancelar={() => setVista('lista')}
           />
         )}
